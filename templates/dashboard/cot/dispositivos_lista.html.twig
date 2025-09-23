@@ -1,0 +1,274 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block title %}Monitor de dispositivos{% endblock %}
+
+{% block page_title %}
+    <i class="fas fa-list"></i> Monitor de Dispositivos
+{% endblock %}
+
+{% block head_stylesheets %}
+    {{ parent() }}
+    <style>
+        .cot_device_container {
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+            width: 152px;
+            padding-left: 1px;
+            margin: 0 4px 4px 0;
+            background-color: #9E9E9E;
+            border-radius: 30px;
+            padding-top: 1px;
+            overflow: hidden;
+            transition-timing-function: ease;
+            transition: width 0.3s;
+            display: inline-block;
+        }
+        
+        .cot_device_container:hover {
+            width: 153.5px;
+            transition-timing-function: ease;
+            transition: all 0.4s;
+        }
+        
+        .btn_circle_icon_left {
+            float: left;
+            padding: 7px 0 0 0;
+            background: #fff;
+            margin-left: -11px;
+            margin-right: 1px;
+            margin-top: 2px;
+            width: 30px;
+            height: 30px;
+            text-align: center;
+            border-radius: 50%;
+        }
+        
+        .btn_circle_text {
+            font-size: 10pt;
+            word-wrap: break-word;
+            overflow: hidden;
+            text-align: left;
+            color: white;
+            padding: 5px;
+        }
+        
+        .device_active {
+            background-color: #4CAF50 !important;
+        }
+        
+        .device_unactive {
+            background-color: #f44336 !important;
+        }
+        
+        .filter-button-active {
+            background-color: #5bc0de !important;
+            color: white !important;
+        }
+        
+        .control-panel {
+            padding: 15px;
+            background: white;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .devices-container {
+            padding: 20px;
+            background: #f5f5f5;
+            min-height: 400px;
+        }
+        
+        .device-type-group {
+            margin-bottom: 30px;
+        }
+        
+        .device-type-header {
+            background: #333;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px 5px 0 0;
+            font-weight: bold;
+        }
+        
+        .device-type-content {
+            background: white;
+            padding: 15px;
+            border-radius: 0 0 5px 5px;
+            border: 1px solid #ddd;
+            border-top: none;
+        }
+        
+        .status-counter {
+            font-size: 18px;
+            margin: 0 10px;
+        }
+        
+        .status-counter.active {
+            color: #4CAF50;
+        }
+        
+        .status-counter.inactive {
+            color: #f44336;
+        }
+    </style>
+{% endblock %}
+
+{% block head_javascript %}
+    {{ parent() }}
+{% endblock %}
+
+{% block page_content %}
+    <div class="container-fluid">
+        <h1><i class="fas fa-server"></i> Monitor de Dispositivos</h1>
+        
+        <!-- Panel de control -->
+        <div class="control-panel">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <div class="input-group-btn">
+                            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                                <i class="fas fa-filter"></i> Filtro de estado <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a href="#" class="filter-button" data-filter="all">Mostrar Todos</a></li>
+                                <li><a href="#" class="filter-button" data-filter="device_active">Mostrar Activos</a></li>
+                                <li><a href="#" class="filter-button" data-filter="device_unactive">Mostrar Inactivos</a></li>
+                            </ul>
+                        </div>
+                        <input type="text" id="input_device_finder" class="form-control" 
+                               placeholder="Buscar dispositivo..." value="{{ input_device_finder }}">
+                        <span class="input-group-btn">
+                            <button class="btn btn-primary" id="btn_device_finder">
+                                <i class="fas fa-search"></i> Buscar
+                            </button>
+                        </span>
+                    </div>
+                </div>
+                <div class="col-md-4 text-right">
+                    <span class="status-counter active">
+                        <i class="fas fa-check-circle"></i> Activos: <span id="active_count">0</span>
+                    </span>
+                    <span class="status-counter inactive">
+                        <i class="fas fa-times-circle"></i> Inactivos: <span id="inactive_count">0</span>
+                    </span>
+                    <a href="{{ path('cot_index', {'videowall': 'true', 'device_status': device_status}) }}" 
+                       class="btn btn-info">
+                        <i class="fas fa-th-large"></i> Vista Videowall
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contenedor de dispositivos -->
+        <div class="devices-container">
+            {% set active_total = 0 %}
+            {% set inactive_total = 0 %}
+            
+            {% for tipo_nombre, tipo_grupo in dispositivos_por_tipo %}
+                <div class="device-type-group">
+                    <div class="device-type-header">
+                        <i class="fas {{ tipo_grupo.tipo ? tipo_grupo.tipo.icono|default('fa-microchip') : 'fa-microchip' }}"></i>
+                        {{ tipo_nombre }}
+                        <span class="badge badge-light float-right">{{ tipo_grupo.dispositivos|length }}</span>
+                    </div>
+                    <div class="device-type-content">
+                        {% for dispositivo in tipo_grupo.dispositivos %}
+                            {% if dispositivo.estado == 1 %}
+                                {% set active_total = active_total + 1 %}
+                            {% else %}
+                                {% set inactive_total = inactive_total + 1 %}
+                            {% endif %}
+                            
+                            <div class="cot_device_container {{ dispositivo.estado == 1 ? 'device_active' : 'device_unactive' }}" 
+                                 data-device-id="{{ dispositivo.id }}"
+                                 data-device-name="{{ dispositivo.nombre|lower }}"
+                                 data-device-ip="{{ dispositivo.ip }}"
+                                 data-device-status="{{ dispositivo.estado == 1 ? 'device_active' : 'device_unactive' }}">
+                                <div style="padding: 5px;">
+                                    <i class="fas {{ tipo_grupo.tipo ? tipo_grupo.tipo.icono|default('fa-microchip') : 'fa-microchip' }} btn_circle_icon_left"></i>
+                                    <div class="btn_circle_text">
+                                        <strong>{{ dispositivo.nombre }}</strong><br>
+                                        <small>{{ dispositivo.ip }}</small>
+                                        {% if dispositivo.puerto %}:{{ dispositivo.puerto }}{% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                        
+                        {% if tipo_grupo.dispositivos|length == 0 %}
+                            <p class="text-muted">No hay dispositivos en este grupo</p>
+                        {% endif %}
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i> No se encontraron dispositivos
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <script>
+        // Actualizar contadores
+        document.getElementById('active_count').textContent = '{{ active_total }}';
+        document.getElementById('inactive_count').textContent = '{{ inactive_total }}';
+        
+        // Filtros
+        document.querySelectorAll('.filter-button').forEach(function(button) {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                var filter = this.dataset.filter;
+                
+                // Remover clase activa de todos los botones
+                document.querySelectorAll('.filter-button').forEach(function(btn) {
+                    btn.classList.remove('filter-button-active');
+                });
+                this.classList.add('filter-button-active');
+                
+                // Filtrar dispositivos
+                document.querySelectorAll('.cot_device_container').forEach(function(device) {
+                    if (filter === 'all') {
+                        device.style.display = 'inline-block';
+                    } else {
+                        if (device.dataset.deviceStatus === filter) {
+                            device.style.display = 'inline-block';
+                        } else {
+                            device.style.display = 'none';
+                        }
+                    }
+                });
+            });
+        });
+        
+        // Búsqueda
+        document.getElementById('btn_device_finder').addEventListener('click', function() {
+            var searchTerm = document.getElementById('input_device_finder').value.toLowerCase();
+            
+            document.querySelectorAll('.cot_device_container').forEach(function(device) {
+                var name = device.dataset.deviceName || '';
+                var ip = device.dataset.deviceIp || '';
+                
+                if (searchTerm.length < 2) {
+                    device.style.display = 'inline-block';
+                } else if (name.includes(searchTerm) || ip.includes(searchTerm)) {
+                    device.style.display = 'inline-block';
+                } else {
+                    device.style.display = 'none';
+                }
+            });
+        });
+        
+        // Búsqueda en tiempo real
+        document.getElementById('input_device_finder').addEventListener('keyup', function() {
+            if (this.value.length >= 2 || this.value.length === 0) {
+                document.getElementById('btn_device_finder').click();
+            }
+        });
+        
+        // Auto-refresh cada 60 segundos
+        setTimeout(function() {
+            location.reload();
+        }, 60000);
+    </script>
+{% endblock %}

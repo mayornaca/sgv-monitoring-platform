@@ -1,0 +1,635 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block title %}Historial de Espiras - COT Dashboard{% endblock %}
+
+{% block page_title %}
+    <i class="fas fa-history"></i> Historial de Estados de Espiras
+{% endblock %}
+
+{% block head_stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.47/css/bootstrap-datetimepicker.min.css">
+    <style>
+        #timeline1 {
+            min-height: 400px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        #timeline1 svg {
+            max-width: 100%;
+        }
+
+        .filter-card {
+            margin-bottom: 20px;
+        }
+        
+        .form-check {
+            margin-bottom: 10px;
+        }
+        
+        /* Timeline styles */
+        .y-tick {
+            stroke: black;
+            fill: none;
+            stroke-width: 1px;
+        }
+
+        .line-separator, .x-axis {
+            stroke: #777;
+            fill: none;
+            stroke-width: 1px;
+        }
+
+        text {
+            stroke: none;
+            fill: black;
+        }
+    </style>
+{% endblock %}
+
+{% block head_javascript %}
+    {{ parent() }}
+{% endblock %}
+
+{% block main %}
+    <!-- Panel de Filtros -->
+    <div class="card filter-card">
+        <div class="card-header">
+            <h5 class="card-title">
+                <i class="fas fa-filter"></i> Filtros & Opciones
+                <button type="button" class="btn btn-sm btn-secondary float-end" data-bs-toggle="collapse" data-bs-target="#filter-panel">
+                    <i class="fas fa-chevron-down"></i> Mostrar/Ocultar
+                </button>
+            </h5>
+        </div>
+        <div id="filter-panel" class="collapse show">
+            <div class="card-body">
+                <form id="report_params" action="{{ path('admin_spire_history') }}" method="get">
+                    <input type="hidden" value="1" id="ci" name="ci">
+                    
+                    <div class="row">
+                        <!-- Fecha de Inicio -->
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="fechaInicio" class="form-label">Fecha de inicio</label>
+                                <div class="input-group">
+                                    <input type="text" id="fechaInicio" name="fechaInicio" 
+                                           class="form-control" placeholder="DD-MM-YYYY HH:mm:ss"
+                                           value="{{ fechaInicio }}">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-calendar"></i>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Fecha de Término -->
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="fechaTermino" class="form-label">Fecha de término</label>
+                                <div class="input-group">
+                                    <input type="text" id="fechaTermino" name="fechaTermino" 
+                                           class="form-control" placeholder="DD-MM-YYYY HH:mm:ss"
+                                           value="{{ fechaTermino }}">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-calendar"></i>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Selección de Espiras -->
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="spires" class="form-label">Espiras</label>
+                                <select id="spires" name="spires[]" class="form-select" multiple size="5">
+                                    <option value="">-- Todas --</option>
+                                    {% for spire in all_spires %}
+                                        <option value="{{ spire.id }}" 
+                                            {% if sel_spires and spire.id in sel_spires %}selected{% endif %}>
+                                            {{ spire.nombre }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <small class="text-muted">Ctrl+Click para selección múltiple</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Opciones -->
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label class="form-label">Opciones de filtrado</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="onlyZeros" name="onlyZeros"
+                                           {% if onlyZeros %}checked{% endif %}>
+                                    <label class="form-check-label" for="onlyZeros">
+                                        Solo ceros
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="onlyEmpty" name="onlyEmpty"
+                                           {% if onlyEmpty %}checked{% endif %}>
+                                    <label class="form-check-label" for="onlyEmpty">
+                                        Solo lagunas
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="generatePdf" name="generatePdf">
+                                    <label class="form-check-label" for="generatePdf">
+                                        Generar PDF
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-search"></i> Consultar
+                            </button>
+                            <button type="button" class="btn btn-info" onclick="updateData()">
+                                <i class="fas fa-sync"></i> Actualizar (AJAX)
+                            </button>
+                            <button type="reset" class="btn btn-secondary">
+                                <i class="fas fa-undo"></i> Limpiar
+                            </button>
+
+                            <!-- Botones de navegación temporal -->
+                            <div class="btn-group ms-3" role="group">
+                                <button type="button" id="btn-prev" class="btn btn-outline-primary">
+                                    <i class="fas fa-backward"></i> -1 Hora
+                                </button>
+                                <button type="button" id="btn-next" class="btn btn-outline-primary">
+                                    <i class="fas fa-forward"></i> +1 Hora
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Área de visualización del Timeline -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title">
+                <i class="fas fa-chart-line"></i> Timeline de Estados
+
+                <!-- Leyenda de colores -->
+                <div class="float-end">
+                    <span class="badge" style="background-color: #329832; color: white;">OK</span>
+                    <span class="badge" style="background-color: #fdfd31; color: black;">Sin Datos</span>
+                    <span class="badge" style="background-color: #fe2525; color: white;">KO</span>
+                    <span class="badge" style="background-color: black; color: white;">Error</span>
+                </div>
+            </h5>
+            {% if return_file_name_pdf %}
+                <div class="alert alert-success mt-2">
+                    <i class="fas fa-file-pdf"></i> PDF generado: {{ return_file_name_pdf }}
+                </div>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <div id="timeline1">
+                {% if arr_reg_spires %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-spinner fa-spin"></i> Cargando visualización...
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle"></i> 
+                        No hay datos para mostrar. Por favor, ajuste los filtros y consulte nuevamente.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Información adicional -->
+    <div class="card mt-3">
+        <div class="card-header">
+            <h5 class="card-title">
+                <i class="fas fa-info-circle"></i> Información
+            </h5>
+        </div>
+        <div class="card-body">
+            <ul>
+                <li><strong>Rango máximo:</strong> El sistema limita las consultas a un máximo de 2 días.</li>
+                <li><strong>Actualización:</strong> Los datos se actualizan cada minuto desde los dispositivos en campo.</li>
+                <li><strong>Espiras:</strong> Dispositivos de detección vehicular instalados en la vía.</li>
+            </ul>
+        </div>
+    </div>
+{% endblock %}
+
+{% block body_javascript %}
+    {{ parent() }}
+    
+    <!-- Scripts adicionales necesarios -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="https://unpkg.com/timelines-chart@2"></script>
+    
+    <script>
+        // Crear variable global de datos (patrón del proyecto antiguo)
+        var data = [];
+        {% if arr_reg_spires is defined and arr_reg_spires is not empty %}
+            {% if arr_reg_spires is iterable %}
+                // PHP array passed directly
+                data = {{ arr_reg_spires|json_encode|raw }};
+            {% else %}
+                // String JSON passed
+                try {
+                    data = JSON.parse('{{ arr_reg_spires|raw }}');
+                } catch (e) {
+                    console.error('Error parsing spires data:', e);
+                    data = [];
+                }
+            {% endif %}
+        {% endif %}
+
+        // Inicializar chart global (patrón del proyecto antiguo)
+        var myChart = TimelinesChart()(document.getElementById('timeline1'))
+            .timeFormat('%d-%m-%Y %H:%M:%S')
+            .zQualitative(true)
+            .maxLineHeight(18)
+            .leftMargin(160)
+            .rightMargin(100)
+            .bottomMargin(30)
+            .enableOverview(true)
+            .enableAnimations(false)
+            .zColorScale(d3.scaleLinear()
+                .domain([-2, -1, 0, 1])
+                .range(["black", "red", "yellow", "green"])
+            );
+
+        jQuery(document).ready(function() {
+            console.log('init no abreviado');
+            renderGraphic(data);
+
+            {% if fechaInicio %}
+            var fechaInicio = '{{ fechaInicio }}';
+            $('#fechaInicio').val(fechaInicio);
+            {% endif %}
+
+            {% if fechaTermino %}
+            var fechaTermino = '{{ fechaTermino }}';
+            $('#fechaTermino').val(fechaTermino);
+            {% endif %}
+
+            {% if onlyZeros %}
+            $('#onlyZeros').prop('checked', true);
+            {% else %}
+            $('#onlyZeros').prop('checked', false);
+            {% endif %}
+
+            {% if onlyEmpty %}
+            $('#onlyEmpty').prop('checked', true);
+            {% else %}
+            $('#onlyEmpty').prop('checked', false);
+            {% endif %}
+        });
+        
+        
+        function formatDateForInput(date) {
+            var day = String(date.getDate()).padStart(2, '0');
+            var month = String(date.getMonth() + 1).padStart(2, '0');
+            var year = date.getFullYear();
+            var hours = String(date.getHours()).padStart(2, '0');
+            var minutes = String(date.getMinutes()).padStart(2, '0');
+            var seconds = String(date.getSeconds()).padStart(2, '0');
+            
+            return day + '-' + month + '-' + year + ' ' + hours + ':' + minutes + ':' + seconds;
+        }
+
+        // Transformar datos abreviados del SP al formato esperado por TimelinesChart
+        function transformAbbreviatedData(abbreviatedData) {
+            if (!abbreviatedData || abbreviatedData.length === 0) {
+                return abbreviatedData;
+            }
+
+            // Si ya tiene las propiedades completas, no transformar
+            if (abbreviatedData[0] && abbreviatedData[0].hasOwnProperty('group')) {
+                return abbreviatedData;
+            }
+
+            console.log('Transformando datos abreviados a formato completo');
+
+            // Mapear de formato abreviado a completo
+            // g -> group, d -> data, l -> label, v -> val, t -> timeRange
+            return abbreviatedData.map(function(group) {
+                return {
+                    group: group.g,
+                    data: (group.d || []).map(function(timeline) {
+                        return {
+                            label: timeline.l,
+                            data: (timeline.d || []).map(function(segment) {
+                                return {
+                                    timeRange: segment.t,
+                                    val: segment.v
+                                };
+                            })
+                        };
+                    })
+                };
+            });
+        }
+
+        function renderGraphic(data) {
+            console.log('renderizando:', data);
+
+            // Validar que tenemos datos válidos
+            if (!data || data.length === 0 || (typeof data === 'object' && Object.keys(data).length === 0)) {
+                console.log('No hay datos para renderizar');
+                document.getElementById('timeline1').innerHTML = '<div class="alert alert-warning"><i class="fas fa-info-circle"></i> No hay datos para mostrar en el período seleccionado</div>';
+                return;
+            }
+
+            // Transformar datos si vienen en formato abreviado
+            var transformedData = transformAbbreviatedData(data);
+            console.log('Datos transformados:', transformedData);
+
+            var sensors_count = 0;
+
+            // Usar las claves correctas después de la transformación
+            for (var prop in transformedData) {
+                if (transformedData[prop] && transformedData[prop].hasOwnProperty('data')){
+                    sensors_count += transformedData[prop].data.length;
+                }
+            }
+
+            // Solo renderizar si tenemos datos válidos
+            if (sensors_count === 0 && Array.isArray(data) && data.length === 0) {
+                console.log('Array de datos vacío, no renderizando chart');
+                document.getElementById('timeline1').innerHTML = '<div class="alert alert-info"><i class="fas fa-info-circle"></i> No hay información de espiras para mostrar</div>';
+                return;
+            }
+
+            var maxHeight = 640;
+            if((sensors_count * 25) > 640 ){
+                maxHeight = sensors_count*25;
+            }
+
+            try {
+                myChart.maxHeight(maxHeight);
+                myChart.data(transformedData).refresh();
+            } catch (e) {
+                console.error('Error al renderizar el gráfico:', e);
+                document.getElementById('timeline1').innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> Error al renderizar el gráfico. Por favor, revise los datos.</div>';
+            }
+        }
+        
+        function getSpiresHistory() {
+            var params = {
+                fechaInicio: document.getElementById('fechaInicio').value,
+                fechaTermino: document.getElementById('fechaTermino').value,
+                onlyZeros: document.getElementById('onlyZeros').checked ? 'on' : 'off',
+                onlyEmpty: document.getElementById('onlyEmpty').checked ? 'on' : 'off'
+            };
+            
+            // Obtener espiras seleccionadas
+            var spiresSelect = document.getElementById('spires');
+            var selectedSpires = [];
+            for (var i = 0; i < spiresSelect.options.length; i++) {
+                if (spiresSelect.options[i].selected) {
+                    selectedSpires.push(spiresSelect.options[i].value);
+                }
+            }
+            if (selectedSpires.length > 0) {
+                params.spires = selectedSpires;
+            }
+            
+            // Mostrar loading
+            document.getElementById('timeline1').innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin"></i> Cargando datos...</div>';
+            
+            // Convertir params a string para fetch
+            var queryString = new URLSearchParams(params).toString();
+            
+            fetch('{{ path('admin_spire_history') }}?' + queryString, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(response => {
+                console.log('Respuesta recibida:', response);
+                if (response.arr_reg_spires && response.arr_reg_spires.length > 0) {
+                    try {
+                        var data = JSON.parse(response.arr_reg_spires);
+                        renderGraphic(data);
+                    } catch(e) {
+                        console.error('Error parseando datos:', e);
+                        document.getElementById('timeline1').innerHTML = '<div class="alert alert-danger">Error al parsear los datos</div>';
+                    }
+                } else {
+                    document.getElementById('timeline1').innerHTML = '<div class="alert alert-warning">No se encontró información para el período seleccionado</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                let errorMessage = 'Error al obtener los datos';
+                
+                // Si es un error de definer, mostrar mensaje específico
+                if (error.toString().includes('definer')) {
+                    errorMessage = 'Error de configuración en la base de datos. Por favor contacte al administrador.';
+                } else {
+                    errorMessage = 'Error al obtener los datos: ' + error;
+                }
+                
+                document.getElementById('timeline1').innerHTML = '<div class="alert alert-danger">' + errorMessage + '</div>';
+            });
+        }
+        
+        function updateData() {
+            console.log('Actualizando datos via AJAX...');
+            
+            // Recolectar parámetros del formulario
+            var params = {
+                fechaInicio: document.getElementById('fechaInicio').value,
+                fechaTermino: document.getElementById('fechaTermino').value,
+                onlyZeros: document.getElementById('onlyZeros').checked ? 'on' : '',
+                onlyEmpty: document.getElementById('onlyEmpty').checked ? 'on' : '',
+                generatePdf: document.getElementById('generatePdf').checked ? 'on' : ''
+            };
+            
+            // Obtener espiras seleccionadas
+            var spiresSelect = document.getElementById('spires');
+            var selectedSpires = [];
+            for (var i = 0; i < spiresSelect.options.length; i++) {
+                if (spiresSelect.options[i].selected && spiresSelect.options[i].value) {
+                    selectedSpires.push(spiresSelect.options[i].value);
+                }
+            }
+            if (selectedSpires.length > 0) {
+                params['spires[]'] = selectedSpires;
+            }
+            
+            console.log('Parámetros a enviar:', params);
+            
+            // Mostrar loading
+            document.getElementById('timeline1').innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin"></i> Cargando datos...</div>';
+            
+            // Convertir params a URLSearchParams
+            var formData = new URLSearchParams();
+            for (var key in params) {
+                if (Array.isArray(params[key])) {
+                    params[key].forEach(value => formData.append(key, value));
+                } else if (params[key]) {
+                    formData.append(key, params[key]);
+                }
+            }
+            
+            // Hacer petición AJAX
+            fetch('{{ path('admin_spire_history') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData.toString()
+            })
+            .then(response => {
+                console.log('Respuesta recibida, status:', response.status);
+                return response.json();
+            })
+            .then(response => {
+                console.log('Respuesta JSON:', response);
+                if (response.arr_reg_spires) {
+                    // Verificar si es array vacío
+                    if (response.arr_reg_spires === '[]' || response.arr_reg_spires === '') {
+                        document.getElementById('timeline1').innerHTML = '<div class="alert alert-info">No hay datos para el período seleccionado</div>';
+                    } else {
+                        try {
+                            var data = JSON.parse(response.arr_reg_spires);
+                            console.log('Datos parseados:', data);
+                            renderGraphic(data);
+                        } catch (e) {
+                            console.error('Error al parsear datos:', e);
+                            document.getElementById('timeline1').innerHTML = '<div class="alert alert-danger">Error al procesar los datos del servidor</div>';
+                        }
+                    }
+                } else {
+                    document.getElementById('timeline1').innerHTML = '<div class="alert alert-warning">No se recibieron datos del servidor</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error AJAX:', error);
+                document.getElementById('timeline1').innerHTML = '<div class="alert alert-danger">Error al obtener los datos: ' + error + '</div>';
+            });
+        }
+
+        // Botones de navegación temporal
+        $('#btn-prev').click(function () {
+            var fechaInicio_val = $('#fechaInicio').val();
+            console.log('Navegando -1 hora desde:', fechaInicio_val);
+
+            // Restar 1 hora usando moment
+            fechaInicio_val = moment(fechaInicio_val, 'DD-MM-YYYY HH:mm:ss', true).add(-1, 'hour').format('DD-MM-YYYY HH:mm:ss');
+            $('#fechaInicio').val(fechaInicio_val);
+
+            var fechaTermino_val = $('#fechaTermino').val();
+            fechaTermino_val = moment(fechaTermino_val, 'DD-MM-YYYY HH:mm:ss', true).add(-1, 'hour').format('DD-MM-YYYY HH:mm:ss');
+            $('#fechaTermino').val(fechaTermino_val);
+
+            // Recargar datos automáticamente
+            updateData();
+        });
+
+        $('#btn-next').click(function () {
+            var fechaInicio_val = $('#fechaInicio').val();
+            console.log('Navegando +1 hora desde:', fechaInicio_val);
+
+            // Sumar 1 hora usando moment
+            fechaInicio_val = moment(fechaInicio_val, 'DD-MM-YYYY HH:mm:ss', true).add(1, 'hour').format('DD-MM-YYYY HH:mm:ss');
+            $('#fechaInicio').val(fechaInicio_val);
+
+            var fechaTermino_val = $('#fechaTermino').val();
+            fechaTermino_val = moment(fechaTermino_val, 'DD-MM-YYYY HH:mm:ss', true).add(1, 'hour').format('DD-MM-YYYY HH:mm:ss');
+            $('#fechaTermino').val(fechaTermino_val);
+
+            // Recargar datos automáticamente
+            updateData();
+        });
+
+        // Inicializar datetimepickers
+        $(function () {
+            console.log('Inicializando datetimepickers');
+
+            // Para fecha inicio
+            $('#fechaInicio').datetimepicker({
+                format: 'DD-MM-YYYY HH:mm:ss',
+                locale: 'es',
+                icons: {
+                    time: 'fas fa-clock',
+                    date: 'fas fa-calendar',
+                    up: 'fas fa-arrow-up',
+                    down: 'fas fa-arrow-down',
+                    previous: 'fas fa-chevron-left',
+                    next: 'fas fa-chevron-right',
+                    today: 'fas fa-calendar-check',
+                    clear: 'fas fa-trash',
+                    close: 'fas fa-times'
+                }
+            });
+
+            // Para fecha término
+            $('#fechaTermino').datetimepicker({
+                format: 'DD-MM-YYYY HH:mm:ss',
+                locale: 'es',
+                icons: {
+                    time: 'fas fa-clock',
+                    date: 'fas fa-calendar',
+                    up: 'fas fa-arrow-up',
+                    down: 'fas fa-arrow-down',
+                    previous: 'fas fa-chevron-left',
+                    next: 'fas fa-chevron-right',
+                    today: 'fas fa-calendar-check',
+                    clear: 'fas fa-trash',
+                    close: 'fas fa-times'
+                },
+                useCurrent: false
+            });
+
+            // Validación de rango de 2 días máximo
+            $('#fechaInicio').on('dp.change', function (e) {
+                var fechaInicio = e.date;
+                var fechaTermino = $('#fechaTermino').data('DateTimePicker').date();
+
+                if (fechaTermino && fechaTermino.diff(fechaInicio, 'days') > 2) {
+                    // Ajustar fecha término a 2 días después
+                    $('#fechaTermino').data('DateTimePicker').date(fechaInicio.clone().add(2, 'days'));
+
+                    alert('El rango máximo permitido es de 2 días. Se ha ajustado la fecha de término.');
+                }
+
+                // Establecer mínimo para fecha término
+                $('#fechaTermino').data('DateTimePicker').minDate(e.date);
+            });
+
+            $('#fechaTermino').on('dp.change', function (e) {
+                var fechaInicio = $('#fechaInicio').data('DateTimePicker').date();
+                var fechaTermino = e.date;
+
+                if (fechaInicio && fechaTermino.diff(fechaInicio, 'days') > 2) {
+                    // Revertir al valor anterior
+                    $('#fechaTermino').data('DateTimePicker').date(e.oldDate);
+
+                    alert('El rango máximo permitido es de 2 días.');
+                }
+
+                // Establecer máximo para fecha inicio
+                $('#fechaInicio').data('DateTimePicker').maxDate(e.date);
+            });
+        });
+    </script>
+
+    <!-- Agregar script de bootstrap-datetimepicker y locale español -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.47/js/bootstrap-datetimepicker.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/locale/es.min.js"></script>
+{% endblock %}

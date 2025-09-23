@@ -1,0 +1,59 @@
+# Symfony
+/var/cache/*
+/var/log/*
+/var/sessions/*
+/vendor/
+/.env.local
+/.env.local.php
+/.env.*.local
+/config/secrets/prod/prod.decrypt.private.php
+/public/bundles/
+/var/
+/vendor/
+
+# IDEs
+/.idea/
+/.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Composer
+composer.phar
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+/phpunit.xml
+/.phpunit.result.cache
+
+# Database
+*.sqlite
+*.db
+
+# Old project (keep for reference but don't version control)
+/old_project/
+
+# Screenshots and temp files
+/public/screenshots/
+*.tmp
+*.log
+
+# Extracted patterns (working files)
+/EXTRACTED_PATTERNS/
+
+# Backup files
+*.backup
+*.bak
+
+# Local configuration
+.env.local
+docker-compose.override.yml

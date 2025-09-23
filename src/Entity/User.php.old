@@ -1,0 +1,892 @@
+<?php
+
+namespace App\Entity;
+
+use App\Repository\UserRepository;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
+use Scheb\TwoFactorBundle\Model\Email\TwoFactorInterface as EmailTwoFactorInterface;
+use Scheb\TwoFactorBundle\Model\Totp\TwoFactorInterface as TotpTwoFactorInterface;
+use Scheb\TwoFactorBundle\Model\Totp\TotpConfiguration;
+use Scheb\TwoFactorBundle\Model\Totp\TotpConfigurationInterface;
+use Scheb\TwoFactorBundle\Model\TrustedDeviceInterface;
+
+#[ORM\Entity(repositoryClass: UserRepository::class)]
+#[ORM\Table(name: 'security_user')]
+class User implements UserInterface, PasswordAuthenticatedUserInterface, EmailTwoFactorInterface, TotpTwoFactorInterface, TrustedDeviceInterface
+{
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column]
+    private ?int $id = null;
+
+    #[ORM\Column(length: 180, unique: true)]
+    private ?string $username = null;
+
+    #[ORM\Column(length: 180, unique: true)]
+    private ?string $email = null;
+
+    #[ORM\Column(type: 'json')]
+    private array $roles = [];
+    
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $role = null;
+
+    #[ORM\Column]
+    private ?string $password = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $firstName = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $lastName = null;
+
+    #[ORM\Column(type: 'boolean')]
+    private bool $isActive = true;
+
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private ?\DateTimeInterface $lastLogin = null;
+
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $backupCodes = null;
+
+    #[ORM\Column(type: 'datetime')]
+    private \DateTimeInterface $createdAt;
+
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private ?\DateTimeInterface $updatedAt = null;
+
+    #[ORM\Column(type: 'boolean')]
+    private bool $twoFactorEnabled = false;
+
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    private ?string $totpSecret = null;
+
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $idStaff = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $concessions = null;
+
+    #[ORM\Column(length: 5, nullable: true)]
+    private ?string $locale = 'es';
+
+    #[ORM\Column(type: 'integer', options: ['default' => 1])]
+    private int $regState = 1;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $sessionId = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $fcmToken = null;
+
+    #[ORM\Column(length: 64, nullable: true)]
+    private ?string $apiToken = null;
+
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $createdBy = 0;
+
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $updatedBy = 0;
+
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private ?\DateTimeInterface $deletedRestoredAt = null;
+
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $deletedRestoredBy = null;
+
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $trustedVersion = 0;
+
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private ?\DateTimeInterface $last2faEnabledAt = null;
+
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $preferred2faMethod = 'totp';
+
+    #[ORM\Column(length: 6, nullable: true)]
+    private ?string $emailAuthCode = null;
+
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $phone = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $department = null;
+
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private ?\DateTimeInterface $lastActivity = null;
+
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private ?\DateTimeInterface $passwordChangedAt = null;
+
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    private bool $mustChangePassword = false;
+
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $failedLoginAttempts = 0;
+
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private ?\DateTimeInterface $lockedUntil = null;
+
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private ?\DateTimeInterface $suspendedUntil = null;
+
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private ?\DateTimeInterface $suspendedAt = null;
+
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $maxFailedAttempts = 5;
+
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $lockoutDuration = 30;
+
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    private bool $requireTwoFactor = false;
+
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $loginCount = 0;
+
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private ?\DateTimeInterface $lastPasswordReset = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $apiTokens = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $preferences = null;
+
+    #[ORM\Column(length: 45, nullable: true)]
+    private ?string $loginIp = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $userAgent = null;
+
+    public function __construct()
+    {
+        $this->createdAt = new \DateTime();
+        $this->roles = ['ROLE_USER'];
+        $this->locale = 'es';
+        $this->regState = 1;
+        $this->trustedVersion = 0;
+        $this->preferred2faMethod = 'totp';
+        $this->mustChangePassword = false;
+        $this->failedLoginAttempts = 0;
+        $this->maxFailedAttempts = 5;
+        $this->lockoutDuration = 30;
+        $this->requireTwoFactor = false;
+        $this->loginCount = 0;
+        $this->createdBy = 0;
+        $this->updatedBy = 0;
+    }
+
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
+
+    public function getUsername(): ?string
+    {
+        return $this->username;
+    }
+
+    public function setUsername(string $username): static
+    {
+        $this->username = $username;
+        return $this;
+    }
+
+    public function getEmail(): ?string
+    {
+        return $this->email;
+    }
+
+    public function setEmail(string $email): static
+    {
+        $this->email = $email;
+        return $this;
+    }
+
+    /**
+     * A visual identifier that represents this user.
+     *
+     * @see UserInterface
+     */
+    public function getUserIdentifier(): string
+    {
+        return (string) $this->username;
+    }
+
+    /**
+     * @see UserInterface
+     */
+    public function getRoles(): array
+    {
+        $roles = $this->roles;
+        
+        // Add the old single role field if exists
+        if ($this->role) {
+            $roles[] = $this->role;
+        }
+        
+        // guarantee every user at least has ROLE_USER
+        $roles[] = 'ROLE_USER';
+
+        return array_unique($roles);
+    }
+    
+    public function getRole(): ?string
+    {
+        return $this->role;
+    }
+    
+    public function setRole(?string $role): static
+    {
+        $this->role = $role;
+        // Also add to roles array for compatibility
+        if ($role && !in_array($role, $this->roles)) {
+            $this->roles[] = $role;
+        }
+        return $this;
+    }
+
+    public function setRoles(array $roles): static
+    {
+        $this->roles = $roles;
+        return $this;
+    }
+
+    /**
+     * @see PasswordAuthenticatedUserInterface
+     */
+    public function getPassword(): ?string
+    {
+        return $this->password;
+    }
+
+    public function setPassword(string $password): static
+    {
+        $this->password = $password;
+        return $this;
+    }
+
+    /**
+     * @see UserInterface
+     */
+    public function eraseCredentials(): void
+    {
+        // If you store any temporary, sensitive data on the user, clear it here
+        // $this->plainPassword = null;
+    }
+
+    public function getFirstName(): ?string
+    {
+        return $this->firstName;
+    }
+
+    public function setFirstName(?string $firstName): static
+    {
+        $this->firstName = $firstName;
+        return $this;
+    }
+
+    public function getLastName(): ?string
+    {
+        return $this->lastName;
+    }
+
+    public function setLastName(?string $lastName): static
+    {
+        $this->lastName = $lastName;
+        return $this;
+    }
+
+    public function getFullName(): string
+    {
+        return trim($this->firstName . ' ' . $this->lastName) ?: $this->username;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->isActive;
+    }
+
+    public function setIsActive(bool $isActive): static
+    {
+        $this->isActive = $isActive;
+        return $this;
+    }
+
+    public function getLastLogin(): ?\DateTimeInterface
+    {
+        return $this->lastLogin;
+    }
+
+    public function setLastLogin(?\DateTimeInterface $lastLogin): static
+    {
+        $this->lastLogin = $lastLogin;
+        return $this;
+    }
+
+    public function getCreatedAt(): \DateTimeInterface
+    {
+        return $this->createdAt;
+    }
+
+    public function getUpdatedAt(): ?\DateTimeInterface
+    {
+        return $this->updatedAt;
+    }
+
+    public function setUpdatedAt(?\DateTimeInterface $updatedAt): static
+    {
+        $this->updatedAt = $updatedAt;
+        return $this;
+    }
+
+    public function isTwoFactorEnabled(): bool
+    {
+        return $this->twoFactorEnabled;
+    }
+
+    public function setTwoFactorEnabled(bool $twoFactorEnabled): static
+    {
+        $this->twoFactorEnabled = $twoFactorEnabled;
+        return $this;
+    }
+
+    public function getTotpSecret(): ?string
+    {
+        return $this->totpSecret;
+    }
+
+    public function setTotpSecret(?string $totpSecret): static
+    {
+        $this->totpSecret = $totpSecret;
+        return $this;
+    }
+
+    public function getBackupCodes(): ?array
+    {
+        return $this->backupCodes;
+    }
+
+    public function setBackupCodes(?array $backupCodes): static
+    {
+        $this->backupCodes = $backupCodes;
+        return $this;
+    }
+
+    public function hasRole(string $role): bool
+    {
+        return in_array($role, $this->getRoles(), true);
+    }
+
+    public function addRole(string $role): static
+    {
+        if (!in_array($role, $this->roles, true)) {
+            $this->roles[] = $role;
+        }
+        return $this;
+    }
+
+    public function removeRole(string $role): static
+    {
+        $this->roles = array_diff($this->roles, [$role]);
+        return $this;
+    }
+
+    public function getIdStaff(): ?int
+    {
+        return $this->idStaff;
+    }
+
+    public function setIdStaff(?int $idStaff): static
+    {
+        $this->idStaff = $idStaff;
+        return $this;
+    }
+
+    public function getConcessions(): ?string
+    {
+        return $this->concessions;
+    }
+
+    public function setConcessions(?string $concessions): static
+    {
+        $this->concessions = $concessions;
+        return $this;
+    }
+
+    public function getLocale(): ?string
+    {
+        return $this->locale;
+    }
+
+    public function setLocale(?string $locale): static
+    {
+        $this->locale = $locale;
+        return $this;
+    }
+
+    public function getRegState(): int
+    {
+        return $this->regState;
+    }
+
+    public function setRegState(int $regState): static
+    {
+        $this->regState = $regState;
+        return $this;
+    }
+
+    public function getSessionId(): ?string
+    {
+        return $this->sessionId;
+    }
+
+    public function setSessionId(?string $sessionId): static
+    {
+        $this->sessionId = $sessionId;
+        return $this;
+    }
+
+    public function getFcmToken(): ?string
+    {
+        return $this->fcmToken;
+    }
+
+    public function setFcmToken(?string $fcmToken): static
+    {
+        $this->fcmToken = $fcmToken;
+        return $this;
+    }
+
+    public function getApiToken(): ?string
+    {
+        return $this->apiToken;
+    }
+
+    public function setApiToken(?string $apiToken): static
+    {
+        $this->apiToken = $apiToken;
+        return $this;
+    }
+
+    public function getCreatedBy(): ?int
+    {
+        return $this->createdBy;
+    }
+
+    public function setCreatedBy(?int $createdBy): static
+    {
+        $this->createdBy = $createdBy;
+        return $this;
+    }
+
+    public function getUpdatedBy(): ?int
+    {
+        return $this->updatedBy;
+    }
+
+    public function setUpdatedBy(?int $updatedBy): static
+    {
+        $this->updatedBy = $updatedBy;
+        return $this;
+    }
+
+    public function getDeletedRestoredAt(): ?\DateTimeInterface
+    {
+        return $this->deletedRestoredAt;
+    }
+
+    public function setDeletedRestoredAt(?\DateTimeInterface $deletedRestoredAt): static
+    {
+        $this->deletedRestoredAt = $deletedRestoredAt;
+        return $this;
+    }
+
+    public function getDeletedRestoredBy(): ?int
+    {
+        return $this->deletedRestoredBy;
+    }
+
+    public function setDeletedRestoredBy(?int $deletedRestoredBy): static
+    {
+        $this->deletedRestoredBy = $deletedRestoredBy;
+        return $this;
+    }
+
+    public function getTrustedVersion(): ?int
+    {
+        return $this->trustedVersion;
+    }
+
+    public function setTrustedVersion(?int $trustedVersion): static
+    {
+        $this->trustedVersion = $trustedVersion;
+        return $this;
+    }
+
+    public function getLast2faEnabledAt(): ?\DateTimeInterface
+    {
+        return $this->last2faEnabledAt;
+    }
+
+    public function setLast2faEnabledAt(?\DateTimeInterface $last2faEnabledAt): static
+    {
+        $this->last2faEnabledAt = $last2faEnabledAt;
+        return $this;
+    }
+
+    public function getPreferred2faMethod(): ?string
+    {
+        return $this->preferred2faMethod;
+    }
+
+    public function setPreferred2faMethod(?string $preferred2faMethod): static
+    {
+        $this->preferred2faMethod = $preferred2faMethod;
+        return $this;
+    }
+
+    public function getPhone(): ?string
+    {
+        return $this->phone;
+    }
+
+    public function setPhone(?string $phone): static
+    {
+        $this->phone = $phone;
+        return $this;
+    }
+
+    public function getDepartment(): ?string
+    {
+        return $this->department;
+    }
+
+    public function setDepartment(?string $department): static
+    {
+        $this->department = $department;
+        return $this;
+    }
+
+    public function getLastActivity(): ?\DateTimeInterface
+    {
+        return $this->lastActivity;
+    }
+
+    public function setLastActivity(?\DateTimeInterface $lastActivity): static
+    {
+        $this->lastActivity = $lastActivity;
+        return $this;
+    }
+
+    public function getPasswordChangedAt(): ?\DateTimeInterface
+    {
+        return $this->passwordChangedAt;
+    }
+
+    public function setPasswordChangedAt(?\DateTimeInterface $passwordChangedAt): static
+    {
+        $this->passwordChangedAt = $passwordChangedAt;
+        return $this;
+    }
+
+    public function getMustChangePassword(): bool
+    {
+        return $this->mustChangePassword;
+    }
+
+    public function setMustChangePassword(bool $mustChangePassword): static
+    {
+        $this->mustChangePassword = $mustChangePassword;
+        return $this;
+    }
+
+    public function getFailedLoginAttempts(): ?int
+    {
+        return $this->failedLoginAttempts;
+    }
+
+    public function setFailedLoginAttempts(?int $failedLoginAttempts): static
+    {
+        $this->failedLoginAttempts = $failedLoginAttempts;
+        return $this;
+    }
+
+    public function getLockedUntil(): ?\DateTimeInterface
+    {
+        return $this->lockedUntil;
+    }
+
+    public function setLockedUntil(?\DateTimeInterface $lockedUntil): static
+    {
+        $this->lockedUntil = $lockedUntil;
+        return $this;
+    }
+
+    public function getSuspendedUntil(): ?\DateTimeInterface
+    {
+        return $this->suspendedUntil;
+    }
+
+    public function setSuspendedUntil(?\DateTimeInterface $suspendedUntil): static
+    {
+        $this->suspendedUntil = $suspendedUntil;
+        return $this;
+    }
+
+    public function getSuspendedAt(): ?\DateTimeInterface
+    {
+        return $this->suspendedAt;
+    }
+
+    public function setSuspendedAt(?\DateTimeInterface $suspendedAt): static
+    {
+        $this->suspendedAt = $suspendedAt;
+        return $this;
+    }
+
+    public function getMaxFailedAttempts(): ?int
+    {
+        return $this->maxFailedAttempts;
+    }
+
+    public function setMaxFailedAttempts(?int $maxFailedAttempts): static
+    {
+        $this->maxFailedAttempts = $maxFailedAttempts;
+        return $this;
+    }
+
+    public function getLockoutDuration(): ?int
+    {
+        return $this->lockoutDuration;
+    }
+
+    public function setLockoutDuration(?int $lockoutDuration): static
+    {
+        $this->lockoutDuration = $lockoutDuration;
+        return $this;
+    }
+
+    public function getRequireTwoFactor(): bool
+    {
+        return $this->requireTwoFactor;
+    }
+
+    public function setRequireTwoFactor(bool $requireTwoFactor): static
+    {
+        $this->requireTwoFactor = $requireTwoFactor;
+        return $this;
+    }
+
+    public function getLoginCount(): ?int
+    {
+        return $this->loginCount;
+    }
+
+    public function setLoginCount(?int $loginCount): static
+    {
+        $this->loginCount = $loginCount;
+        return $this;
+    }
+
+    public function getLastPasswordReset(): ?\DateTimeInterface
+    {
+        return $this->lastPasswordReset;
+    }
+
+    public function setLastPasswordReset(?\DateTimeInterface $lastPasswordReset): static
+    {
+        $this->lastPasswordReset = $lastPasswordReset;
+        return $this;
+    }
+
+    public function getApiTokens(): ?string
+    {
+        return $this->apiTokens;
+    }
+
+    public function setApiTokens(?string $apiTokens): static
+    {
+        $this->apiTokens = $apiTokens;
+        return $this;
+    }
+
+    public function getPreferences(): ?string
+    {
+        return $this->preferences;
+    }
+
+    public function setPreferences(?string $preferences): static
+    {
+        $this->preferences = $preferences;
+        return $this;
+    }
+
+    public function getLoginIp(): ?string
+    {
+        return $this->loginIp;
+    }
+
+    public function setLoginIp(?string $loginIp): static
+    {
+        $this->loginIp = $loginIp;
+        return $this;
+    }
+
+    public function getUserAgent(): ?string
+    {
+        return $this->userAgent;
+    }
+
+    public function setUserAgent(?string $userAgent): static
+    {
+        $this->userAgent = $userAgent;
+        return $this;
+    }
+
+    public function isAccountNonLocked(): bool
+    {
+        if ($this->lockedUntil && $this->lockedUntil > new \DateTime()) {
+            return false;
+        }
+        if ($this->suspendedUntil && $this->suspendedUntil > new \DateTime()) {
+            return false;
+        }
+        return true;
+    }
+
+    public function incrementLoginCount(): static
+    {
+        $this->loginCount++;
+        $this->lastLogin = new \DateTime();
+        $this->lastActivity = new \DateTime();
+        return $this;
+    }
+
+    public function incrementFailedLoginAttempts(): static
+    {
+        $this->failedLoginAttempts++;
+        if ($this->failedLoginAttempts >= $this->maxFailedAttempts) {
+            $this->lockedUntil = new \DateTime('+' . $this->lockoutDuration . ' minutes');
+        }
+        return $this;
+    }
+
+    public function resetFailedLoginAttempts(): static
+    {
+        $this->failedLoginAttempts = 0;
+        $this->lockedUntil = null;
+        return $this;
+    }
+
+    // TODO(human): Implementar métodos requeridos por SchebTwoFactorBundle
+
+    // EmailTwoFactorInterface methods
+    public function isEmailAuthEnabled(): bool
+    {
+        return $this->twoFactorEnabled && $this->preferred2faMethod === 'email';
+    }
+
+    public function getEmailAuthRecipient(): string
+    {
+        return $this->email;
+    }
+
+    public function getEmailAuthCode(): ?string
+    {
+        return $this->emailAuthCode ?? null;
+    }
+
+    public function setEmailAuthCode(?string $authCode): void
+    {
+        $this->emailAuthCode = $authCode;
+    }
+
+    // TotpTwoFactorInterface methods
+    public function isTotpAuthenticationEnabled(): bool
+    {
+        return $this->twoFactorEnabled && $this->totpSecret !== null;
+    }
+
+    public function getTotpAuthenticationUsername(): string
+    {
+        return $this->email;
+    }
+
+    public function getTotpAuthenticationConfiguration(): ?TotpConfigurationInterface
+    {
+        if (!$this->totpSecret) {
+            return null;
+        }
+
+        return new TotpConfiguration(
+            $this->totpSecret,
+            'sha1',
+            30,
+            6
+        );
+    }
+
+    // TrustedDeviceInterface methods
+    public function getTrustedTokenVersion(): int
+    {
+        return $this->trustedVersion ?? 0;
+    }
+
+    // Getters y setters adicionales para 2FA
+    public function getEmailAuthCodeField(): ?string
+    {
+        return $this->emailAuthCode;
+    }
+
+    public function setEmailAuthCodeField(?string $emailAuthCode): static
+    {
+        $this->emailAuthCode = $emailAuthCode;
+        return $this;
+    }
+
+    public function addBackupCode(string $code): static
+    {
+        if ($this->backupCodes === null) {
+            $this->backupCodes = [];
+        }
+        
+        if (!in_array($code, $this->backupCodes, true)) {
+            $this->backupCodes[] = $code;
+        }
+        
+        return $this;
+    }
+
+    public function removeBackupCode(string $code): static
+    {
+        if ($this->backupCodes !== null) {
+            $this->backupCodes = array_values(array_filter(
+                $this->backupCodes,
+                fn($backupCode) => $backupCode !== $code
+            ));
+        }
+        
+        return $this;
+    }
+
+    public function hasValidBackupCode(string $code): bool
+    {
+        return $this->backupCodes !== null && in_array($code, $this->backupCodes, true);
+    }
+
+    public function generateBackupCodes(int $count = 8): array
+    {
+        $codes = [];
+        for ($i = 0; $i < $count; $i++) {
+            $codes[] = strtoupper(substr(bin2hex(random_bytes(4)), 0, 8));
+        }
+        
+        $this->backupCodes = $codes;
+        return $codes;
+    }
+}

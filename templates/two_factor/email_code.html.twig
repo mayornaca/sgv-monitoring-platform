@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Código de Verificación - SGV</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #374151;
+            background-color: #f9fafb;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .content {
+            padding: 30px;
+        }
+        .code-container {
+            background: #f3f4f6;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+            border-left: 4px solid #3b82f6;
+        }
+        .code {
+            font-size: 32px;
+            font-weight: bold;
+            color: #1f2937;
+            letter-spacing: 4px;
+            font-family: monospace;
+        }
+        .code-label {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 10px;
+        }
+        .warning {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #92400e;
+        }
+        .footer {
+            background: #f9fafb;
+            padding: 20px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 14px;
+            border-top: 1px solid #e5e7eb;
+        }
+        .security-info {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e5e7eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 SGV</h1>
+            <p>Código de Verificación de Seguridad</p>
+        </div>
+        
+        <div class="content">
+            <h2>¡Hola!</h2>
+            
+            <p>Has solicitado acceso al SGV. Para completar tu inicio de sesión, utiliza el siguiente código de verificación:</p>
+            
+            <div class="code-container">
+                <div class="code-label">Tu código de verificación es:</div>
+                <div class="code">{{ code }}</div>
+            </div>
+            
+            <div class="warning">
+                <strong>⚠️ Importante:</strong> Este código es válido por 10 minutos. No compartas este código con nadie.
+            </div>
+            
+            <p>Si no has solicitado este código, ignora este mensaje. Tu cuenta permanece segura.</p>
+            
+            <div class="security-info">
+                <strong>Información de seguridad:</strong><br>
+                • Este código solo es válido para una sesión<br>
+                • Expira automáticamente en 10 minutos<br>
+                • Solo funciona desde la dirección IP que inició la sesión
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>SGV</strong></p>
+            <p>Este es un mensaje automático, no respondas a este correo.</p>
+            <p style="margin-top: 10px; font-size: 12px;">
+                © {{ "now"|date("Y") }} GVOps - SGV
+            </p>
+        </div>
+    </div>
+</body>
+</html>

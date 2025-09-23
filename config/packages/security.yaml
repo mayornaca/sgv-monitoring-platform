@@ -1,0 +1,152 @@
+security:
+    # https://symfony.com/doc/current/security.html#registering-the-user-hashing-passwords
+    password_hashers:
+        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
+    
+    # Jerarquía de roles para sistema de monitoreo COT/SCADA/SIV
+    role_hierarchy:
+        # Super Admin - Acceso total
+        ROLE_SUPER_ADMIN:
+            - ROLE_ADMIN
+            - ROLE_ALLOWED_TO_SWITCH
+        
+        # Admin COT - Administración del Centro de Operaciones
+        ROLE_ADMIN_COT:
+            - ROLE_OPERATOR_COT
+            - ROLE_VIEW_REPORTS
+            - ROLE_MANAGE_INCIDENTS
+            - ROLE_MANAGE_DEVICES
+        
+        # Admin general del sistema
+        ROLE_ADMIN:
+            - ROLE_USER
+            - ROLE_VIEW_REPORTS
+            - ROLE_MANAGE_USERS
+            - ROLE_MANAGE_TASKS
+        
+        # Operador COT
+        ROLE_OPERATOR_COT:
+            - ROLE_USER
+            - ROLE_VIEW_COT
+            - ROLE_CREATE_INCIDENTS
+            - ROLE_UPDATE_INCIDENTS
+        
+        # Supervisor COT
+        ROLE_SU_COT:
+            - ROLE_OPERATOR_COT
+            - ROLE_APPROVE_INCIDENTS
+            - ROLE_VIEW_REPORTS
+        
+        # Inspector Fiscal
+        ROLE_FISCAL_INSPECTOR:
+            - ROLE_USER
+            - ROLE_VIEW_COT
+            - ROLE_VIEW_REPORTS
+            - ROLE_AUDIT
+        
+        # Operador SCADA
+        ROLE_OPERATOR_SCADA:
+            - ROLE_USER
+            - ROLE_VIEW_SCADA
+            - ROLE_MANAGE_SCADA
+        
+        # Operador de Pórtico
+        ROLE_OPERATOR_PORTICO:
+            - ROLE_USER
+            - ROLE_VIEW_PORTICO
+            - ROLE_MANAGE_PORTICO
+        
+        # Operador de Incidentes
+        ROLE_OPERATOR_INCIDENTS:
+            - ROLE_USER
+            - ROLE_CREATE_INCIDENTS
+            - ROLE_UPDATE_INCIDENTS
+            - ROLE_VIEW_INCIDENTS
+        
+        # Usuario básico
+        ROLE_USER:
+            - ROLE_VIEW_DASHBOARD
+            - ROLE_VIEW_PROFILE
+    
+    # https://symfony.com/doc/current/security.html#loading-the-user-the-user-provider
+    providers:
+        app_user_provider:
+            entity:
+                class: App\Entity\User
+                property: email
+        # used to reload user from session & other features (e.g. switch_user)
+    
+    firewalls:
+        dev:
+            pattern: ^/(css|images|js)/
+            security: false
+        
+        api:
+            pattern: ^/api
+            stateless: true
+            jwt: ~
+        
+        main:
+            lazy: true
+            provider: app_user_provider
+            
+            form_login:
+                login_path: app_login
+                check_path: app_login
+                enable_csrf: true
+                username_parameter: _username
+                password_parameter: _password
+                default_target_path: admin
+            
+            logout:
+                path: app_logout
+                target: app_login
+            
+            remember_me:
+                secret: '%kernel.secret%'
+                lifetime: 604800 # 1 week
+                path: /
+            
+            # 2FA configuration
+            two_factor:
+                auth_form_path: 2fa_login
+                check_path: 2fa_login_check
+
+    # Estrategia de votación unanime para permisos granulares (EasyAdmin 2024 best practice)
+    access_decision_manager:
+        strategy: unanimous
+        allow_if_all_abstain: false
+
+    # Easy way to control access for large sections of your site
+    access_control:
+        # Profiler and Web Debug Toolbar - Solo para usuarios autenticados
+        - { path: ^/_profiler, roles: IS_AUTHENTICATED_FULLY }
+        - { path: ^/_wdt, roles: IS_AUTHENTICATED_FULLY }
+
+        - { path: ^/login, roles: PUBLIC_ACCESS }
+        - { path: ^/logout, roles: PUBLIC_ACCESS }
+        - { path: ^/reset-password, roles: PUBLIC_ACCESS }
+        - { path: ^/register, roles: PUBLIC_ACCESS }
+        - { path: ^/api/login, roles: PUBLIC_ACCESS }
+        - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
+        
+        # Módulos específicos de monitoreo
+        - { path: ^/admin/users, roles: ROLE_ADMIN }
+        - { path: ^/admin, roles: ROLE_ADMIN }
+        - { path: ^/cot, roles: ROLE_OPERATOR_COT }
+        - { path: ^/scada, roles: ROLE_OPERATOR_SCADA }
+        - { path: ^/portico, roles: ROLE_OPERATOR_PORTICO }
+        - { path: ^/incidents, roles: ROLE_OPERATOR_INCIDENTS }
+        - { path: ^/reports, roles: ROLE_VIEW_REPORTS }
+        
+        # Área general
+        - { path: ^/, roles: ROLE_USER }
+
+when@test:
+    security:
+        password_hashers:
+            Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
+                algorithm: auto
+                cost: 4 # Lowest possible value for bcrypt
+                time_cost: 3 # Lowest possible value for argon
+                memory_cost: 10 # Lowest possible value for argon

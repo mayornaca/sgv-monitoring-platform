@@ -1,0 +1,638 @@
+<!-- Modern Control Panel for COT System -->
+<div class="bg-light border-bottom shadow-sm w-100" id="modern-control-panel">
+    <div class="container-fluid px-4 py-3">
+        <!-- Main Controls Row -->
+        <div class="row g-3 align-items-center">
+            <!-- Device Type Filter -->
+            <div class="col-lg-3 col-md-4">
+                <label for="device-type-select" class="form-label fw-semibold">Tipo de Dispositivo</label>
+                <select id="device-type-select" class="form-select">
+                    <option value="0">Todos los tipos</option>
+                    {% for tipo in tipos_dispositivos %}
+                        <option value="{{ tipo.id }}" {% if tipo.id == id_device_type_fr %}selected{% endif %}>
+                            {{ tipo.tipo }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Status Filter -->
+            <div class="col-lg-3 col-md-4">
+                <label for="status-filter" class="form-label fw-semibold">Estado</label>
+                <select id="status-filter" class="form-select">
+                    <option value="all">Todos los estados</option>
+                    <option value="device_active">Activos</option>
+                    <option value="device_unactive">Inactivos</option>
+                    <option value="device_indeterminate">Indeterminados</option>
+                </select>
+            </div>
+
+            <!-- Search -->
+            <div class="col-lg-4 col-md-4">
+                <label for="device-search" class="form-label fw-semibold">Buscar Dispositivos</label>
+                <div class="input-group">
+                    <input type="search" id="device-search" class="form-control"
+                           placeholder="Nombre, IP o descripción..." maxlength="50">
+                    <button class="btn btn-outline-secondary" type="button" id="clear-search">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Toggle Controls -->
+            <div class="col-lg-2 col-md-12">
+                <label class="form-label fw-semibold d-block">Opciones</label>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary" type="button" id="advanced-options-toggle">
+                        <i class="fas fa-cog"></i>
+                        <span class="d-none d-sm-inline">Avanzado</span>
+                    </button>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="contract-ui-toggle">
+                        <label class="form-check-label small" for="contract-ui-toggle">
+                            Compacto
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Advanced Options Panel (Collapsible) -->
+        <div class="collapse mt-3" id="advanced-options">
+            <div class="card border-0 bg-white">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <!-- Update Settings -->
+                        <div class="col-lg-3 col-md-6">
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                <i class="fas fa-sync-alt"></i> Actualización
+                            </h6>
+                            <div class="mb-2">
+                                <label for="update-interval" class="form-label small">
+                                    Intervalo (segundos)
+                                </label>
+                                <input type="range" class="form-range" id="update-interval"
+                                       min="10" max="600" value="60" step="10">
+                                <div class="d-flex justify-content-between small text-muted">
+                                    <span>10s</span>
+                                    <span id="interval-display">60s</span>
+                                    <span>10m</span>
+                                </div>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="auto-update" checked>
+                                <label class="form-check-label small" for="auto-update">
+                                    Actualización automática
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- View Settings -->
+                        <div class="col-lg-3 col-md-6">
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                <i class="fas fa-eye"></i> Visualización
+                            </h6>
+                            <div class="mb-2">
+                                <label for="grid-width" class="form-label small">Ancho de columnas</label>
+                                <select id="grid-width" class="form-select form-select-sm">
+                                    <option value="1">Muy angosto</option>
+                                    <option value="2" selected>Normal</option>
+                                    <option value="3">Ancho</option>
+                                    <option value="4">Muy ancho</option>
+                                </select>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="masonry-layout" checked>
+                                <label class="form-check-label small" for="masonry-layout">
+                                    Layout dinámico
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Export Settings -->
+                        <div class="col-lg-3 col-md-6">
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                <i class="fas fa-download"></i> Exportar
+                            </h6>
+                            <div class="mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="export-format"
+                                           id="export-pdf" value="pdf" checked>
+                                    <label class="form-check-label small" for="export-pdf">
+                                        PDF Report
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="export-format"
+                                           id="export-excel" value="excel">
+                                    <label class="form-check-label small" for="export-excel">
+                                        Excel/CSV
+                                    </label>
+                                </div>
+                            </div>
+                            <button class="btn btn-success btn-sm w-100" id="generate-report">
+                                <i class="fas fa-file-export"></i> Generar Reporte
+                            </button>
+                        </div>
+
+                        <!-- Quick Actions -->
+                        <div class="col-lg-3 col-md-6">
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                <i class="fas fa-bolt"></i> Acciones Rápidas
+                            </h6>
+                            <div class="d-grid gap-1">
+                                <button class="btn btn-outline-info btn-sm" id="refresh-now">
+                                    <i class="fas fa-refresh"></i> Actualizar Ahora
+                                </button>
+                                <button class="btn btn-outline-warning btn-sm" id="reset-filters">
+                                    <i class="fas fa-filter"></i> Limpiar Filtros
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm" id="fullscreen-toggle">
+                                    <i class="fas fa-expand"></i> Pantalla Completa
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Load Tom Select for enhanced selects -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.css">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+
+<script>
+class ModernControlPanel {
+    constructor() {
+        this.selectInstances = new Map();
+        this.init();
+    }
+
+    init() {
+        this.initTomSelect();
+        this.bindEvents();
+        this.loadSettings();
+    }
+
+    initTomSelect() {
+        // Enhanced device type selector with search and icons
+        const deviceTypeEl = document.getElementById('device-type-select');
+        this.selectInstances.set('deviceType', new TomSelect(deviceTypeEl, {
+            plugins: ['clear_button'],
+            searchField: ['text', 'value'],
+            placeholder: 'Buscar tipo de dispositivo...',
+            allowEmptyOption: true,
+            render: {
+                option: function(data, escape) {
+                    return `<div class="d-flex align-items-center">
+                        <i class="fas fa-microchip me-2 text-primary"></i>
+                        <span>${escape(data.text)}</span>
+                    </div>`;
+                },
+                item: function(data, escape) {
+                    return `<div class="d-flex align-items-center">
+                        <i class="fas fa-microchip me-1 text-primary"></i>
+                        <span>${escape(data.text)}</span>
+                    </div>`;
+                }
+            }
+        }));
+
+        // Enhanced status filter with icons
+        const statusEl = document.getElementById('status-filter');
+        this.selectInstances.set('status', new TomSelect(statusEl, {
+            plugins: ['clear_button'],
+            allowEmptyOption: false,
+            render: {
+                option: function(data, escape) {
+                    let icon = 'fas fa-circle';
+                    let color = 'text-secondary';
+
+                    if (data.value === 'device_active') {
+                        icon = 'fas fa-check-circle';
+                        color = 'text-success';
+                    } else if (data.value === 'device_unactive') {
+                        icon = 'fas fa-times-circle';
+                        color = 'text-danger';
+                    } else if (data.value === 'device_indeterminate') {
+                        icon = 'fas fa-question-circle';
+                        color = 'text-warning';
+                    }
+
+                    return `<div class="d-flex align-items-center">
+                        <i class="${icon} me-2 ${color}"></i>
+                        <span>${escape(data.text)}</span>
+                    </div>`;
+                },
+                item: function(data, escape) {
+                    let icon = 'fas fa-circle';
+                    let color = 'text-secondary';
+
+                    if (data.value === 'device_active') {
+                        icon = 'fas fa-check-circle';
+                        color = 'text-success';
+                    } else if (data.value === 'device_unactive') {
+                        icon = 'fas fa-times-circle';
+                        color = 'text-danger';
+                    } else if (data.value === 'device_indeterminate') {
+                        icon = 'fas fa-question-circle';
+                        color = 'text-warning';
+                    }
+
+                    return `<div class="d-flex align-items-center">
+                        <i class="${icon} me-1 ${color}"></i>
+                        <span>${escape(data.text)}</span>
+                    </div>`;
+                }
+            }
+        }));
+    }
+
+    bindEvents() {
+        // Advanced options toggle
+        document.getElementById('advanced-options-toggle').addEventListener('click', () => {
+            const collapse = new bootstrap.Collapse(document.getElementById('advanced-options'));
+        });
+
+        // Search functionality
+        const searchInput = document.getElementById('device-search');
+        let searchTimeout;
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                this.performSearch(e.target.value);
+            }, 300);
+        });
+
+        // Clear search
+        document.getElementById('clear-search').addEventListener('click', () => {
+            searchInput.value = '';
+            this.performSearch('');
+        });
+
+        // Interval range slider
+        const intervalSlider = document.getElementById('update-interval');
+        const intervalDisplay = document.getElementById('interval-display');
+        intervalSlider.addEventListener('input', (e) => {
+            const value = parseInt(e.target.value);
+            intervalDisplay.textContent = value < 60 ? `${value}s` : `${Math.round(value/60)}m`;
+            this.updateTimerInterval(value);
+        });
+
+        // Contract UI toggle
+        document.getElementById('contract-ui-toggle').addEventListener('change', (e) => {
+            this.toggleContractUI(e.target.checked);
+        });
+
+        // Auto-update toggle
+        document.getElementById('auto-update').addEventListener('change', (e) => {
+            this.toggleAutoUpdate(e.target.checked);
+        });
+
+        // Quick actions
+        document.getElementById('refresh-now').addEventListener('click', () => {
+            if (typeof getDevicesStatus === 'function') {
+                getDevicesStatus();
+            }
+        });
+
+        document.getElementById('reset-filters').addEventListener('click', () => {
+            this.resetAllFilters();
+        });
+
+        document.getElementById('fullscreen-toggle').addEventListener('click', () => {
+            this.toggleFullscreen();
+        });
+
+        // Generate report
+        document.getElementById('generate-report').addEventListener('click', () => {
+            this.generateReport();
+        });
+
+        // Grid width change
+        document.getElementById('grid-width').addEventListener('change', (e) => {
+            this.updateGridWidth(parseInt(e.target.value));
+        });
+
+        // Masonry layout toggle
+        document.getElementById('masonry-layout').addEventListener('change', (e) => {
+            this.toggleMasonryLayout(e.target.checked);
+        });
+
+        // Tom Select events
+        this.selectInstances.get('deviceType').on('change', (value) => {
+            this.handleDeviceTypeChange(value);
+        });
+
+        this.selectInstances.get('status').on('change', (value) => {
+            this.handleStatusFilterChange(value);
+        });
+    }
+
+    performSearch(searchTerm) {
+        // Update legacy search input field
+        const legacyInput = document.getElementById('input_device_finder');
+        if (legacyInput) {
+            legacyInput.value = searchTerm;
+        }
+
+        // Update global config
+        if (typeof cot_index_ui_config !== 'undefined') {
+            cot_index_ui_config.input_device_finder = searchTerm;
+        }
+
+        // Implement search logic directly (adapted from original elementsFinder)
+        if (searchTerm.length >= 2) {
+            const searchLower = searchTerm.toLowerCase();
+            const currentStatus = this.selectInstances.get('status').getValue();
+
+            document.querySelectorAll('.cot_device_container, .opc_device_container').forEach(device => {
+                const nombre = String(device.dataset.nombre || '');
+                const descripcion = String(device.dataset.descripcion || '');
+                const ip = String(device.dataset.ip || '');
+
+                const matchesSearch =
+                    nombre.toLowerCase().indexOf(searchLower) >= 0 ||
+                    descripcion.toLowerCase().indexOf(searchLower) >= 0 ||
+                    ip.toLowerCase().indexOf(searchLower) >= 0;
+
+                if (matchesSearch) {
+                    // Show if matches search AND passes status filter
+                    if (currentStatus === "all") {
+                        device.style.display = '';
+                    } else {
+                        device.style.display = device.classList.contains(currentStatus) ? '' : 'none';
+                    }
+                } else {
+                    device.style.display = 'none';
+                }
+            });
+        } else if (searchTerm.length === 0) {
+            // No search term - show all devices that pass status filter
+            this.handleStatusFilterChange(this.selectInstances.get('status').getValue());
+        } else {
+            // 1 character - apply status filter only
+            this.handleStatusFilterChange(this.selectInstances.get('status').getValue());
+        }
+
+        // Save configuration
+        if (typeof saveUiConfig === 'function') {
+            saveUiConfig();
+        }
+    }
+
+    handleDeviceTypeChange(typeId) {
+        // Update legacy select
+        const legacySelect = document.getElementById('id_device_type_fr');
+        if (legacySelect) {
+            legacySelect.value = typeId;
+        }
+
+        // Update global config
+        if (typeof cot_index_ui_config !== 'undefined') {
+            cot_index_ui_config.id_type = parseInt(typeId);
+        }
+
+        // Always navigate to the new URL with the selected type ID
+        // If typeId is '0', it will show all devices; otherwise, it filters by that type
+        const currentPath = window.location.pathname;
+        const newPath = currentPath.replace(/\/\d+$/, '/' + typeId);
+        const fullUrl = newPath + window.location.search;
+
+        // Only navigate if the path actually changed to avoid unnecessary reloads
+        if (newPath !== currentPath) {
+            window.location.replace(fullUrl);
+        }
+    }
+
+    handleStatusFilterChange(status) {
+        // Update global config
+        if (typeof cot_index_ui_config !== 'undefined') {
+            cot_index_ui_config.device_status = status;
+        }
+
+        // Apply filter directly (adapted from original filterState logic)
+        const inputFinder = document.getElementById('input_device_finder');
+        if (inputFinder && inputFinder.value.length >= 2) {
+            // If there's a search term, call elementsFinder instead
+            if (typeof elementsFinder === 'function') {
+                elementsFinder();
+            }
+        } else {
+            // Apply status filter directly
+            const devices = document.querySelectorAll('.cot_device_container, .opc_device_container');
+
+            if (status === "all") {
+                devices.forEach(device => device.style.display = '');
+            } else {
+                devices.forEach(device => {
+                    if (device.classList.contains(status)) {
+                        device.style.display = '';
+                    } else {
+                        device.style.display = 'none';
+                    }
+                });
+            }
+        }
+
+        // Save configuration
+        if (typeof saveUiConfig === 'function') {
+            saveUiConfig();
+        }
+    }
+
+    toggleContractUI(enabled) {
+        // Update legacy checkbox
+        const legacyCheckbox = document.getElementById('contract_ui');
+        if (legacyCheckbox) {
+            legacyCheckbox.checked = enabled;
+        }
+
+        // Update global config
+        if (typeof cot_index_ui_config !== 'undefined') {
+            cot_index_ui_config.contract_ui = enabled;
+        }
+
+        // Call existing contract UI function
+        if (typeof contractUi === 'function') {
+            contractUi();
+        }
+    }
+
+    toggleAutoUpdate(enabled) {
+        // Update legacy checkbox
+        const legacyCheckbox = document.getElementById('actualizacionAutomatica');
+        if (legacyCheckbox) {
+            legacyCheckbox.checked = enabled;
+        }
+
+        // Update auto-refresh status in footer
+        if (window.modernStatusFooter) {
+            window.modernStatusFooter.updateAutoRefreshStatus(enabled);
+        }
+
+        // Restart or stop timer based on setting
+        if (enabled && typeof SetCotDevicesTimer === 'function') {
+            SetCotDevicesTimer();
+        } else if (!enabled && typeof cot_devices_timer_interval !== 'undefined') {
+            clearInterval(cot_devices_timer_interval);
+        }
+    }
+
+    updateTimerInterval(seconds) {
+        // Update legacy slider if exists
+        const legacySlider = document.getElementById('timer-range-ajax-update');
+        if (legacySlider) {
+            legacySlider.value = seconds;
+        }
+
+        // Clear existing timer and restart with new interval
+        if (typeof cot_devices_timer_interval !== 'undefined') {
+            clearInterval(cot_devices_timer_interval);
+        }
+
+        if (typeof SetCotDevicesTimer === 'function') {
+            SetCotDevicesTimer();
+        }
+    }
+
+    resetAllFilters() {
+        // Reset all filters to default state
+        this.selectInstances.get('deviceType').setValue('0');
+        this.selectInstances.get('status').setValue('all');
+        document.getElementById('device-search').value = '';
+        this.performSearch('');
+    }
+
+    toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+        } else {
+            document.exitFullscreen();
+        }
+    }
+
+    generateReport() {
+        const format = document.querySelector('input[name="export-format"]:checked').value;
+
+        // Update legacy PDF checkbox
+        const legacyPdfCheckbox = document.getElementById('generatePDF');
+        if (legacyPdfCheckbox) {
+            legacyPdfCheckbox.checked = (format === 'pdf');
+        }
+
+        // Call existing report function
+        if (typeof generarReporteDispositivos === 'function') {
+            generarReporteDispositivos();
+        }
+    }
+
+    updateGridWidth(width) {
+        // Update URL parameters for grid width
+        const url = new URL(window.location);
+        url.searchParams.set('grid_items_width', width);
+        window.location.replace(url.toString());
+    }
+
+    toggleMasonryLayout(enabled) {
+        // Update URL parameters for masonry
+        const url = new URL(window.location);
+        url.searchParams.set('masonry', enabled ? 'true' : 'false');
+
+        // Apply immediately if masonry is disabled
+        if (!enabled && typeof $grid !== 'undefined') {
+            $grid.isotope('destroy');
+        } else if (enabled && typeof masonryLayout === 'function') {
+            masonryLayout();
+        }
+    }
+
+    loadSettings() {
+        // Load from existing global config
+        if (typeof cot_index_ui_config !== 'undefined') {
+            // Set device type
+            if (cot_index_ui_config.id_type) {
+                this.selectInstances.get('deviceType').setValue(cot_index_ui_config.id_type.toString());
+            }
+
+            // Set status filter
+            if (cot_index_ui_config.device_status) {
+                this.selectInstances.get('status').setValue(cot_index_ui_config.device_status);
+            }
+
+            // Set search term
+            if (cot_index_ui_config.input_device_finder) {
+                document.getElementById('device-search').value = cot_index_ui_config.input_device_finder;
+            }
+
+            // Set contract UI
+            if (cot_index_ui_config.contract_ui !== undefined) {
+                document.getElementById('contract-ui-toggle').checked = cot_index_ui_config.contract_ui;
+            }
+        }
+    }
+
+    saveSettings() {
+        // Save to existing global config and call existing save function
+        if (typeof saveUiConfig === 'function') {
+            saveUiConfig();
+        }
+    }
+}
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    window.modernControlPanel = new ModernControlPanel();
+});
+</script>
+
+<style>
+/* Modern Control Panel Styles */
+#modern-control-panel {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+/* Tom Select Bootstrap 5 integration - native styling */
+.ts-control {
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+}
+
+.ts-control.focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.ts-dropdown .option.active {
+    background-color: #0d6efd;
+    color: #fff;
+}
+
+.form-range {
+    height: 1.5rem;
+}
+
+.card {
+    border-radius: 0.5rem;
+}
+
+.btn {
+    border-radius: 0.375rem;
+}
+
+@media (max-width: 768px) {
+    #modern-control-panel .container-fluid {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .d-none.d-sm-inline {
+        display: none !important;
+    }
+}
+</style>

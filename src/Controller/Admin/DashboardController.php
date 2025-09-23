@@ -1,0 +1,127 @@
+<?php
+
+namespace App\Controller\Admin;
+
+use App\Entity\User;
+use App\Entity\Device;
+use App\Entity\DeviceType;
+use App\Entity\DeviceAlert;
+use App\Entity\Alert;
+use App\Entity\AlertRule;
+use App\Entity\AuditLog;
+use App\Entity\NotificationLog;
+use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
+use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
+use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
+use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
+
+#[AdminDashboard(routePath: '/admin', routeName: 'admin')]
+#[IsGranted('ROLE_ADMIN')]
+class DashboardController extends AbstractDashboardController
+{
+    public function index(): Response
+    {
+        // Por ahora redirigir al CRUD de usuarios
+        // TODO: Crear un dashboard personalizado con estadísticas cuando sea necesario
+        $adminUrlGenerator = $this->container->get(AdminUrlGenerator::class);
+        return $this->redirect($adminUrlGenerator->setController(UserCrudController::class)->generateUrl());
+    }
+
+    public function configureDashboard(): Dashboard
+    {
+        return Dashboard::new()
+            ->setTitle('SGV')
+            ->setFaviconPath('favicon.ico')
+            ->setTranslationDomain('admin')
+            ->renderContentMaximized();
+    }
+
+    public function configureMenuItems(): iterable
+    {
+        yield MenuItem::linkToDashboard('Dashboard', 'fas fa-tachometer-alt');
+        
+        // Monitor de dispositivos
+        yield MenuItem::section('Monitor de dispositivos');
+        
+        // CN (Costanera Norte)
+        yield MenuItem::subMenu('CN', 'fas fa-road')->setSubItems([
+            MenuItem::linkToRoute('Resumen', 'fas fa-pie-chart', 'cot_dashboard'),
+            MenuItem::linkToRoute('Videowall Dispositivos', 'fas fa-th-large', 'admin_cot_monitor', [
+                'id' => 0,
+                'videowall' => 'true',
+                'device_status' => 'device_unactive',
+                'contract_ui' => 'true',
+                'masonry' => 'true',
+                'grid_items_width' => '2',
+                'fixed' => 'true',
+                'input_device_finder' => ''
+            ]),
+            MenuItem::linkToRoute('Lista Dispositivos CN', 'fas fa-list', 'admin_cot_monitor', [
+                'id' => 0,
+                'videowall' => 'false',
+                'device_status' => 'all',
+                'contract_ui' => 'true',
+                'masonry' => 'true',
+                'grid_items_width' => '2',
+                'input_device_finder' => ''
+            ]),
+            MenuItem::linkToRoute('Gálibos', 'fas fa-arrows-v', 'cot_galibos'),
+            MenuItem::linkToRoute('Monitor sensores SOS', 'fas fa-exclamation-circle', 'cot_sosindex', ['id' => 1]),
+            MenuItem::linkToRoute('Reporte sensores SOS', 'fas fa-file-alt', 'cot_sos_report_status'),
+            MenuItem::linkToRoute('Red', 'fas fa-network-wired', 'cot_network'),
+            MenuItem::linkToRoute('Monitor Espiras CN', 'fas fa-circle-notch', 'admin_cot_monitor', ['id' => 4]),
+            MenuItem::linkToRoute('Historial Espiras CN', 'fas fa-history', 'admin_spire_history'),
+        ]);
+        
+        // VS (Vespucio Sur)
+        yield MenuItem::subMenu('VS', 'fas fa-highway')->setSubItems([
+            MenuItem::linkToRoute('Lista Dispositivos VS', 'fas fa-list', 'admin_vs_index', ['id' => 0]),
+            MenuItem::linkToRoute('Historial Espiras VS', 'fas fa-history', 'admin_spire_history_vs_min'),
+            MenuItem::linkToRoute('Monitor Espiras VS', 'fas fa-circle-notch', 'admin_vs_index', ['id' => 13]),
+        ]);
+        
+        // Reportes
+        yield MenuItem::section('Reportes');
+        
+        // Citofonía
+        yield MenuItem::subMenu('Citofonía', 'fas fa-phone')->setSubItems([
+            MenuItem::linkToRoute('Lista de llamadas SOS', 'fas fa-phone-volume', 'admin_lista_llamadas_sos'),
+            MenuItem::linkToRoute('Informe Mensual de Citofonía', 'fas fa-file-invoice', 'siv_dashboard_informe_mensual_citofonia'),
+        ]);
+        
+        // Incidentes
+        yield MenuItem::subMenu('Incidentes', 'fas fa-car-crash')->setSubItems([
+            MenuItem::linkToRoute('Registro Incidente', 'fas fa-plus-circle', 'siv_dashboard_registro_incidente'),
+            MenuItem::linkToRoute('Ficha Accidente', 'fas fa-file-medical', 'siv_dashboard_ficha_accidente'),
+            MenuItem::linkToRoute('Atenciones por Clase de Vehículo', 'fas fa-car', 'siv_dashboard_atenciones_clase_vehiculo'),
+            MenuItem::linkToRoute('Tiempos recursos externos', 'fas fa-clock', 'siv_dashboard_tiempos_recursos_externos'),
+            MenuItem::linkToRoute('Tiempos de respuesta por recursos', 'fas fa-stopwatch', 'siv_dashboard_tiempos_respuesta_recursos'),
+            MenuItem::linkToRoute('Tiempos de respuesta por incidente', 'fas fa-hourglass', 'siv_dashboard_tiempos_respuesta_incidente'),
+            MenuItem::linkToRoute('Historial de recursos', 'fas fa-history', 'siv_dashboard_historial_recursos'),
+        ]);
+        
+        // SCADA
+        yield MenuItem::section('SCADA');
+        yield MenuItem::linkToRoute('Permisos de Trabajos', 'fas fa-hard-hat', 'siv_dashboard_lista_permisos_trabajos');
+        yield MenuItem::linkToRoute('Bitácora', 'fas fa-book', 'siv_dashboard_bitacora');
+        
+        // Gestión de Usuarios (sección administrativa)
+        yield MenuItem::section('Administración');
+        yield MenuItem::linkToCrud('Usuarios', 'fas fa-users', User::class)
+            ->setPermission('ROLE_ADMIN');
+        yield MenuItem::linkToCrud('Alertas', 'fas fa-exclamation-triangle', Alert::class)
+            ->setPermission('ROLE_OPERATOR_COT');
+        yield MenuItem::linkToCrud('Reglas de Alerta', 'fas fa-cogs', AlertRule::class)
+            ->setPermission('ROLE_ADMIN');
+        
+        yield MenuItem::section('Sistema');
+        yield MenuItem::linkToUrl('Volver al sitio', 'fas fa-home', '/');
+        yield MenuItem::linkToLogout('Cerrar sesión', 'fas fa-sign-out-alt');
+    }
+    
+    // TODO(human): Implementar método para manejar la vista de historial de espiras
+    // Esta acción personalizada permitirá mostrar el historial de espiras dentro del contexto de EasyAdmin
+}

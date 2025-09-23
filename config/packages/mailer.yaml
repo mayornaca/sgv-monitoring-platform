@@ -1,0 +1,8 @@
+framework:
+    mailer:
+        dsn: '%env(MAILER_DSN)%'
+        envelope:
+            sender: 'sgv@gesvial.cl'
+        headers:
+            from: 'SGV <sgv@gesvial.cl>'
+            reply_to: 'sgv@gesvial.cl'

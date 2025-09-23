@@ -1,0 +1,72 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block head_stylesheets %}
+    {{ parent() }}
+
+    {# Bootstrap 5 - Ya incluido en EasyAdmin #}
+
+    {# Bootstrap Table última versión #}
+    <link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.23.5/dist/bootstrap-table.min.css">
+
+    {# Flatpickr para datepickers modernos #}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+    {# Tom Select para selectores mejorados #}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.bootstrap5.min.css">
+
+    {# Font Awesome Icons #}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    {% block custom_stylesheets %}{% endblock %}
+{% endblock %}
+
+{% block body_javascript %}
+    {{ parent() }}
+
+    {# jQuery - Necesario para Bootstrap Table y algunos plugins #}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    {# Highcharts última versión (versión gratuita con watermark) #}
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/highcharts-3d.js"></script>
+    <script src="https://code.highcharts.com/highcharts-more.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/export-data.js"></script>
+    <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+
+    {# Chart.js v4.5 como alternativa gratuita #}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"></script>
+
+    {# Bootstrap Table con extensiones #}
+    <script src="https://unpkg.com/bootstrap-table@1.23.5/dist/bootstrap-table.min.js"></script>
+    <script src="https://unpkg.com/bootstrap-table@1.23.5/dist/locale/bootstrap-table-es-ES.min.js"></script>
+    <script src="https://unpkg.com/bootstrap-table@1.23.5/dist/extensions/export/bootstrap-table-export.min.js"></script>
+    <script src="https://unpkg.com/tableexport.jquery.plugin/tableExport.min.js"></script>
+
+    {# Flatpickr para datepickers #}
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+
+    {# Tom Select para selectores #}
+    <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
+
+    {# Cytoscape.js para diagramas de red (reemplazo gratuito de GoJS) #}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+
+    {# Notify.js para notificaciones #}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"></script>
+
+    {# Configuración global de Highcharts para versión gratuita #}
+    <script>
+        // Configuración para mostrar que es versión no comercial
+        Highcharts.setOptions({
+            credits: {
+                enabled: true,
+                text: 'Highcharts.com',
+                href: 'https://www.highcharts.com?credits'
+            }
+        });
+    </script>
+
+    {% block custom_javascript %}{% endblock %}
+{% endblock %}

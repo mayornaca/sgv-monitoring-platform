@@ -1,0 +1,331 @@
+{% extends 'base_dashboard.html.twig' %}
+
+{% block title %}Resumen del monitor de dispositivos{% endblock %}
+
+{% block custom_stylesheets %}
+<link rel="stylesheet" href="{{ asset('css/asRange.css') }}">
+<style>
+    .card {
+        background-color: #fff;
+        box-shadow: 0 0 6px rgba(0, 0, 0, 0.1);
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        max-width: 300px;
+        height: 375px;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .card .about {
+        height: 150px;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+
+    .card .about h3,
+    .card .about .lead {
+        font-weight: 300;
+        margin: 0;
+    }
+
+    .card .about h3 {
+        font-size: 24px;
+    }
+
+    .card .about .lead {
+        color: #aaa;
+    }
+
+    #tooltip-canvas {
+        position: absolute;
+        top: 115px;
+        left: 75px;
+    }
+
+    .btn-reload {
+        position: absolute;
+        top: 280px;
+        left: 50%;
+        width: 30px;
+        margin-left: -15px;
+        -webkit-appearance: none;
+        appearance: none;
+        border: 0;
+        background: transparent;
+        outline: none;
+        cursor: pointer;
+        opacity: 0.6;
+        transition: opacity 0.3s;
+    }
+
+    .btn-reload:hover {
+        opacity: 1;
+    }
+
+    /* ICONO TARJETA */
+    .card_circle_icon_right {
+        float: right;
+        margin: -15px 0 0 0 !important;
+        padding: 7px 0 0 0;
+        background: #f5f5f5;
+        width: 50px;
+        height: 50px;
+        font-size: 35px;
+    }
+
+    .bs-callout h4 {
+        /*font-size: 30px;*/
+    }
+
+    .chart_label{
+        font-size: 18px;
+        margin-top: -145px;
+        margin-left: 80px;
+        background: rgba(0,0,0,.075);
+        margin-top: -181px;
+        margin-left: 66px;
+        background: rgba(0,0,0,.075);
+        border-radius: 100%;
+        width: 130px;
+        height: 130px;
+        padding: 30px 0 0 10px;
+    }
+
+    .chart_label .badge {
+        font-size: 17px;
+    }
+
+    .bs-callout {
+        padding: 20px;
+        margin: 20px 0;
+        border: 1px solid #eee;
+        border-left-width: 5px;
+        border-radius: 3px;
+    }
+
+    .bs-callout-info {
+        border-left-color: #1b809e;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="main-wrapper" class="container fluid col-lg-12">
+    <div class="row-fluid">
+        <div class="page-header margin-none hidden" style="padding-bottom: 0px;margin: 20px 0 -12px;border-bottom: 0;">
+            <h1 class="padding-none" style="padding: 25px;border-radius:40px 0 0 40px;">Monitor de dispositivos</h1>
+        </div>
+        <div class="row">
+            <div class="col-lg-4">
+                <label class="form-label">
+                    <i class="bi bi-clock"></i> Intervalo de actualización:
+                    <span id="timer-value" class="badge bg-primary">300 seg</span>
+                </label>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="text-muted small">10s</span>
+                    <input id="timer-range-ajax-update"
+                           type="range"
+                           class="form-range flex-grow-1"
+                           min="10"
+                           max="600"
+                           value="300"
+                           step="10">
+                    <span class="text-muted small">600s</span>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div id="resumen">
+                {% for device_status in data_table %}
+                    <div class="col-sm-2">
+                        <div class="bs-callout bs-callout-info">
+                            <h4 id="callout-progress-csp">
+                                <i class="fa {{ device_status.icono }} btn-glyphicon img-circle card_circle_icon_right"></i>
+                                {{ device_status.tipo }}
+                            </h4>
+                            <div id="status_chart_{{ device_status.id }}" style="height: 250px; max-width: 600px; margin: 0 auto"></div>
+                            <div class="col-sm-5 chart_label">
+                                Activos: <span id="active_devices_count_{{ device_status.id }}" class="badge btn-success waves-effect waves-light">{{ device_status.activos }}</span><br>
+                                Inactivos: <span id="unactive_devices_count_{{ device_status.id }}" class="badge btn-danger waves-effect waves-light">{{ device_status.inactivos }}</span><br>
+                                Total: {{ device_status.total }}
+                            </div>
+                            <script>
+                                // Build the chart
+                                Highcharts.chart('status_chart_{{ device_status.id }}', {
+                                    chart: {
+                                        plotBackgroundColor: null,
+                                        plotBorderWidth: null,
+                                        plotShadow: false,
+                                        type: 'pie',
+                                    },
+                                    title: {
+                                        text: '',
+                                        align: 'center',
+                                        verticalAlign: 'middle',
+                                        y: 90,
+                                        x: 0
+                                    },
+                                    tooltip: {
+                                        pointFormat: '<b>{point.percentage:.1f}%</b>'
+                                    },
+                                    plotOptions: {
+                                        pie: {
+                                            innerSize: '80%',
+                                            cursor: 'pointer',
+                                            dataLabels: {
+                                                enabled: false
+                                            },
+                                            showInLegend: true
+                                        }
+                                    },
+                                    legend: {
+                                        enabled: true,
+                                        layout: 'horizontal',
+                                        align: 'left',
+                                        verticalAlign: 'bottom',
+                                        floating: true,
+                                        y: 25,
+                                        x: -10
+                                    },
+                                    series: [{
+                                        name: 'Estado',
+                                        colorByPoint: true,
+                                        data: [{
+                                            name: 'Inactivos {{ device_status.por_inactivos|number_format(1, ',', '.') }}%',
+                                            y: {{ device_status.por_inactivos }},
+                                        }, {
+                                            name: 'Activos {{ device_status.por_Activos|number_format(1, ',', '.') }}%',
+                                            y: {{ device_status.por_Activos }}
+                                        }]
+                                    }],
+                                    colors: [
+                                        '#f50057',
+                                        '#4ca44c',
+                                        '#2979ff',
+                                        '#90ed7d',
+                                        '#f7a35c',
+                                        '#8085e9',
+                                        '#f15c80',
+                                        '#e4d354',
+                                        '#2b908f',
+                                        '#f45b5b',
+                                        '#91e8e1'
+                                    ],
+                                    credits: {
+                                        enabled: false
+                                    }
+                                });
+                            </script>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        <br>
+        <div class="col-md-12"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block custom_javascript %}
+<script src="{{ asset('js/jquery-asRange.js') }}"></script>
+<script>
+jQuery(document).ready(function() {
+    SetDashboardTimer()
+});
+
+/********************
+ * Timer de ejecución periodica
+ * ******************/
+var cot_devices_timer_interval;
+
+function SetDashboardTimer(){
+    var interval = $('#timer-range-ajax-update').val() * 1000;
+    cot_devices_timer_interval = setInterval(function () {
+        if(typeof _isWindowsVisible === 'undefined' || _isWindowsVisible) {
+            getDashboardData();
+        }
+    }, interval);
+}
+
+/**********************
+ * Se Añade Control de Timer
+ ***********************/
+$("#timer-range-ajax-update").asRange({
+    step: 10,
+    range: false,
+    min: 10,
+    max: 600,
+    tip: {
+        active: 'onMove'
+    }
+});
+/**********************
+ * Se Añade Evento al Control de Timer
+ ***********************/
+$("#timer-range-ajax-update").on('asRange::change', function (e) {
+    clearInterval(cot_devices_timer_interval);
+    SetDashboardTimer();
+});
+
+function getDashboardData() {
+    $.ajax({
+        url: "{{ path('cot_dashboard') }}",
+        type: "GET",
+        async: true,
+        success: function (html) {
+            if (html) {
+                // Si es JSON, actualizar directamente
+                if (typeof html === 'object' && html.data_table) {
+                    updateCharts(html.data_table);
+                }
+                // Si es HTML, reemplazar el DOM
+                else if ($(html).find('#resumen').length > 0) {
+                    $('#resumen').replaceWith($(html).find('#resumen'));
+                }
+                else {
+                    $.notify(
+                        "Error al procesar los datos",
+                        {style: 'bootstrap', className: 'error', position: "top right"}
+                    );
+                }
+            }
+        },
+        error: function () {
+            $.notify(
+                "Error al intentar procesar los datos",
+                {style: 'bootstrap', className: 'error', position: "top right"}
+            );
+        }
+    });
+}
+
+function updateCharts(data_table) {
+    // Actualizar contadores y gráficos sin recargar todo el DOM
+    $.each(data_table, function(index, device_status) {
+        $('#active_devices_count_' + device_status.id).text(device_status.activos);
+        $('#unactive_devices_count_' + device_status.id).text(device_status.inactivos);
+
+        // Actualizar el gráfico si existe
+        var chart = Highcharts.charts.find(function(chart) {
+            return chart && chart.renderTo.id === 'status_chart_' + device_status.id;
+        });
+
+        if (chart) {
+            chart.series[0].setData([
+                {
+                    name: 'Inactivos ' + device_status.por_inactivos.toFixed(1) + '%',
+                    y: device_status.por_inactivos
+                },
+                {
+                    name: 'Activos ' + device_status.por_Activos.toFixed(1) + '%',
+                    y: device_status.por_Activos
+                }
+            ]);
+        }
+    });
+}
+</script>
+{% endblock %}

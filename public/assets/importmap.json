@@ -1,0 +1,42 @@
+{
+    "app": {
+        "path": "\/assets\/app-00cc6ecb577a674433e001f3d8103ec2.js",
+        "type": "js"
+    },
+    "\/assets\/bootstrap.js": {
+        "path": "\/assets\/bootstrap-97656ab68e522ab9732b853e32a2116f.js",
+        "type": "js"
+    },
+    "\/assets\/@symfony\/stimulus-bundle\/controllers.js": {
+        "path": "\/assets\/@symfony\/stimulus-bundle\/controllers-7b8c7fc398232dc7e64d060f53b1e2aa.js",
+        "type": "js"
+    },
+    "\/assets\/@symfony\/ux-live-component\/live_controller.js": {
+        "path": "\/assets\/@symfony\/ux-live-component\/live_controller-3fd8885cd7b84128ce9bf1a6f4060998.js",
+        "type": "js"
+    },
+    "\/assets\/@symfony\/ux-live-component\/live.min.css": {
+        "path": "\/assets\/@symfony\/ux-live-component\/live.min-14eb5f1e9732c175c6b157707be96d64.css",
+        "type": "css"
+    },
+    "\/assets\/controllers\/hello_controller.js": {
+        "path": "\/assets\/controllers\/hello_controller-55882fcad241d2bea50276ea485583bc.js",
+        "type": "js"
+    },
+    "\/assets\/controllers\/dropdown_controller.js": {
+        "path": "\/assets\/controllers\/dropdown_controller-cd166245a3616acc5a5b8799658ed76d.js",
+        "type": "js"
+    },
+    "@hotwired\/stimulus": {
+        "path": "\/assets\/vendor\/@hotwired\/stimulus\/stimulus.index-4b8ccd71e6b1c4ddba22853d5a50a26c.js",
+        "type": "js"
+    },
+    "@symfony\/stimulus-bundle": {
+        "path": "\/assets\/@symfony\/stimulus-bundle\/loader-5751ad1ee2975e725a94d8121d153d17.js",
+        "type": "js"
+    },
+    "@symfony\/ux-live-component": {
+        "path": "\/assets\/@symfony\/ux-live-component\/live_controller-3fd8885cd7b84128ce9bf1a6f4060998.js",
+        "type": "js"
+    }
+}

@@ -1,0 +1,304 @@
+{% extends '@!EasyAdmin/page/content.html.twig' %}
+
+{% block content_title %}Monitor de red{% endblock %}
+
+{% block head_stylesheets %}
+    {{ parent() }}
+    <style>
+        .gsfFeedback {
+            border-color: #7ec6f7;
+            font-size: 13;
+            margin-bottom: 5;
+        }
+    </style>
+    <style id="modal_ui">
+        .ui-draggable .modal-header {
+            cursor: -webkit-grab;
+            cursor: -moz-grab;
+            cursor: grab;
+        }
+        .ui-draggable-dragging .modal-header  {
+            cursor: -webkit-grabbing;
+        }
+        .cot_device_container{
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+            width: 152px;
+            margin: 0 4px 4px 0;
+            background-color: #9E9E9E;
+            border-radius: 30px;
+            overflow: hidden;
+            transition-timing-function: ease;
+            transition: width 0.3s;
+        }
+        .cot_device_container:hover{
+            width:153.5px;
+            transition-timing-function: ease;
+            transition:all 0.4s;
+        }
+        .cot_device_container:active{
+            width:153.5px;
+        }
+        .opc_device_container {
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+            width: 152px;
+            margin: 0 4px 4px 0;
+            background-color: #9E9E9E;
+            padding: 2px 1px 2px 1.45px;
+            overflow: hidden;
+            height: auto;
+            border-radius: 3px;
+        }
+        .opc_device_container .opc_vars_container{
+            background: rgba(255, 255, 255, 0.57);
+            margin-bottom: 3px;
+            height: 160px;
+            border-radius: 3px;
+            padding: 3px;
+            margin-top: 3px;
+        }
+        .btn_circle_icon_left{
+            float: left;
+            padding: 7px 0 0 0;
+            background: #fff;
+            margin-left: -11px;
+            margin-right: 1px;
+            margin-top: 2px;
+            width: 30px;
+            height: 30px;
+        }
+        .btn_circle_text{
+            font-size: 10pt;
+            word-wrap: break-word;
+            overflow: hidden;
+            text-align: left;
+        }
+        .mini_device{
+            width: 35px;
+            height: 36px;
+        }
+        .device_active .btn_circle_icon_left{
+            background: rgba(255, 255, 255, 0.81);
+        }
+        .filter-button-active{
+            background-color: #5bc0de !important;
+        }
+        .affix{
+            z-index: 1;
+            padding: 15px 5px 4px 5px;
+            top: 53px;
+        }
+        .icon-btn {
+            margin-left: 0px;
+        }
+        .mCSB_outside + .mCS-minimal.mCSB_scrollTools_vertical, .mCSB_outside + .mCS-minimal-dark.mCSB_scrollTools_vertical {
+            margin: 12px -6px;
+        }
+        .mCS-minimal-dark.mCSB_scrollTools .mCSB_dragger .mCSB_dragger_bar{
+            background-color: #000;
+            background-color: rgba(0, 0, 0, 0.42);
+            filter: "alpha(opacity=20)";
+            -ms-filter: "alpha(opacity=20)";
+        }
+        .mCS-minimal-dark.mCSB_scrollTools .mCSB_dragger:active .mCSB_dragger_bar,
+        .mCS-minimal-dark.mCSB_scrollTools .mCSB_dragger.mCSB_dragger_onDrag .mCSB_dragger_bar{
+            background-color: #000; background-color: rgba(0,0,0,0.9);
+            filter: "alpha(opacity=50)"; -ms-filter: "alpha(opacity=50)";
+        }
+        span.badge-expand-s {
+            width: 26px;
+            height: 21px;
+            overflow: hidden;
+            -webkit-transition: width 1s;
+            transition: width 1s;
+            white-space: nowrap;
+        }
+        span.badge-expand-s:hover {
+            width: 60px;
+            -webkit-transition: width 0.4s;
+            transition: width 0.4s;
+        }
+        span.badge-expand-s:hover::after {
+            content: 'Editar';
+        }
+        span.badge-expand-l {
+            width: 50px;
+            height: 50px;
+            overflow: hidden;
+            -webkit-transition: all 1s;
+            transition: all 1s;
+            white-space: nowrap;
+            border-radius: 50%;
+            margin-top: 40%;
+        }
+        span.badge-expand-l:hover {
+            width: 240px;
+            height: 240px;
+            -webkit-transition: all 0.4s;
+            transition: all 0.4s;
+            border-radius: 50%;
+            text-align: center;
+            box-shadow: -2px 3px 9px 0px rgba(0, 0, 0, 0.35);
+            margin-top: 0;
+        }
+        span.badge-expand-l:hover::after {
+            content: 'Nuevo';
+            font-size: 27pt;
+        }
+        span.badge-expand-l:hover span {
+            margin-top: 41%;
+        }
+        span.badge-expand-l span {
+            margin: 6% 0 0 1px;
+        }
+        .reporte-panel-expand{
+            display: block;
+        }
+        .reporte-panel-collapsed{
+            display: none;
+        }
+    </style>
+    <link rel="stylesheet" href="{{ asset('gojs/ZoomSlider.css') }}">
+{% endblock %}
+
+{% block head_javascripts %}
+    {{ parent() }}
+    <script src="{{ asset('gojs/go.js') }}"></script>
+    <script src="{{ asset('gojs/ZoomSlider.js') }}"></script>
+{% endblock %}
+
+{% block main %}
+    <!-- Notificaciones button -->
+    <div class="mb-3">
+        <button onclick="notifyMe()" class="btn btn-info btn-sm">
+            <i class="fas fa-bell"></i> Activar Notificaciones!
+        </button>
+    </div>
+    
+    <div class="col-lg-12 col-md-12 col-sm-12 stick-top " style="position: relative;top: 1px;margin-bottom: -36px;z-index: 10;">
+        <div id="reporte-panel" class="reporte-panel reporte-panel-collapsed col-lg-12 col-md-12 col-sm-12">
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <h3>Opciones de configuración del monitor de red</h3>
+                    <div class="form-group col-md-2 col-xs-12">
+                        <label class="control-label " for="id_device_type_fr">Tipo de dispositivo</label>
+                        <select class="selectpicker"  id="id_device_type_fr" name="id_device_type_fr">
+                            <option value="10" selected="selected">Dispositivos de Red</option>
+                        </select>
+
+                        <hr class="">
+                        <div class="row">
+                            <label><span class="glyphicon glyphicon-time"></span> Intervalo de actualización </label>
+                            </br>
+                            <input id="timer-range-ajax-update"  type="text" min="3" max="60" value="10" name="points" step="1">
+                        </div>
+                    </div>
+                    <div class="form-group col-md-1 col-xs-7">
+                        <label>Actualización</label>
+                        <button class="btn btn-default waves-effect btn-block btn-sm" onclick="getNetWorkData();">
+                            <i class="fa fa-refresh" aria-hidden="true"></i>Actualizar ahora
+                        </button>
+                    </div>
+                    <div class="form-group col-md-2 col-xs-5">
+                        <label>Automática</label>
+                        <div class="onoffswitch1">
+                            <input type="checkbox" name="actualizacionAutomatica" class="onoffswitch1-checkbox" id="actualizacionAutomatica" checked>
+                            <label class="onoffswitch1-label" for="actualizacionAutomatica">
+                                <span class="onoffswitch1-inner"></span>
+                                <span class="onoffswitch1-switch"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group col-md-2 hidden-xs">
+                    </div>
+                    <div class="form-group col-md-2 hidden-xs">
+                    </div>
+                    <div class="form-group col-md-3 pull-right">
+                        <div class="form-group col-md-4">
+                        </div>
+                        <div class="form-group col-sm-3">
+                            <label class="control-label" for="generatePDF">Generar PDF</label>
+                            <div class="onoffswitch1">
+                                <input type="checkbox" name="generatePDF" class="onoffswitch1-checkbox" id="generatePDF">
+                                <label class="onoffswitch1-label" for="generatePDF">
+                                    <span class="onoffswitch1-inner"></span>
+                                    <span class="onoffswitch1-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+                        </br>
+                        <div class="form-group col-sm-5">
+                            <a id="btn-generar-reporte-dispositivos" class="btn icon-btn btn-warning waves-effect waves-light pull-right" onclick="generarReporteDispositivos();">
+                                <span class="glyphicon btn-glyphicon glyphicon-play-circle img-circle text-info"></span> Generar Reporte
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div align="left" class="col-md-6">
+            <div class="pull-left col-md-8">
+                <div class="input-group col-md-12">
+                    <div class="input-group-btn">
+                        <button id="btn-reporte-panel-toggle" type="button" class="btn btn-default waves-effect btn_responsive_hide_text">
+                            <span class="glyphicon glyphicon glyphicon-cog is-blue"></span>Más Opciones
+                        </button>
+
+                        <button type="button" class="btn btn-default waves-effect dropdown-toggle btn_responsive_hide_text hidden" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <span class="glyphicon glyphicon glyphicon-filter is-blue"></span> Filtro de estado <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu" style="margin-left: 136px;">
+                            <li><a id="btn_show_all" class="filter-button" data-filter="all">Mostrar Todos</a></li>
+                            <li><a id="btn_show_actives" class="filter-button" data-filter="device_active">Mostrar Activos</a></li>
+                            <li><a id="btn_show_unactives" class="filter-button" data-filter="device_unactive">Mostrar Inactivos</a></li>
+                        </ul>
+                    </div>
+                    <input id="input_device_finder" type="text" class="form-control hidden" placeholder="Escriba al menos dos caracteres..." style="height: 36px;width: 229px;">
+                    <span class="input-group-btn  hidden">
+                            <button id="btn_device_finder" class="btn btn-default waves-effect btn_responsive_hide_text" type="button">
+                                <span class="glyphicon glyphicon glyphicon-search is-blue"></span>Buscar
+                            </button>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div align="right" class="col-md-6">
+            <div class="form-group hidden">
+                <label class="control-label" for="contract_ui">Interfaz Reducida</label>
+                <div class="onoffswitch1">
+                    <input type="checkbox" class="onoffswitch1-checkbox" id="contract_ui">
+                    <label class="onoffswitch1-label" for="contract_ui">
+                        <span class="onoffswitch1-inner"></span>
+                        <span class="onoffswitch1-switch"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <br/>
+        <div id="dialog-bg" class="modal-backdrop fade in windows-modal" style="display: none;" oncontextmenu="return false"></div>
+    </div>
+    <div id="graphic" style="display: inline-block; vertical-align: top;width:100%; height:900px;position: relative;">
+        <div id="myDiagramDiv" style="background-color: #ffffff;width:100%; height:900px; border:1px solid #d4eaff">
+
+        </div>
+        <div class="hidden__">
+            Add port to selected nodes:
+            <button onclick="addPort('top')">Top</button>
+            <button onclick="addPort('bottom')">Bottom</button>
+            <button onclick="addPort('left')">Left</button>
+            <button onclick="addPort('right')">Right</button>
+
+            <div>
+                <div>
+                    <button id="SaveButton" onclick="save()">Guardar</button>
+                    <button onclick="load()">Cargar JSON</button>
+                    Diagram Model saved in JSON format:
+                </div>
+                <textarea class="form-control" id="mySavedModel" style="width:100%;height:250px">
+                       {{ canvas_model|default('{}') }}
+                </textarea>
+            </div>
+        </div>
+    </div>
+    {{ include('admin/cot/includes/ajax_edit_popup.html.twig') }}
+    {{ include('admin/cot/includes/ajax_report.html.twig') }}
+{% endblock %}

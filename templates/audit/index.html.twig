@@ -1,0 +1,206 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% block title %}Audit Logs - SGV{% endblock %}
+{% block page_title %}Audit Logs{% endblock %}
+{% block page_description %}System activity and security events monitor{% endblock %}
+
+{% block admin_content %}
+    <div class="space-y-6">
+        <!-- Statistics Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
+            <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-green-600">{{ stats.total_logs }}</div>
+                    <div class="text-sm text-gray-600 mt-1">Total Logs</div>
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-blue-600">{{ stats.today_logs }}</div>
+                    <div class="text-sm text-gray-600 mt-1">Today</div>
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-purple-600">{{ stats.week_logs }}</div>
+                    <div class="text-sm text-gray-600 mt-1">This Week</div>
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-yellow-600">{{ stats.warning_logs }}</div>
+                    <div class="text-sm text-gray-600 mt-1">Warnings</div>
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-red-600">{{ stats.error_logs }}</div>
+                    <div class="text-sm text-gray-600 mt-1">Errors</div>
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-orange-600">{{ stats.unique_users_today }}</div>
+                    <div class="text-sm text-gray-600 mt-1">Active Users</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+            <form method="get" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Level</label>
+                    <select name="level" class="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">All Levels</option>
+                        <option value="INFO" {% if current_level == 'INFO' %}selected{% endif %}>Info</option>
+                        <option value="WARNING" {% if current_level == 'WARNING' %}selected{% endif %}>Warning</option>
+                        <option value="ERROR" {% if current_level == 'ERROR' %}selected{% endif %}>Error</option>
+                        <option value="CRITICAL" {% if current_level == 'CRITICAL' %}selected{% endif %}>Critical</option>
+                    </select>
+                </div>
+                
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Source</label>
+                    <select name="source" class="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">All Sources</option>
+                        <option value="WEB" {% if current_source == 'WEB' %}selected{% endif %}>Web</option>
+                        <option value="AUTH" {% if current_source == 'AUTH' %}selected{% endif %}>Authentication</option>
+                        <option value="USER_MANAGEMENT" {% if current_source == 'USER_MANAGEMENT' %}selected{% endif %}>User Management</option>
+                        <option value="ENTITY" {% if current_source == 'ENTITY' %}selected{% endif %}>Entity Changes</option>
+                        <option value="SYSTEM" {% if current_source == 'SYSTEM' %}selected{% endif %}>System</option>
+                        <option value="SECURITY" {% if current_source == 'SECURITY' %}selected{% endif %}>Security</option>
+                    </select>
+                </div>
+                
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Limit</label>
+                    <select name="limit" class="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="50" {% if current_limit == 50 %}selected{% endif %}>50</option>
+                        <option value="100" {% if current_limit == 100 %}selected{% endif %}>100</option>
+                        <option value="200" {% if current_limit == 200 %}selected{% endif %}>200</option>
+                        <option value="500" {% if current_limit == 500 %}selected{% endif %}>500</option>
+                    </select>
+                </div>
+                
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">&nbsp;</label>
+                    <button type="submit" class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors font-medium">
+                        Apply Filters
+                    </button>
+                </div>
+                
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">&nbsp;</label>
+                    <a href="{{ path('app_audit_export', app.request.query.all) }}" 
+                       class="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors text-center block font-medium">
+                        Export CSV
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Logs Table -->
+        <div class="bg-white rounded-lg shadow border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">System Audit Logs</h3>
+                <p class="text-sm text-gray-600">Recent activity and security events</p>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
+                            <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Level</th>
+                            <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                            <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                            <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
+                            <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Entity</th>
+                            <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">IP Address</th>
+                            <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for log in logs %}
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">{{ log.createdAt|date('M d, Y') }}</div>
+                                    <div class="text-xs text-gray-500">{{ log.createdAt|date('H:i:s') }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {% set level_class = {
+                                        'INFO': 'bg-blue-100 text-blue-800',
+                                        'WARNING': 'bg-yellow-100 text-yellow-800',
+                                        'ERROR': 'bg-red-100 text-red-800',
+                                        'CRITICAL': 'bg-red-100 text-red-900'
+                                    } %}
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full {{ level_class[log.level] ?? 'bg-gray-100 text-gray-800' }}">
+                                        {{ log.level }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <code class="text-sm text-indigo-600 bg-indigo-50 px-2 py-1 rounded">{{ log.action }}</code>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {% if log.username %}
+                                        <div class="text-sm font-medium text-gray-900">{{ log.username }}</div>
+                                        <div class="text-xs text-gray-500">ID: {{ log.userId }}</div>
+                                    {% else %}
+                                        <span class="text-sm text-gray-500">System</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="text-sm text-gray-900">{{ log.source ?? 'N/A' }}</span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {% if log.entityType %}
+                                        <div class="text-sm text-gray-900">{{ log.entityType }}</div>
+                                        {% if log.entityId %}
+                                            <div class="text-xs text-gray-500">ID: {{ log.entityId }}</div>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-sm text-gray-500">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="text-sm font-mono text-gray-900">{{ log.ipAddress ?? 'N/A' }}</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    {% if log.description %}
+                                        <div class="text-sm text-gray-900 max-w-xs truncate" title="{{ log.description }}">
+                                            {{ log.description }}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-sm text-gray-500">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="8" class="px-6 py-8 text-center text-gray-500">
+                                    No audit logs found matching the current filters
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block admin_javascripts %}
+<script>
+// Auto-refresh logs every 30 seconds
+setInterval(function() {
+    fetch('{{ path('app_audit_api_logs', app.request.query.all) }}')
+        .then(response => response.json())
+        .then(data => {
+            console.log('Audit logs updated', data);
+            // Could implement live table updates here
+        })
+        .catch(error => console.error('Error fetching audit logs:', error));
+}, 30000);
+</script>
+{% endblock %}

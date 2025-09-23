@@ -1,0 +1,211 @@
+{% extends "@EasyAdmin/page/content.html.twig" %}
+
+{% block title %}Historial de Espiras VS{% endblock %}
+
+{% block page_title %}
+    <i class="fas fa-history"></i> Historial de Estados de Espiras - Vespucio Sur
+{% endblock %}
+
+{% block head_stylesheets %}
+    {{ parent() }}
+    <style>
+        #timeline1 { min-height: 400px; background: white; padding: 20px; }
+        #timeline1 svg { max-width: 100%; }
+        .y-tick { stroke: black; fill: none; stroke-width: 1px; }
+        .line-separator, .x-axis { stroke: #777; fill: none; stroke-width: 1px; }
+        text { stroke: none; fill: black; }
+        .legend{ display: none; }
+    </style>
+{% endblock %}
+
+{% block main %}
+    <div class="card mb-3">
+        <div class="card-header"><h5><i class="fas fa-filter"></i> Filtros - Vespucio Sur</h5></div>
+        <div class="card-body">
+            <form method="get">
+                <input type="hidden" value="2" name="ci">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label>Fecha inicio</label>
+                        <input type="text" id="fechaInicio" name="fechaInicio" class="form-control" value="{{ fechaInicio }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label>Fecha término</label>
+                        <input type="text" id="fechaTermino" name="fechaTermino" class="form-control" value="{{ fechaTermino }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label>Espiras</label>
+                        <select id="spires" name="spires[]" class="form-select" multiple>
+                            <option value="">-- Todas --</option>
+                            {% for spire in all_spires %}
+                                <option value="{{ spire.id }}" {% if sel_spires and spire.id in sel_spires %}selected{% endif %}>{{ spire.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label>Opciones</label>
+                        <div class="form-check">
+                            <input type="checkbox" id="onlyZeros" name="onlyZeros" {% if onlyZeros %}checked{% endif %}> Solo ceros
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" id="onlyEmpty" name="onlyEmpty" {% if onlyEmpty %}checked{% endif %}> Solo lagunas
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-success">Consultar</button>
+                    <button type="button" class="btn btn-info" onclick="updateData()">Actualizar</button>
+                    <button type="button" class="btn btn-primary" id="btn-prev">-1 Hora</button>
+                    <button type="button" class="btn btn-primary" id="btn-next">+1 Hora</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <span class="badge" style="background-color: #329832;">OK</span>
+        <span class="badge" style="background-color: #fdfd31; color: black;">Sin Datos</span>
+        <span class="badge" style="background-color: #fe2525;">KO</span>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h5>Timeline - Vespucio Sur</h5></div>
+        <div class="card-body">
+            <div id="timeline1">
+                {% if arr_reg_spires %}
+                    <div class="alert alert-info">Cargando...</div>
+                {% else %}
+                    <div class="alert alert-warning">No hay datos</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block body_javascript %}
+    {{ parent() }}
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="https://unpkg.com/timelines-chart@2"></script>
+    <script>
+        var data = [];
+        {% if arr_reg_spires is defined and arr_reg_spires is not empty %}
+            {% if arr_reg_spires is iterable %}
+                data = {{ arr_reg_spires|json_encode|raw }};
+            {% else %}
+                try { data = JSON.parse({{ arr_reg_spires|json_encode|raw }}); } catch (e) { console.error("Error parsing:", e); data = []; }
+            {% endif %}
+        {% endif %}
+
+        var w = window.innerWidth, cartw = w - 20;
+        var myChart = TimelinesChart()(document.getElementById("timeline1"))
+            .timeFormat("%d-%m-%Y %H:%M:%S").zQualitative(true).maxLineHeight(20)
+            .leftMargin(150).rightMargin(150).bottomMargin(150)
+            .enableOverview(true).enableAnimations(false).width(cartw)
+            .zColorScale(d3.scaleLinear().domain([-1, 0, 1]).range(["red", "yellow", "green"]));
+
+        $(document).ready(function() {
+            renderGraphic(data);
+            {% if fechaInicio %}$("#fechaInicio").val("{{ fechaInicio }}");{% endif %}
+            {% if fechaTermino %}$("#fechaTermino").val("{{ fechaTermino }}");{% endif %}
+        });
+
+        function transformAbbreviatedData(d) {
+            console.log("Transform input:", d);
+            if (!d || d.length === 0) return [];
+            if (d[0] && d[0].hasOwnProperty("group")) return d;
+
+            try {
+                var result = d.map(g => ({
+                    group: g.g || 'Unknown',
+                    data: (g.d || []).map(t => ({
+                        label: t.l || 'Unknown',
+                        data: (t.d || []).map(s => ({
+                            timeRange: s.t || [],
+                            val: isNaN(s.v) ? 0 : (s.v || 0)
+                        }))
+                    }))
+                }));
+                console.log("Transform result:", result);
+                return result;
+            } catch (e) {
+                console.error("Transform error:", e);
+                return [];
+            }
+        }
+
+        function renderGraphic(data) {
+            if (!data || data.length === 0 || (typeof data === 'string' && data.trim() === '')) {
+                $("#timeline1").html("<div class=\"alert alert-warning\">No hay datos</div>");
+                return;
+            }
+
+            var transformedData = transformAbbreviatedData(data);
+            if (!transformedData || transformedData.length === 0) {
+                $("#timeline1").html("<div class=\"alert alert-warning\">No hay datos para mostrar</div>");
+                return;
+            }
+
+            var sensors_count = 0;
+            for (var prop in transformedData) {
+                if (transformedData[prop] && transformedData[prop].hasOwnProperty("data")){
+                    sensors_count += transformedData[prop].data.length;
+                }
+            }
+
+            if (sensors_count === 0) {
+                $("#timeline1").html("<div class=\"alert alert-warning\">No hay sensores para mostrar</div>");
+                return;
+            }
+
+            var maxHeight = Math.max(640, sensors_count * 25);
+            try {
+                myChart.maxHeight(maxHeight).data(transformedData).refresh();
+            } catch (e) {
+                console.error("Chart render error:", e);
+                $("#timeline1").html("<div class=\"alert alert-danger\">Error al renderizar: " + e.message + "</div>");
+            }
+        }
+
+        $("#btn-prev").click(() => {
+            var fi = moment($("#fechaInicio").val(), "DD-MM-YYYY HH:mm:ss").add(-1,"hour").format("DD-MM-YYYY HH:mm:ss");
+            var ft = moment($("#fechaTermino").val(), "DD-MM-YYYY HH:mm:ss").add(-1,"hour").format("DD-MM-YYYY HH:mm:ss");
+            $("#fechaInicio").val(fi); $("#fechaTermino").val(ft); updateData();
+        });
+
+        $("#btn-next").click(() => {
+            var fi = moment($("#fechaInicio").val(), "DD-MM-YYYY HH:mm:ss").add(1,"hour").format("DD-MM-YYYY HH:mm:ss");
+            var ft = moment($("#fechaTermino").val(), "DD-MM-YYYY HH:mm:ss").add(1,"hour").format("DD-MM-YYYY HH:mm:ss");
+            $("#fechaInicio").val(fi); $("#fechaTermino").val(ft); updateData();
+        });
+
+        function updateData() {
+            var params = {
+                fechaInicio: $("#fechaInicio").val(),
+                fechaTermino: $("#fechaTermino").val(),
+                onlyZeros: $("#onlyZeros").is(":checked") ? "on" : "off",
+                onlyEmpty: $("#onlyEmpty").is(":checked") ? "on" : "off"
+            };
+            var selectedSpires = [];
+            $("#spires option:selected").each(function() {
+                if ($(this).val()) selectedSpires.push($(this).val());
+            });
+            if (selectedSpires.length > 0) params.spires = selectedSpires;
+
+            $("#timeline1").html("<div class=\"alert alert-info\">Cargando...</div>");
+            $.get(window.location.pathname, params, function(response) {
+                if (response.arr_reg_spires) {
+                    try {
+                        var data = JSON.parse(response.arr_reg_spires);
+                        renderGraphic(data);
+                    } catch(e) {
+                        $("#timeline1").html("<div class=\"alert alert-danger\">Error datos</div>");
+                    }
+                } else {
+                    $("#timeline1").html("<div class=\"alert alert-warning\">Sin datos</div>");
+                }
+            }).fail(() => $("#timeline1").html("<div class=\"alert alert-danger\">Error conexión</div>"));
+        }
+    </script>
+{% endblock %}

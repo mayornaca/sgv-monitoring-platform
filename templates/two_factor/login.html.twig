@@ -1,0 +1,185 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Verificación de Seguridad - SGV{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        <!-- Logo y título -->
+        <div class="text-center">
+            <div class="mx-auto h-16 w-16 bg-blue-600 rounded-full flex items-center justify-center mb-4">
+                <svg class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+            </div>
+            <h2 class="text-3xl font-bold text-gray-900">Verificación de Seguridad</h2>
+            <p class="mt-2 text-sm text-gray-600">
+                Se requiere autenticación de dos factores para continuar
+            </p>
+        </div>
+
+        <!-- Formulario de 2FA -->
+        <div class="bg-white py-8 px-6 shadow-xl rounded-lg">
+            {% if availableTwoFactorProviders|length > 1 %}
+                <!-- Selección de método -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">
+                        Selecciona el método de verificación:
+                    </label>
+                    <div class="space-y-2">
+                        {% for provider in availableTwoFactorProviders %}
+                            <a href="{{ path('2fa_login', {provider: provider}) }}" 
+                               class="flex items-center justify-between w-full px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors {% if authenticationContext.preferredProvider == provider %}bg-blue-50 border-blue-300{% endif %}">
+                                <span class="flex items-center">
+                                    {% if provider == 'email' %}
+                                        <svg class="h-5 w-5 text-gray-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.25a1 1 0 001.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                        </svg>
+                                        Enviar código por email
+                                    {% elseif provider == 'totp' %}
+                                        <svg class="h-5 w-5 text-gray-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                        </svg>
+                                        Aplicación autenticadora
+                                    {% endif %}
+                                </span>
+                                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Formulario de código -->
+            {% if authenticationContext.preferredProvider %}
+                <form method="post" action="{{ path('2fa_login_check') }}">
+                    <div class="mb-6">
+                        {% if authenticationContext.preferredProvider == 'email' %}
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                                <div class="flex">
+                                    <svg class="h-5 w-5 text-blue-400 mt-0.5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <div class="text-sm text-blue-700">
+                                        <p class="font-medium">Código enviado por email</p>
+                                        <p class="mt-1">Revisa tu bandeja de entrada y spam. El código expira en 10 minutos.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% elseif authenticationContext.preferredProvider == 'totp' %}
+                            <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                                <div class="flex">
+                                    <svg class="h-5 w-5 text-green-400 mt-0.5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <div class="text-sm text-green-700">
+                                        <p class="font-medium">Código de aplicación autenticadora</p>
+                                        <p class="mt-1">Abre tu aplicación autenticadora y ingresa el código de 6 dígitos.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <label for="authCode" class="block text-sm font-medium text-gray-700 mb-2">
+                            Código de verificación
+                        </label>
+                        <input type="text" 
+                               id="authCode" 
+                               name="_auth_code" 
+                               class="input input-bordered w-full text-center text-2xl tracking-widest font-mono" 
+                               placeholder="000000"
+                               maxlength="6"
+                               pattern="[0-9]{6}"
+                               autocomplete="one-time-code"
+                               autofocus
+                               required>
+                        
+                        {% if twoFactorProvider %}
+                            <input type="hidden" name="_two_factor_provider" value="{{ twoFactorProvider }}">
+                        {% endif %}
+                        
+                        <!-- Token CSRF -->
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token('two_factor') }}">
+                    </div>
+
+                    {% if displayTrustedOption %}
+                        <div class="mb-6">
+                            <label class="flex items-center">
+                                <input type="checkbox" name="_trusted" value="1" class="checkbox checkbox-sm mr-2">
+                                <span class="text-sm text-gray-600">Confiar en este dispositivo por 30 días</span>
+                            </label>
+                        </div>
+                    {% endif %}
+
+                    <!-- Botones -->
+                    <div class="space-y-3">
+                        <button type="submit" class="btn btn-primary w-full">
+                            <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Verificar Código
+                        </button>
+                        
+                        {% if availableTwoFactorProviders|length > 1 %}
+                            <a href="{{ path('2fa_login') }}" class="btn btn-ghost w-full">
+                                Usar otro método
+                            </a>
+                        {% endif %}
+                        
+                        <a href="{{ path('app_logout') }}" class="btn btn-ghost w-full text-gray-500">
+                            Cancelar y cerrar sesión
+                        </a>
+                    </div>
+                </form>
+            {% endif %}
+
+            <!-- Errores -->
+            {% if authenticationError %}
+                <div class="mt-4 bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div class="flex">
+                        <svg class="h-5 w-5 text-red-400 mt-0.5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div class="text-sm text-red-700">
+                            <p class="font-medium">Error de verificación</p>
+                            <p class="mt-1">{{ authenticationError.messageKey|trans(authenticationError.messageData, 'SchebTwoFactorBundle') }}</p>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Ayuda -->
+        <div class="text-center">
+            <p class="text-xs text-gray-500">
+                Si tienes problemas con la verificación, contacta al administrador del sistema.
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const authCodeInput = document.getElementById('authCode');
+    if (authCodeInput) {
+        // Auto-submit cuando se ingresen 6 dígitos
+        authCodeInput.addEventListener('input', function(e) {
+            const value = e.target.value.replace(/\D/g, '');
+            e.target.value = value;
+            
+            if (value.length === 6) {
+                // Pequeño delay para que el usuario vea el código completo
+                setTimeout(() => {
+                    e.target.closest('form').submit();
+                }, 300);
+            }
+        });
+        
+        // Enfocar el input al cargar
+        authCodeInput.focus();
+    }
+});
+</script>
+{% endblock %}

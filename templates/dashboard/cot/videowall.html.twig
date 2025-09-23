@@ -1,0 +1,1537 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block title %}Monitor de dispositivos CN{% endblock %}
+
+{% block page_title %}
+    <i class="fas fa-th-large"></i> Monitor de Dispositivos - COT
+{% endblock %}
+
+{% block head_stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.9.2/jquery.contextMenu.min.css">
+
+    <!-- Bootstrap 3 Compatible Modal and JSON Editor CSS -->
+    <style>
+        .windows-modal {
+            z-index: 10000;
+        }
+
+        .json-editor-container {
+            height: 400px;
+            border: 1px solid #ddd;
+            margin: 10px 0;
+            background: #f9f9f9;
+        }
+
+        /* Bootstrap Slider Custom Styling */
+        .slider-selection {
+            background: #5bc0de;
+        }
+
+        .slider-handle {
+            background: #337ab7;
+        }
+
+        /* Status Footer Styling */
+        .navbar-fixed-bottom {
+            border-top: 1px solid #ddd;
+            background: #f8f8f8;
+        }
+
+        /* Modal improvements */
+        .modal-lg {
+            width: 90%;
+            max-width: 1200px;
+        }
+
+        .bootbox-close-button {
+            z-index: 10001;
+        }
+
+        /* Bootstrap img-circle class for circular images */
+        .img-circle {
+            -webkit-border-radius: 500px;
+            -moz-border-radius: 500px;
+            border-radius: 500px;
+        }
+
+        /* Color-only classes that don't affect borders */
+        .device-color-success {
+            background-color: #5cb85c !important;
+            border-color: #4cae4c !important;
+            color: #fff !important;
+        }
+
+        .device-color-danger {
+            background-color: #d9534f !important;
+            border-color: #d43f3a !important;
+            color: #fff !important;
+        }
+
+        .device-color-warning {
+            background-color: #f0ad4e !important;
+            border-color: #eea236 !important;
+            color: #fff !important;
+        }
+
+        .device-color-indeterminate {
+            background-image: -webkit-linear-gradient(top, #f7f7f7 0, #777 100%) !important;
+            background-image: linear-gradient(to bottom, #f7f7f7 0, #777 100%) !important;
+            border-color: #ccc !important;
+            color: black !important;
+        }
+
+        /* Base definitions for circular icon buttons */
+        .btn_circle_image_left {
+            float: left;
+            background: #fff;
+            margin-right: 1px;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+        }
+
+        .btn_circle_icon_left {
+            float: left;
+            padding: 7px 0 0 0;
+            background: #fff;
+            margin-left: -11px;
+            margin-right: 1px;
+            margin-top: 2px;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+        }
+
+        .btn_circle_text {
+            font-size: 10pt;
+            word-wrap: break-word;
+            overflow: hidden;
+            text-align: left;
+        }
+
+        /* Device state specific styling */
+        .device_active .btn_circle_icon_left {
+            background: rgba(255, 255, 255, 0.81);
+        }
+
+        .device_unactive .btn_circle_icon_left {
+            background: #fff;
+        }
+
+        /* Ensure circular borders are preserved even with Bootstrap button classes */
+        .btn_circle_icon_left.img-circle,
+        .btn_circle_image_left.img-circle,
+        .img-circle.btn-success,
+        .img-circle.btn-danger,
+        .img-circle.btn-warning,
+        .img-circle.device_indeterminate,
+        .btn_circle_icon_left,
+        .btn_circle_image_left {
+            -webkit-border-radius: 50% !important;
+            -moz-border-radius: 50% !important;
+            border-radius: 50% !important;
+        }
+    </style>
+    <style id="modal_ui">
+        .ui-draggable .modal-header {
+            cursor: -webkit-grab;
+            cursor: -moz-grab;
+            cursor: grab;
+        }
+
+        .ui-draggable-dragging .modal-header {
+            cursor: -webkit-grabbing;
+        }
+
+        .cot_device_container {
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+            padding-left: 1px;
+            margin: 0 1px 4px 0;
+            background-color: #9E9E9E;
+            border-radius: 30px;
+            padding-top: 1px;
+            overflow: hidden;
+        {% if transitions == 2 %} transition-timing-function: ease;
+            transition: width 0.3s;
+        {% endif %}
+        }
+
+        .cot_device_container:hover {
+        {% if transitions == 2 %} transition-timing-function: ease;
+            transition: all 0.4s;
+        {% endif %} z-index: 1;
+        }
+
+        .cot_device_container:active {
+        }
+
+        /* Modern responsive grid behavior - equivalent to col-sm-1 */
+        .cot_device_container:not(.mini_device) {
+            width: calc(8.33% - 2px); /* Equivalent to col-sm-1 with margin compensation */
+            min-width: 120px; /* Minimum width for readability */
+            max-width: 160px; /* Maximum width to prevent oversized devices */
+        }
+
+        .opc_device_container:not(.mini_device) {
+            width: calc(8.33% - 2px); /* Equivalent to col-sm-1 with margin compensation */
+            min-width: 120px;
+            max-width: 160px;
+        }
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 768px) {
+            .cot_device_container:not(.mini_device),
+            .opc_device_container:not(.mini_device) {
+                width: calc(16.66% - 2px); /* Equivalent to col-sm-2 on mobile */
+                min-width: 100px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .cot_device_container:not(.mini_device),
+            .opc_device_container:not(.mini_device) {
+                width: calc(25% - 2px); /* Equivalent to col-sm-3 on very small screens */
+                min-width: 80px;
+            }
+        }
+
+        .opc_device_container {
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+            margin: 0 1px 4px 0;
+            background-color: #9E9E9E;
+            padding: 2px 1px 2px 1.45px;
+            overflow: hidden;
+            height: auto;
+            border-radius: 3px;
+        }
+
+        /* OPC Device Bootstrap Override - COMMENTED FOR RESPONSIVE GRID */
+        /*
+        .col-sm-1.opc_device_container,
+        .devices_grid_item.opc_device_container {
+            width: 151px !important;
+            flex: none !important;
+            max-width: none !important;
+        }
+        */
+
+        .opc_device_container .opc_vars_container {
+            height: auto;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+            align-content: flex-start;
+            width: 100%;
+            padding: 2px;
+            margin-bottom: 3px;
+            border-radius: 3px;
+            margin-top: 3px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.57);
+        }
+
+        .opc_device_container .device_unactive {
+            height: auto;
+        }
+
+        /* Sensores individuales dentro del contenedor OPC/Espiras - RESPONSIVE */
+        .opc_var_device_container {
+            width: calc(100% - 4px) !important; /* Responsive width with margin compensation */
+            min-width: 114px !important; /* Minimum width for readability */
+            max-width: 140px !important; /* Maximum width to prevent oversized sensors */
+            height: 25px !important;
+            margin: 2px 0 !important;
+            padding: 2px 5px !important;
+            float: none !important;
+            display: block !important;
+            font-size: 10px !important;
+            line-height: 20px !important;
+            position: relative;
+        }
+
+        .opc_var_device_container .btn_circle_text {
+            font-size: 9px !important;
+            padding: 0 2px !important;
+            margin: 0 0 0 24px !important;
+            display: inline-block;
+            vertical-align: top !important;
+            text-align: left !important;
+            line-height: 21px !important;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: calc(100% - 28px);
+        }
+
+        .opc_var_device_container .btn_circle_icon_left {
+            width: 20px !important;
+            height: 20px !important;
+            border-radius: 50% !important;
+            background: #fff !important;
+            position: absolute;
+            left: 2px;
+            top: 2px;
+            margin: 1px 2px 0 0px !important;
+            padding: 3px 0 0 0 !important;
+            text-align: center;
+            font-size: 10px !important;
+            color: #333333 !important;
+        }
+
+        /* Estilos específicos del sistema original */
+        .cot_device_container i.btn_circle_icon_left,
+        .opc_device_container i.btn_circle_icon_left,
+        .opc_var_device_container i.btn_circle_icon_left {
+            margin: 1px 2px 0 0px !important;
+            color: #333333 !important;
+        }
+
+        span.opc_var_device_container {
+            padding: 1px 0 0 1px !important;
+        }
+
+        /* Panel de controles */
+        #control-panel-container {
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            margin-bottom: 10px;
+        }
+
+        .filter-button-active {
+            background-color: #007bff !important;
+            color: white !important;
+        }
+
+        .reporte-panel-collapsed {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .reporte-panel-expand {
+            max-height: 100px;
+            overflow: visible;
+            transition: max-height 0.3s ease-in;
+        }
+
+        .opc_var_device_container .btn_circle_image_left {
+            width: 20px !important;
+            height: 20px !important;
+            border-radius: 50% !important;
+            position: absolute;
+            left: 2px;
+            top: 2px;
+            margin: 0 !important;
+        }
+
+        .btn_circle_image_left {
+            float: left;
+            background: #fff;
+            margin-right: 1px;
+            width: 30px;
+            height: 30px;
+        }
+
+        .btn_circle_icon_left {
+            float: left;
+            padding: 7px 0 0 0;
+            background: #fff;
+            margin-left: -11px;
+            margin-right: 1px;
+            margin-top: 2px;
+            width: 30px;
+            height: 30px;
+        }
+
+        .btn_circle_text {
+            font-size: 10pt;
+            word-wrap: break-word;
+            overflow: hidden;
+            text-align: left !important;
+            /* line-height: 1.2; */
+            padding: 2px 4px;
+            display: block;
+            width: 70%;
+        }
+
+        /* Sensor styling - vertical stacking like original - RESPONSIVE DUPLICATE REMOVED */
+        /* This duplicate CSS rule has been removed - see main responsive rule above */
+
+        .opc_var_device_container .btn_circle_text {
+            font-size: 9px !important;
+            padding: 0 2px !important;
+            margin: 0 0 0 24px !important;
+            display: inline-block;
+            vertical-align: top !important;
+            text-align: left !important;
+            line-height: 21px !important;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: calc(100% - 28px);
+        }
+
+        .opc_var_device_container .btn_circle_icon_left {
+            width: 20px !important;
+            height: 20px !important;
+            border-radius: 50% !important;
+            background: #fff !important;
+            position: absolute;
+            left: 2px;
+            top: 2px;
+            margin: 1px 2px 0 0px !important;
+            padding: 3px 0 0 0 !important;
+            text-align: center;
+            font-size: 10px !important;
+            color: #333333 !important;
+        }
+
+        .opc_var_device_container .btn_circle_image_left {
+            width: 20px !important;
+            height: 20px !important;
+            border-radius: 50% !important;
+            position: absolute;
+            left: 2px;
+            top: 2px;
+            margin: 0 !important;
+        }
+
+        /* SCROLLBAR-AWARE RESPONSIVE BREAKPOINTS FOR SENSORS */
+
+        /* Default: Single column layout that adapts to scrollbar */
+        .opc_vars_container {
+            /* Ensure scrollbar detection works properly */
+            scrollbar-width: thin; /* Firefox */
+            -ms-overflow-style: -ms-autohiding-scrollbar; /* IE/Edge */
+        }
+
+        /* When container has scrollbar, sensors adapt width automatically */
+        .opc_vars_container::-webkit-scrollbar {
+            width: 8px; /* Webkit browsers */
+        }
+
+        /* For devices with many sensors, make them smaller - ENHANCED RESPONSIVE */
+        .opc_device_container:has(.opc_vars_container span:nth-child(5)) .opc_var_device_container {
+            width: calc(50% - 4px) !important; /* Two column layout */
+            flex: 0 0 calc(50% - 4px);
+            min-height: 40px;
+            max-width: none; /* Override global max-width for multi-column */
+        }
+
+        .opc_device_container:has(.opc_vars_container span:nth-child(7)) .opc_var_device_container {
+            width: calc(33.33% - 4px) !important; /* Three column layout */
+            flex: 0 0 calc(33.33% - 4px);
+            min-height: 35px;
+            max-width: none; /* Override global max-width for multi-column */
+        }
+
+        .opc_device_container:has(.opc_vars_container span:nth-child(10)) .opc_var_device_container {
+            width: calc(25% - 4px) !important; /* Four column layout for many sensors */
+            flex: 0 0 calc(25% - 4px);
+            min-height: 30px;
+            max-width: none;
+        }
+
+        /* SIMPLE EASYADMIN FULL WIDTH OVERRIDE */
+
+        /* Override EasyAdmin's container max-width restrictions */
+        .ea-content-wrapper .container-fluid,
+        .content-wrapper .container-fluid,
+        #main .container-fluid,
+        main.container-fluid {
+            max-width: none !important;
+        }
+
+        /* Fix for device type 18 (AMB) sensors */
+        .monitoreo4 .opc_var_device_container .btn_circle_text,
+        .monitoreo6 .opc_var_device_container .btn_circle_text,
+        .monitoreo7 .opc_var_device_container .btn_circle_text {
+            font-size: 8px;
+            line-height: 1;
+            margin-top: 2px;
+        }
+
+        .mini_device {
+            width: 35px !important;
+            height: 36px !important;
+            flex: none !important;
+            max-width: none !important;
+        }
+
+        /* Mini device Bootstrap override */
+        .col-sm-1.mini_device,
+        .devices_grid_item.mini_device,
+        .cot_device_container.mini_device,
+        .opc_device_container.mini_device {
+            width: 35px !important;
+            height: 36px !important;
+            flex: none !important;
+            max-width: none !important;
+        }
+
+        /* Isotope Masonry Grid Configuration - Reverted */
+        .devices_grid {
+            position: relative;
+        }
+
+        .devices_grid_sizer {
+            width: 1px;
+            height: 0;
+        }
+
+        .devices_grid_item {
+            margin-bottom: 4px;
+            display: inline-block;
+            vertical-align: top;
+        }
+
+        .device_active .btn_circle_icon_left {
+            background: rgba(255, 255, 255, 0.81);
+        }
+
+        .filter-button-active {
+            background-color: #5bc0de !important;
+        }
+
+        .affix {
+            z-index: 1;
+            padding: 15px 5px 4px 5px;
+            top: 53px;
+        }
+
+        .icon-btn {
+            margin-left: 0px;
+        }
+
+        .mCSB_outside + .mCS-minimal.mCSB_scrollTools_vertical, .mCSB_outside + .mCS-minimal-dark.mCSB_scrollTools_vertical {
+            margin: 12px -6px;
+        }
+
+        .mCS-minimal-dark.mCSB_scrollTools .mCSB_dragger .mCSB_dragger_bar {
+            background-color: #000;
+            background-color: rgba(0, 0, 0, 0.42);
+            filter: "alpha(opacity=20)";
+            -ms-filter: "alpha(opacity=20)";
+        }
+
+        .mCS-minimal-dark.mCSB_scrollTools .mCSB_dragger:active .mCSB_dragger_bar,
+        .mCS-minimal-dark.mCSB_scrollTools .mCSB_dragger.mCSB_dragger_onDrag .mCSB_dragger_bar {
+            background-color: #000;
+            background-color: rgba(0, 0, 0, 0.9);
+            filter: "alpha(opacity=50)";
+            -ms-filter: "alpha(opacity=50)";
+        }
+
+        span.badge-expand-s {
+            width: 26px;
+            height: 21px;
+            overflow: hidden;
+        {% if transitions == 2 %} -webkit-transition: width 1s;
+            transition: width 1s;
+        {% endif %} white-space: nowrap;
+        }
+
+        span.badge-expand-s:hover {
+            width: 60px;
+        {% if transitions == 2 %} -webkit-transition: width 0.4s;
+            transition: width 0.4s;
+        {% endif %}
+        }
+
+        span.badge-expand-s:hover::after {
+            content: 'Editar';
+        }
+
+        span.badge-expand-l {
+            width: 50px;
+            height: 50px;
+            overflow: hidden;
+        {% if transitions == 2 %} -webkit-transition: all 1s;
+            transition: all 1s;
+        {% endif %} white-space: nowrap;
+            border-radius: 50%;
+            margin-top: 40%;
+        }
+
+        span.badge-expand-l:hover {
+            width: 240px;
+            height: 240px;
+        {% if transitions == 2 %} -webkit-transition: all 0.4s;
+            transition: all 0.4s;
+        {% endif %} border-radius: 50%;
+            text-align: center;
+            box-shadow: -2px 3px 9px 0px rgba(0, 0, 0, 0.35);
+            margin-top: 0;
+        }
+
+        span.badge-expand-l:hover::after {
+            content: 'Nuevo';
+            font-size: 27pt;
+        }
+
+        span.badge-expand-l:hover span {
+            margin-top: 41%;
+        }
+
+        span.badge-expand-l span {
+            margin: 6% 0 0 1px;
+        }
+
+        .device_unactive .btn_circle_icon_left {
+            /* Estilo específico para dispositivos inactivos */
+        }
+
+        .device_indeterminate {
+            text-shadow: 0 1px 0 #fff;
+            background-image: -webkit-linear-gradient(top, #f7f7f7 0, #777 100%);
+            background-image: -o-linear-gradient(top, #f7f7f7 0, #777 100%);
+            background-image: -webkit-gradient(linear, left top, left bottom, from(#f7f7f7), to(#777));
+            background-image: linear-gradient(to bottom, #f7f7f7 0, #777 100%);
+            filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffffff', endColorstr='#777', GradientType=0);
+            filter: progid:DXImageTransform.Microsoft.gradient(enabled=false);
+            background-repeat: repeat-x;
+            border-color: #ccc;
+            color: black;
+        }
+
+        .reporte-panel-expand {
+            display: block;
+        }
+
+        .reporte-panel-collapsed {
+            display: none;
+        }
+
+
+    {% set active_devices_count = 0 %}
+    {% set unactive_devices_count = 0 %}
+
+        .h1, h1 {
+        {% if videowall and fixed %} font-size: 40px;
+        {% else %} font-size: 29px;
+        {% endif %}
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        /* ---- grid ---- */
+        .grid {
+        {% if not videowall %} margin-top: 48px;
+        {% endif %}
+        }
+
+        /* clear fix */
+        .grid:after {
+            content: '';
+            display: block;
+            clear: both;
+        }
+
+        /* ---- .grid-item ---- */
+        {% set grid_items_width_px = 157.58 * grid_items_width|number_format  %}
+
+        .grid-item {
+            float: left;
+            min-width: 300px;
+            max-width: {{ grid_items_width_px }}px;
+            min-height: 80px;
+        {% if videowall and fixed %} height: 313px;
+            overflow: hidden;
+        {% endif %}
+            padding: 0px 0 5px 3px;
+            margin: 1px;
+            background-color: white;
+            width: 100%;
+            border-radius: 4px;
+            -webkit-box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.1);
+            box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.1);
+        }
+
+        .devices_grid_item {
+        {% if transitions == 0 %} transition: none !important;
+        {% elseif transitions == 1  %} transition: all 0.3s ease-out;
+        {% endif %}
+        }
+
+        .grid-item--height2 {
+            height: 200px;
+        }
+
+        .status_count {
+            font-size: 20px;
+            font-weight: 100;
+        }
+
+        .opc_device_container:focus {
+            width: 152px;
+            height: auto;
+        }
+
+        /* ---- grid ---- */
+        .devices_grid {
+            margin-top: 34px;
+        }
+
+        .devices_grid_sizer {
+            width: 1px;
+        }
+
+        /* clear fix */
+        .devices_grid:after {
+            content: '';
+            display: block;
+            clear: both;
+        }
+
+        .gallery {
+            padding: 0px;
+        }
+
+    </style>
+    {% if videowall %}
+        <style>
+            #control-panel-container, nav {
+                display: none;
+            }
+
+            html, body {
+                padding: 0 0 0 0;
+            }
+
+            body {
+                font-family: sans-serif;
+            }
+        </style>
+    {% endif %}
+{% endblock %}
+
+{% block main %}
+    {% include 'dashboard/cot/index/modern_control_panel.html.twig' %}
+
+    <main class="container-fluid px-0 py-3">
+        <div class="grid">
+            {% include 'dashboard/cot/index/devices_container.html.twig' %}
+        </div>
+    </main>
+
+    <!-- Device Details Modal -->
+    <div class="modal fade" id="deviceDetailsModal" tabindex="-1" aria-labelledby="deviceDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="deviceDetailsModalLabel">
+                        <i class="fas fa-info-circle me-2"></i>Detalles del Dispositivo
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td class="fw-bold text-muted">ID:</td>
+                                    <td id="modal-device-id">-</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold text-muted">Nombre:</td>
+                                    <td id="modal-device-nombre">-</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold text-muted">Tipo:</td>
+                                    <td id="modal-device-tipo">-</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold text-muted">Descripción:</td>
+                                    <td id="modal-device-descripcion">-</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td class="fw-bold text-muted">IP:</td>
+                                    <td id="modal-device-ip">-</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold text-muted">Estado:</td>
+                                    <td><span id="modal-device-estado" class="badge">-</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold text-muted">KM:</td>
+                                    <td id="modal-device-km">-</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold text-muted">Eje:</td>
+                                    <td id="modal-device-eje">-</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold text-muted">Tramo:</td>
+                                    <td id="modal-device-tramo">-</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cerrar
+                    </button>
+                    <button type="button" class="btn btn-primary" id="btn-edit-device">
+                        <i class="fas fa-edit me-1"></i>Editar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% include 'dashboard/cot/index/ajax_edit_popup.html.twig' %}
+    {% include 'dashboard/cot/index/ajax_report.html.twig' %}
+    {% include 'dashboard/cot/index/modern_status_footer.html.twig' %}
+{% endblock %}
+
+{% block body_javascript %}
+    {{ parent() }}
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.9.2/jquery.contextMenu.min.js"></script>
+    <script src="https://unpkg.com/isotope-layout@3/dist/isotope.pkgd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.16.0/d3.min.js"></script>
+
+    <!-- JSON Editor (Bootstrap 3 Compatible) -->
+    <script src="https://cdn.jsdelivr.net/npm/@json-editor/json-editor@latest/dist/jsoneditor.min.js"></script>
+
+    <!-- Bootstrap Slider for Controls -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/11.0.2/css/bootstrap-slider.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/11.0.2/bootstrap-slider.min.js"></script>
+
+    <script>
+        var $grid = $('.grid').isotope({
+            itemSelector: '.grid-item-block',
+            masonry: {
+                columnWidth: '.col-lg-2'
+            },
+            getSortData: {
+                status_count: '[data-order]',
+            },
+            sortBy: '[status_count]',
+            sortAscending: false,
+        });
+
+        var $devices_grid = $('.devices_grid').isotope({
+            itemSelector: '.devices_grid_item',
+            masonry: {
+                columnWidth: '.devices_grid_sizer'
+            },
+            sortBy: '[data-estado]',
+            sortAscending: true,
+        });
+
+        /********************
+         * Renderiza masonryLayout
+         * * ******************/
+        function masonryLayout() {
+            setTimeout(function () {
+                $devices_grid.isotope('layout');
+                setTimeout(function () {
+                    $grid.isotope('layout');
+                }, 500);
+            }, 250);
+        }
+
+        $(window).on("load", function () {
+            // Configurar scroll nativo para contenedores de sensores
+            $('.opc_vars_container').css({
+                'max-height': '200px',
+                'overflow-y': 'auto',
+                'scrollbar-width': 'thin'
+            });
+        });
+
+        var cot_index_ui_config = {
+            id_type: {{ id_device_type_fr }},
+            generate_pdf: false,
+            device_status: '{{ device_status }}',
+            input_device_finder: '{{ input_device_finder }}',
+            contract_ui: {% if contract_ui is defined and contract_ui is same as(true) %}true{% else %}false{% endif %},
+            videowall: {% if videowall is defined and videowall is same as(true) %}true{% else %}false{% endif %}
+        };
+
+        $(document).ready(function () {
+            $(".filter-button").click(function () {
+                if ($(".filter-button").removeClass("filter-button-active")) {
+                    $(this).removeClass("filter-button-active");
+                }
+                $(this).addClass("filter-button-active");
+                filterState();
+            });
+
+            $("#btn_device_finder").click(function (e) {
+                e.preventDefault();
+                elementsFinder();
+            });
+
+            // Control panel toggle functionality - Fixed to use correct panel ID
+            $("#btn-reporte-panel-toggle").click(function (e) {
+                e.preventDefault();
+                var expandibleDiv = $("#reporte-panel");
+                var toggleIcon = $(this).find("span");
+
+                if (expandibleDiv.hasClass("reporte-panel-collapsed")) {
+                    expandibleDiv.removeClass("reporte-panel-collapsed").addClass("reporte-panel-expand");
+                    expandibleDiv.show();
+                    toggleIcon.removeClass("glyphicon-cog").addClass("glyphicon-chevron-up");
+                } else {
+                    expandibleDiv.removeClass("reporte-panel-expand").addClass("reporte-panel-collapsed");
+                    expandibleDiv.hide();
+                    toggleIcon.removeClass("glyphicon-chevron-up").addClass("glyphicon-cog");
+                }
+            });
+
+            $("#input_device_finder").on('keyup', function () {
+                var key = event.keyCode || event.charCode;
+                if (key) {
+                    elementsFinder();
+                }
+                $("#input_device_finder").css("background-color", "#eee");
+            });
+
+            $("#id_device_type_fr").on('change', function () {
+                var id_type = $("#id_device_type_fr").val();
+                cot_index_ui_config.id_type = id_type;
+                saveUiConfig();
+                var path_url_encoded = "{{ path('admin_cot_monitor', { id: '__ID__' }) }}";
+                path_url_encoded = path_url_encoded.replace('__ID__', $(this).val());
+                window.location.replace(path_url_encoded);
+            });
+
+            SetCotDevicesTimer();
+
+            $('#contract_ui').change(function (e) {
+                e.preventDefault();
+                contractUi();
+            });
+
+            getUiConfig();
+            saveUiConfig();
+
+            // Configurar estado inicial del contract_ui (por defecto interfaz normal)
+            cot_index_ui_config.contract_ui = false;  // Forzar modo normal por defecto
+            $('#contract_ui').prop('checked', false);
+            // No llamar contractUi() para mantener dispositivos en tamaño normal
+
+            // Inicializar Bootstrap Slider para intervalo de actualización
+            if ($('#timer-range-ajax-update').length) {
+                $('#timer-range-ajax-update').slider({
+                    min: 10,
+                    max: 600,
+                    value: 60,
+                    step: 10,
+                    tooltip: 'show',
+                    formatter: function(value) {
+                        return value + ' segundos';
+                    }
+                });
+
+                // Evento para actualizar timer cuando cambia el slider
+                $('#timer-range-ajax-update').on('slide', function(slideEvt) {
+                    clearInterval(cot_devices_timer_interval);
+                    setTimeout(function() {
+                        SetCotDevicesTimer();
+                    }, 1000);
+                });
+            }
+        });
+
+        /********************
+         * Timer de ejecución periodica
+         * ******************/
+        var cot_devices_timer_interval;
+
+        function SetCotDevicesTimer() {
+            getDevicesStatus();
+            var interval = $('#timer-range-ajax-update').val() * 1000;
+            cot_devices_timer_interval = setInterval(function () {
+                if ($('#actualizacionAutomatica').is(":checked")) {
+                    getDevicesStatus();
+                }
+            }, interval);
+        }
+
+        var isGettingDevicesStatus = false;
+        function getDevicesStatus() {
+            var id = $("#id_device_type_fr").val() || 0;
+            var url_string = window.location.href;
+            var current_url = new URL(url_string);
+            var path_url = "/admin/monitor/" + id;
+            path_url = path_url + current_url.search;
+
+            if (!isGettingDevicesStatus) {
+                isGettingDevicesStatus = true;
+                $.ajax({
+                    url: path_url,
+                    type: "GET",
+                    data: { ajax: true },
+                    async: true,
+                    cache: false,
+                    dataType: 'json',
+                    success: function (response) {
+                        if (response.dispositivos && response.dispositivos.length > 0) {
+                            renderDevicesStatus(response.dispositivos, response);
+                        }
+                        isGettingDevicesStatus = false;
+                    },
+                    error: function(xhr, status, error) {
+                        console.log('Error actualizando dispositivos:', error);
+                        isGettingDevicesStatus = false;
+                    }
+                });
+            }
+        }
+
+        function renderDevicesStatus(DevicesStatusResponse, fullResponse) {
+            var active_devices_count = 0;
+            var unactive_devices_count = 0;
+
+            $.each(DevicesStatusResponse, function (i, device_status_data) {
+                var exist_el_device = ($('#device_' + device_status_data.id).length > 0);
+
+                // Hack específico para dispositivo 787 (como en el original)
+                if (device_status_data.id === 787) {
+                    device_status_data.estado = 1;
+                }
+
+                // Si el dispositivo existe en el DOM
+                if (exist_el_device) {
+                    var el_device = $('#device_' + device_status_data.id);
+                    el_device.attr('title', device_status_data.ip);
+
+                    /********************
+                     * Renderiza Espiras
+                     * ******************/
+                    if (device_status_data.idTipo.metodoMonitoreo === 4 ||
+                        device_status_data.idTipo.metodoMonitoreo === 6 ||
+                        device_status_data.idTipo.metodoMonitoreo === 7) {
+
+                        el_device.attr('title', device_status_data.nombre);
+                        var obj_vars;
+                        try {
+                            if (device_status_data.atributos &&
+                                (obj_vars = JSON.parse(device_status_data.atributos).sensors)) {
+
+                                $.each(obj_vars, function (i, obj_var) {
+                                    var el_obj_var_id = "esp_" + device_status_data.id + "_sen_" + obj_var.id;
+                                    var el_obj_var = el_device.find("#" + el_obj_var_id);
+
+                                    if (obj_var.status === 1) {
+                                        el_obj_var.removeClass('btn-danger btn-warning device-color-danger device-color-warning');
+                                        el_obj_var.addClass('btn-success device-color-success');
+                                    } else if (obj_var.status === 0) {
+                                        el_obj_var.removeClass('btn-success btn-danger device-color-success device-color-danger');
+                                        el_obj_var.addClass('btn-warning device-color-warning');
+                                    } else if (obj_var.status === -1) {
+                                        el_obj_var.removeClass('btn-success btn-warning device-color-success device-color-warning');
+                                        el_obj_var.addClass('btn-danger device-color-danger');
+                                    }
+
+                                    el_obj_var.children('.btn_circle_text').text(obj_var.name);
+                                    el_obj_var.attr('title', obj_var.name);
+                                });
+                            }
+                        } catch (e) {
+                            console.log('Error parsing espiras sensors:', e);
+                        }
+                    }
+                    /********************
+                     * Renderiza dispositivos OPC
+                     * ******************/
+                    else if (device_status_data.idTipo.metodoMonitoreo === 3) {
+                        el_device.attr('title', device_status_data.nombre);
+                        var opc_vars;
+                        try {
+                            if (device_status_data.atributos &&
+                                (opc_vars = JSON.parse(device_status_data.atributos).opc_vars)) {
+
+                                $.each(opc_vars, function (i, opc_var) {
+                                    var el_opc_var_id = opc_var.opc_var.replace(/[^a-zA-Z0-9]/g, "-");
+                                    var el_opc_var = el_device.find("#" + el_opc_var_id);
+
+                                    if (opc_var.opc_value === opc_var.result_success_value) {
+                                        el_opc_var.removeClass('btn-danger btn-warning device_indeterminate device-color-danger device-color-warning device-color-indeterminate');
+                                        el_opc_var.addClass('btn-success device-color-success waves-effect waves-light');
+                                    } else if (opc_var.opc_value === 2) {
+                                        el_opc_var.removeClass('btn-danger btn-success device-color-danger device-color-success');
+                                        el_opc_var.addClass('device_indeterminate device-color-indeterminate waves-effect waves-light');
+                                    } else {
+                                        el_opc_var.removeClass('btn-success btn-warning device_indeterminate device-color-success device-color-warning device-color-indeterminate');
+                                        el_opc_var.addClass('btn-danger device-color-danger waves-effect waves-light');
+                                    }
+
+                                    el_opc_var.children('.btn_circle_text').text(opc_var.name);
+                                    el_opc_var.attr('title', opc_var.opc_var);
+                                });
+                            }
+                        } catch (e) {
+                            console.log('Error parsing OPC vars:', e);
+                        }
+                    }
+
+                    /********************
+                     * Actualizar estado principal del dispositivo
+                     * ******************/
+                    el_device.removeClass('device_active device_unactive btn-success btn-danger btn-warning device-color-success device-color-danger device-color-warning device-color-indeterminate');
+
+                    // Implement different color schemes based on monitoring method
+                    var isEspiraDevice = (device_status_data.idTipo.metodoMonitoreo === 4 ||
+                                        device_status_data.idTipo.metodoMonitoreo === 6 ||
+                                        device_status_data.idTipo.metodoMonitoreo === 7);
+
+                    if (device_status_data.estado === 1) {
+                        el_device.addClass('device_active btn-success device-color-success waves-effect waves-light');
+                        active_devices_count++;
+                    } else if (device_status_data.estado === 0) {
+                        if (isEspiraDevice) {
+                            // Espiras: estado 0 = yellow (warning)
+                            el_device.addClass('device_unactive btn-warning device-color-warning waves-effect waves-light');
+                        } else {
+                            // Normal devices: estado 0 = red (danger)
+                            el_device.addClass('device_unactive btn-danger device-color-danger waves-effect waves-light');
+                        }
+                        unactive_devices_count++;
+                    } else if (device_status_data.estado === -1) {
+                        // Both device types: estado -1 = red (danger)
+                        el_device.addClass('device_unactive btn-danger device-color-danger waves-effect waves-light');
+                        unactive_devices_count++;
+                    } else if (device_status_data.estado === 2) {
+                        el_device.addClass('device_indeterminate device-color-indeterminate waves-effect waves-light');
+                    }
+
+                    // Actualizar data attributes
+                    el_device.attr('data-estado', device_status_data.estado);
+                }
+            });
+
+            // Actualizar contadores en la UI
+            $('#count_active_devices').text(active_devices_count);
+            $('#count_unactive_devices').text(unactive_devices_count);
+
+            // Recalcular layout después de los cambios
+            masonryLayout();
+
+            console.log('Estados actualizados:', active_devices_count, 'activos,', unactive_devices_count, 'inactivos');
+        }
+
+        function filterState() {
+            var btn_filter = $(".filter-button.filter-button-active");
+            var btn_filter_type = btn_filter.data('device_type');
+            var btn_filter_value = btn_filter.data('filter');
+            var input_device_finder = $("#input_device_finder");
+
+            if (input_device_finder.val().length >= 2) {
+                elementsFinder();
+            } else {
+                if (btn_filter_value === "all") {
+                    $('.cot_device_container, .opc_device_container').show();
+                } else {
+                    $(".cot_device_container, .opc_device_container").not('.' + btn_filter_value).hide();
+                    $('.cot_device_container, .opc_device_container').filter('.' + btn_filter_value).show();
+                }
+            }
+            cot_index_ui_config.device_status = btn_filter_value;
+            saveUiConfig();
+        }
+
+        function elementsFinder() {
+            var input_device_finder = $("#input_device_finder");
+            var btn_filter = $(".filter-button.filter-button-active");
+            var btn_filter_value = btn_filter.data('filter');
+
+            if (input_device_finder.val().length >= 2) {
+                var str_searched = input_device_finder.val().toLowerCase();
+
+                $('.cot_device_container, .opc_device_container').each(function (i, device) {
+                    var d_nombre = String($(device).data('nombre'));
+                    var d_descripcion = String($(device).data('descripcion'));
+                    var d_ip = String($(device).data('ip'));
+
+                    if ((d_nombre !== null && d_nombre.toLowerCase().indexOf(str_searched) >= 0) ||
+                        (d_descripcion !== null && d_descripcion.toLowerCase().indexOf(str_searched) >= 0) ||
+                        (d_ip !== null && d_ip.toLowerCase().indexOf(str_searched) >= 0)) {
+
+                        if (btn_filter_value === "all") {
+                            $(device).show();
+                        } else {
+                            if ($(device).hasClass(btn_filter_value)) {
+                                $(device).show();
+                            } else {
+                                $(device).hide();
+                            }
+                        }
+                    } else {
+                        $(device).hide();
+                    }
+                });
+            } else if (input_device_finder.val().length === 0) {
+                $('.cot_device_container, .opc_device_container').show();
+            } else {
+                filterState();
+            }
+            cot_index_ui_config.input_device_finder = input_device_finder.val();
+            saveUiConfig();
+        }
+
+        function contractUi() {
+            var contract_ui = $('#contract_ui').is(":checked");
+            if (contract_ui) {
+                $('.cot_device_container, .opc_device_container').each(function (i, device) {
+                    if (!$(device).hasClass('device_unactive')) {
+                        $(device).addClass('mini_device');
+                    } else {
+                        $(device).removeClass('mini_device');
+                    }
+                });
+            } else {
+                $('.cot_device_container, .opc_device_container').removeClass('mini_device');
+            }
+            cot_index_ui_config.contract_ui = contract_ui;
+
+            // Force style recalculation by triggering reflow
+            $('.cot_device_container, .opc_device_container').each(function() {
+                this.offsetHeight; // Force reflow
+            });
+
+            // Llamar inmediatamente a masonryLayout para recalcular el grid
+            masonryLayout();
+
+            // Forzar redibujado de Isotope después de cambios de CSS
+            setTimeout(function() {
+                if (typeof $grid !== 'undefined' && $grid) {
+                    $grid.isotope('layout');
+                }
+            }, 50);
+
+            // Guardar configuración después del layout
+            setTimeout(function () {
+                saveUiConfig();
+            }, 100);
+            return true;
+        }
+
+        function saveUiConfig() {
+            masonryLayout();
+        }
+
+        function getUiConfig() {
+            if (cot_index_ui_config.videowall) {
+                saveUiConfig();
+            }
+
+            try {
+                if (cot_index_ui_config.device_status === 'all') {
+                    $('#btn_show_all').click();
+                } else if (cot_index_ui_config.device_status === 'device_active') {
+                    $('#btn_show_actives').click();
+                } else if (cot_index_ui_config.device_status === 'device_unactive') {
+                    $('#btn_show_unactives').click();
+                } else {
+                    $('#btn_show_unactives').click();
+                }
+
+                if (cot_index_ui_config.input_device_finder.length >= 2) {
+                    $('#input_device_finder').val(cot_index_ui_config.input_device_finder);
+                    elementsFinder();
+                }
+
+                $('#contract_ui').attr('checked', cot_index_ui_config.contract_ui).triggerHandler('change');
+            } catch (ex) {
+                console.log('Error configurando UI:', ex);
+            }
+            masonryLayout();
+        }
+
+        function generarReporteDispositivos() {
+            clearInterval(cot_devices_timer_interval);
+            var generate_pdf = $('#generatePDF').is(":checked");
+            var id_type = $("#id_device_type_fr").val();
+            var btn_filter = $(".filter-button.filter-button-active");
+            var btn_filter_value = btn_filter.data('filter');
+
+            alert('Generando reporte PDF para tipo: ' + id_type + ', filtro: ' + btn_filter_value);
+            SetCotDevicesTimer();
+        }
+
+        $('.devices_grid_item').hover(function () {
+            if (!!$(this).hasClass('mini_device')) {
+                masonryLayout();
+            }
+        });
+
+        // Funciones secundarias - Click en dispositivos
+        $('.cot_device_container, .opc_device_container').on('click', function (e) {
+            if ($(this).hasClass('active')) {
+                $(this).removeClass('active');
+            } else {
+                $(this).addClass('active');
+            }
+        });
+
+        // Context menu para dispositivos (click derecho)
+        $.contextMenu({
+            selector: '.cot_device_container, .opc_device_container',
+            callback: function(key, options) {
+                var device = this;
+                switch(key) {
+                    case "details":
+                        showDeviceDetails(device);
+                        break;
+                    case "edit":
+                        editDevice(device);
+                        break;
+                    case "report":
+                        generateDeviceReport(device);
+                        break;
+                }
+            },
+            items: {
+                "details": {
+                    name: "Detalles",
+                    icon: "fa-info-circle"
+                },
+                "edit": {
+                    name: "Editar",
+                    icon: "fa-edit"
+                },
+                "report": {
+                    name: "Generar Reporte",
+                    icon: "fa-file-pdf-o"
+                }
+            }
+        });
+
+        // Función para mostrar detalles del dispositivo (formato original modernizado)
+        function showDeviceDetails(device) {
+            var targetObjDevice = device;
+
+            // Construir el HTML exactamente como el original pero con Bootstrap 5
+            var info = '<div>' +
+                '<table class="table table-striped">' +
+                '<tr>' +
+                '<th>Tipo:</th><td>' + ($(targetObjDevice).data('nombre_tipo') || '-') + '</td>' +
+                '</tr>' +
+                '<tr>' +
+                '<th>Tag:</th><td>' + ($(targetObjDevice).data('nombre') || '-') + '</td>' +
+                '</tr>' +
+                '<tr>' +
+                '<th>Descripción:</th><td>' + ($(targetObjDevice).data('descripcion') || '-') + '</td>' +
+                '</tr>' +
+                '<tr>' +
+                '<th>IP:</th><td>' + ($(targetObjDevice).data('ip') || '-') + '</td>' +
+                '</tr>' +
+                '<tr>' +
+                '<th>Eje:</th><td>' + ($(targetObjDevice).data('eje') || '-') + '</td>' +
+                '</tr>' +
+                '<tr>' +
+                '<th>Tramo:</th><td>' + ($(targetObjDevice).data('tramo') || '-') + '</td>' +
+                '</tr>' +
+                '<tr>' +
+                '<th>Kilómetro:</th><td>' + ($(targetObjDevice).data('km') || '-') + '</td>' +
+                '</tr>' +
+                '<tr>' +
+                '<th>Orientación:</th><td>' + ($(targetObjDevice).data('orientacion') || '-') + '</td>' +
+                '</tr>' +
+                '</table>' +
+                '</div>';
+
+            // Actualizar contenido del modal Bootstrap
+            $('#deviceDetailsModalLabel').html('<i class="fas fa-info-circle me-2"></i>Información de: ' + ($(targetObjDevice).data('nombre') || 'Dispositivo'));
+            $('#deviceDetailsModal .modal-body').html(info);
+
+            // Configurar botón editar
+            $('#btn-edit-device').off('click').on('click', function() {
+                $('#deviceDetailsModal').modal('hide');
+                editDevice($(targetObjDevice).data('id'));
+            });
+
+            // Mostrar modal
+            $('#deviceDetailsModal').modal('show');
+        }
+
+        // Función para editar dispositivo
+        function editDevice(device) {
+            var deviceId = $(device).data('id');
+            var deviceData = {
+                id: $(device).data('id'),
+                nombre: $(device).data('nombre'),
+                descripcion: $(device).data('descripcion'),
+                ip: $(device).data('ip'),
+                km: $(device).data('km'),
+                orientacion: $(device).data('orientacion'),
+                estado: $(device).data('estado'),
+                atributos: $(device).data('atributos') || '{}'
+            };
+
+            // Mostrar modal de edición
+            showDeviceEditModal(deviceData);
+        }
+
+        // Variable global para el editor JSON
+        var jsonEditor = null;
+
+        // Función para mostrar modal de edición
+        function showDeviceEditModal(deviceData) {
+            // Llenar campos del formulario
+            $('#device_name').val(deviceData.nombre);
+            $('#device_description').val(deviceData.descripcion);
+            $('#device_ip').val(deviceData.ip);
+            $('#device_km').val(deviceData.km);
+            $('#device_orientation').val(deviceData.orientacion);
+            $('#device_status').val(deviceData.estado);
+
+            // Inicializar JSON Editor
+            initializeJsonEditor(deviceData.atributos);
+
+            // Mostrar modal
+            $('#ajax_edit_popup').show(300);
+            $('#dialog-bg').show();
+            $('body').css({'overflow': 'hidden'});
+        }
+
+        // Función para inicializar el JSON Editor
+        function initializeJsonEditor(attributesJson) {
+            // Limpiar editor anterior si existe
+            if (jsonEditor) {
+                jsonEditor.destroy();
+            }
+
+            var startValue = {};
+            try {
+                if (attributesJson && attributesJson !== '{}') {
+                    startValue = JSON.parse(attributesJson);
+                }
+            } catch (e) {
+                console.log('Error parsing JSON attributes:', e);
+                startValue = {};
+            }
+
+            // Configurar esquema para el editor JSON
+            var schema = {
+                "type": "object",
+                "title": "Atributos del Dispositivo",
+                "properties": {
+                    "opc_vars": {
+                        "type": "array",
+                        "title": "Variables OPC",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "opc_var": {"type": "string", "title": "Variable OPC"},
+                                "name": {"type": "string", "title": "Nombre"},
+                                "opc_value": {"type": "number", "title": "Valor OPC"},
+                                "result_success_value": {"type": "number", "title": "Valor de Éxito"}
+                            }
+                        }
+                    },
+                    "sensors": {
+                        "type": "array",
+                        "title": "Sensores",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {"type": "number", "title": "ID"},
+                                "name": {"type": "string", "title": "Nombre"},
+                                "orden": {"type": "number", "title": "Orden"},
+                                "status": {"type": "number", "title": "Estado"}
+                            }
+                        }
+                    }
+                }
+            };
+
+            // Inicializar JSON Editor
+            jsonEditor = new JSONEditor(document.getElementById('json_editor_container'), {
+                schema: schema,
+                startval: startValue,
+                theme: 'bootstrap3',
+                iconlib: 'fontawesome4',
+                show_errors: 'always',
+                disable_edit_json: false,
+                disable_properties: false
+            });
+        }
+
+        // Función para guardar dispositivo
+        $(document).on('click', '#btn_save_device', function() {
+            if (jsonEditor) {
+                var jsonData = jsonEditor.getValue();
+                var formData = {
+                    nombre: $('#device_name').val(),
+                    descripcion: $('#device_description').val(),
+                    ip: $('#device_ip').val(),
+                    km: $('#device_km').val(),
+                    orientacion: $('#device_orientation').val(),
+                    estado: $('#device_status').val(),
+                    atributos: JSON.stringify(jsonData)
+                };
+
+                console.log('Datos para guardar:', formData);
+                alert('Guardando dispositivo...\n' + JSON.stringify(formData, null, 2));
+
+                // TODO: Implementar AJAX para guardar cambios
+
+                // Debug 1: Verificar jQuery
+                console.log('=== AJAX DEBUG START ===');
+                console.log('jQuery available:', typeof $ !== 'undefined');
+                console.log('jQuery version:', typeof $ !== 'undefined' ? $.fn.jquery : 'N/A');
+
+                // Debug 2: Test llamada AJAX al endpoint
+                if (typeof $ !== 'undefined') {
+                    var testUrl = '/admin/monitor/0';
+                    console.log('Testing AJAX endpoint:', testUrl);
+
+                    $.ajax({
+                        url: testUrl,
+                        type: 'GET',
+                        data: { ajax: true },
+                        dataType: 'json',
+                        success: function(response) {
+                            // Debug 3: Log de respuesta completa
+                            console.log('AJAX SUCCESS - Response keys:', Object.keys(response));
+                            console.log('Dispositivos count:', response.dispositivos ? response.dispositivos.length : 'N/A');
+                            console.log('Device status:', response.device_status);
+                            console.log('Real mode:', response.real_mode);
+                            console.log('Count status type:', response.count_status_type);
+                            console.log('Active devices:', response.active_devices_count);
+                            console.log('Inactive devices:', response.unactive_devices_count);
+                            console.log('Timestamps - Stentofon:', response.StentofonLastUpdateDateTime);
+                            console.log('Timestamps - SwIp:', response.SwIpDevicesMonitorLastUpdateDateTime);
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('AJAX ERROR:', {
+                                status: xhr.status,
+                                statusText: xhr.statusText,
+                                error: error,
+                                responseText: xhr.responseText ? xhr.responseText.substring(0, 200) + '...' : 'N/A'
+                            });
+                        }
+                    });
+                } else {
+                    console.error('jQuery not available for AJAX test');
+                }
+                console.log('=== AJAX DEBUG END ===');
+
+                // Cerrar modal por ahora
+                $('#ajax_edit_popup').hide(300);
+                $('#dialog-bg').hide();
+                $('body').css({'overflow': 'auto'});
+            }
+        });
+
+        // Función para generar reporte de dispositivo
+        function generateDeviceReport(device) {
+            var deviceId = $(device).data('id');
+            alert('Generando reporte para dispositivo ID: ' + deviceId);
+            // TODO: Implementar generación de reporte específico
+        }
+    </script>
+{% endblock %}

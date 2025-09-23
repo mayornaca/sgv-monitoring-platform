@@ -1,0 +1,59 @@
+{% extends '@EasyAdmin/page/login.html.twig' %}
+
+{% block page_title %}SGV - Login{% endblock %}
+
+{% block logo %}
+    <div class="text-center mb-4">
+        <h1 class="h3 font-weight-bold">SGV</h1>
+        <p class="text-muted">Sistema de Monitoreo</p>
+    </div>
+{% endblock %}
+
+{% block login_form %}
+    {% if error %}
+        <div class="alert alert-danger rounded mb-3">
+            {{ error.messageKey|trans(error.messageData, 'security') }}
+        </div>
+    {% endif %}
+
+    <form method="post" action="{{ path('app_login') }}">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+        
+        <div class="form-group">
+            <label for="username" class="form-label">
+                <i class="fas fa-user"></i> {{ 'login.username'|trans({}, 'admin') }}
+            </label>
+            <input type="text" id="username" name="_username" class="form-control" 
+                   value="{{ last_username }}" required autofocus autocomplete="username">
+        </div>
+
+        <div class="form-group">
+            <label for="password" class="form-label">
+                <i class="fas fa-lock"></i> {{ 'login.password'|trans({}, 'admin') }}
+            </label>
+            <input type="password" id="password" name="_password" class="form-control" 
+                   required autocomplete="current-password">
+        </div>
+
+        <div class="form-group">
+            <div class="custom-control custom-checkbox">
+                <input type="checkbox" name="_remember_me" class="custom-control-input" id="remember_me">
+                <label class="custom-control-label" for="remember_me">
+                    {{ 'login.remember_me'|trans({}, 'admin') }}
+                </label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <button type="submit" class="btn btn-primary btn-lg btn-block">
+                <i class="fas fa-sign-in-alt"></i> {{ 'login.sign_in'|trans({}, 'admin') }}
+            </button>
+        </div>
+
+        <div class="form-group text-center">
+            <a href="{{ path('app_forgot_password') }}" class="text-primary">
+                {{ 'login.forgot_password'|trans({}, 'admin') }}
+            </a>
+        </div>
+    </form>
+{% endblock %}
