@@ -102,6 +102,121 @@ class {EntityName}ApiTest extends TestCase
 }
 ```
 
+### **Behavior-Driven Testing Pattern (BDD)**
+```php
+// Focus on behavior rather than implementation
+class DeviceMonitoringBehaviorTest extends TestCase
+{
+    /** @test */
+    public function it_should_detect_device_offline_after_3_failed_pings(): void
+    {
+        // Arrange - Set up the scenario
+        $device = $this->createDevice(['status' => 'online']);
+        $pingService = $this->createMockPingService();
+        $pingService->willFailPings(3);
+
+        // Act - Execute the behavior
+        $monitor = new DeviceMonitoringService($pingService);
+        $monitor->checkDevice($device);
+
+        // Assert - Verify the expected behavior
+        $this->assertEquals('offline', $device->getStatus());
+        $this->assertDeviceAlertWasSent($device);
+    }
+
+    /** @test */
+    public function it_should_maintain_online_status_for_intermittent_failures(): void
+    {
+        // Arrange
+        $device = $this->createDevice(['status' => 'online']);
+        $pingService = $this->createMockPingService();
+        $pingService->willFailPings(2); // Less than threshold
+
+        // Act
+        $monitor = new DeviceMonitoringService($pingService);
+        $monitor->checkDevice($device);
+
+        // Assert
+        $this->assertEquals('online', $device->getStatus());
+        $this->assertNoAlertWasSent();
+    }
+}
+```
+
+### **Property-Based Testing Pattern**
+```php
+// Test with random data to find edge cases
+class DeviceValidationPropertyTest extends TestCase
+{
+    /** @test */
+    public function device_names_should_always_be_sanitized(): void
+    {
+        $this->forAll(
+            Generator::string()->withCharset('!@#$%^&*()'),
+            Generator::int(1, 1000)
+        )->then(function (string $unsafeName, int $id) {
+            $device = new Device($id, $unsafeName);
+
+            $sanitizedName = $device->getName();
+
+            // Property: sanitized names should never contain special chars
+            $this->assertStringNotContainsAny(['<', '>', '&', '"'], $sanitizedName);
+            $this->assertNotEmpty($sanitizedName);
+        });
+    }
+}
+```
+
+### **Test Impact Analysis Pattern**
+```php
+// Intelligent test selection based on code changes
+class TestImpactAnalyzer
+{
+    public function selectTestsForChanges(array $changedFiles): array
+    {
+        $testsToRun = [];
+
+        foreach ($changedFiles as $file) {
+            // Direct test files
+            if ($this->isTestFile($file)) {
+                $testsToRun[] = $file;
+                continue;
+            }
+
+            // Find related tests
+            $relatedTests = $this->findTestsForSourceFile($file);
+            $testsToRun = array_merge($testsToRun, $relatedTests);
+
+            // Integration tests for API changes
+            if ($this->isApiController($file)) {
+                $testsToRun = array_merge($testsToRun, $this->getApiIntegrationTests());
+            }
+
+            // Full test suite for critical files
+            if ($this->isCriticalFile($file)) {
+                return $this->getAllTests();
+            }
+        }
+
+        return array_unique($testsToRun);
+    }
+
+    private function findTestsForSourceFile(string $sourceFile): array
+    {
+        // Map source files to their test files
+        $testFile = str_replace('src/', 'tests/', $sourceFile);
+        $testFile = str_replace('.php', 'Test.php', $testFile);
+
+        if (file_exists($testFile)) {
+            return [$testFile];
+        }
+
+        // Find tests that import this class
+        return $this->findTestsImporting($sourceFile);
+    }
+}
+```
+
 ### **Service Testing Template**
 ```php
 // Business logic testing pattern
