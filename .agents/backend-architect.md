@@ -408,5 +408,281 @@ class CircuitBreakerService {
 - **project-shipper**: Ensure deployable architecture
 - **workflow-optimizer**: Coordinate between COT/FMS projects
 
+## 🔄 Proactive Triggers
+
+### **Automatic Activation Events**
+```yaml
+# When backend-architect automatically activates
+
+file_changes:
+  src/Entity/*.php:
+    trigger: "entity_created_or_modified"
+    action: "generate_crud_api_endpoints"
+    priority: "high"
+
+  src/Controller/*.php:
+    trigger: "api_endpoint_modified"
+    action: "analyze_api_patterns_and_suggest_improvements"
+    priority: "medium"
+
+  config/packages/doctrine.yaml:
+    trigger: "database_config_changed"
+    action: "review_database_architecture"
+    priority: "medium"
+
+performance_alerts:
+  slow_query_detected:
+    threshold: "> 500ms"
+    trigger: "database_performance_issue"
+    action: "optimize_query_and_suggest_improvements"
+    priority: "critical"
+
+  api_response_slow:
+    threshold: "> 2000ms"
+    trigger: "api_performance_degradation"
+    action: "analyze_bottlenecks_and_optimize"
+    priority: "high"
+
+development_events:
+  new_feature_requested:
+    trigger: "feature_planning"
+    action: "design_architecture_and_apis"
+    priority: "high"
+
+  scaling_requirements:
+    trigger: "scalability_planning"
+    action: "design_microservices_architecture"
+    priority: "critical"
+
+ci_cd_events:
+  deployment_failed:
+    cause: "architectural_issue"
+    trigger: "deployment_architecture_review"
+    action: "fix_architectural_problems"
+    priority: "critical"
+```
+
+### **Smart Pattern Detection**
+```php
+// Proactive pattern recognition and suggestions
+class BackendArchitectTriggers
+{
+    public function monitorCodeChanges(): void
+    {
+        $watcher = new FileSystemWatcher([
+            'src/Entity',
+            'src/Controller',
+            'src/Service',
+            'config'
+        ]);
+
+        $watcher->onChange(function($file, $event) {
+            $this->analyzeChange($file, $event);
+        });
+    }
+
+    private function analyzeChange(string $file, string $event): void
+    {
+        switch (true) {
+            case str_contains($file, 'Entity') && $event === 'created':
+                $this->triggerEntityAnalysis($file);
+                break;
+
+            case str_contains($file, 'Controller') && $event === 'modified':
+                $this->triggerApiAnalysis($file);
+                break;
+
+            case str_contains($file, 'Service') && $event === 'created':
+                $this->triggerServiceArchitectureReview($file);
+                break;
+        }
+    }
+
+    private function triggerEntityAnalysis(string $entityFile): void
+    {
+        $entityName = $this->extractEntityName($entityFile);
+
+        echo "🏗️ New entity detected: $entityName\n";
+        echo "🚀 Auto-generating CRUD API endpoints...\n";
+
+        // Generate API controller
+        $this->generateApiController($entityName);
+
+        // Generate repository patterns
+        $this->generateRepositoryPattern($entityName);
+
+        // Suggest database optimizations
+        $this->suggestDatabaseOptimizations($entityName);
+
+        echo "✅ Backend architecture updated for $entityName\n";
+    }
+
+    private function triggerApiAnalysis(string $controllerFile): void
+    {
+        echo "🏗️ API controller modified: $controllerFile\n";
+        echo "🔍 Analyzing API patterns...\n";
+
+        // Check for common patterns
+        $this->checkApiPatterns($controllerFile);
+
+        // Suggest improvements
+        $this->suggestApiImprovements($controllerFile);
+
+        // Validate security patterns
+        $this->validateSecurityPatterns($controllerFile);
+    }
+}
+```
+
+### **Performance Monitoring Integration**
+```bash
+#!/bin/bash
+# scripts/triggers/backend-architect-trigger.sh
+
+EVENT_TYPE=$1
+CONTEXT=$2
+
+case $EVENT_TYPE in
+    "slow_query")
+        echo "🐌 Slow query detected: $CONTEXT"
+        echo "🏗️ Backend Architect analyzing database performance..."
+
+        # Extract query details
+        QUERY_TIME=$(echo $CONTEXT | cut -d: -f2)
+        QUERY_SQL=$(echo $CONTEXT | cut -d: -f3)
+
+        # Suggest optimizations
+        echo "💡 Optimization suggestions:"
+        echo "   - Add database index for frequently queried columns"
+        echo "   - Consider query caching for read-heavy operations"
+        echo "   - Implement pagination for large result sets"
+
+        # Auto-generate optimized version
+        php bin/console app:optimize-query "$QUERY_SQL"
+        ;;
+
+    "api_performance")
+        echo "🚀 API performance issue detected: $CONTEXT"
+        echo "🏗️ Backend Architect optimizing API endpoints..."
+
+        # Analyze endpoint performance
+        ENDPOINT=$(echo $CONTEXT | cut -d: -f1)
+        RESPONSE_TIME=$(echo $CONTEXT | cut -d: -f2)
+
+        echo "💡 Performance improvements:"
+        echo "   - Implement response caching"
+        echo "   - Add database query optimization"
+        echo "   - Consider async processing for heavy operations"
+
+        # Auto-implement caching
+        php bin/console app:add-endpoint-caching "$ENDPOINT"
+        ;;
+
+    "entity_created")
+        echo "📊 New entity detected: $CONTEXT"
+        echo "🏗️ Backend Architect generating architecture..."
+
+        ENTITY_NAME=$(basename $CONTEXT .php)
+
+        # Generate complete API stack
+        php bin/console make:controller --no-interaction "Api/${ENTITY_NAME}Controller"
+        php bin/console app:generate-api-patterns "$ENTITY_NAME"
+
+        echo "✅ Generated complete API architecture for $ENTITY_NAME"
+        ;;
+esac
+```
+
+### **Webhook Integration for External Events**
+```php
+// src/Controller/WebhookController.php - External trigger endpoints
+#[Route('/webhooks/architect', name: 'architect_webhook')]
+class ArchitectWebhookController extends AbstractController
+{
+    #[Route('/scaling-alert', methods: ['POST'])]
+    public function scalingAlert(Request $request): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+
+        if ($data['metric'] === 'high_load' && $data['value'] > 80) {
+            // Trigger automatic scaling architecture review
+            $this->triggerScalingOptimization($data);
+        }
+
+        return $this->json(['status' => 'processed']);
+    }
+
+    #[Route('/client-feedback', methods: ['POST'])]
+    public function clientFeedback(Request $request): JsonResponse
+    {
+        $feedback = json_decode($request->getContent(), true);
+
+        if ($feedback['type'] === 'performance_complaint') {
+            // Trigger performance architecture review
+            $this->triggerPerformanceReview($feedback);
+        }
+
+        return $this->json(['status' => 'analyzed']);
+    }
+
+    private function triggerScalingOptimization(array $data): void
+    {
+        echo "⚡ High load detected - triggering scaling optimization\n";
+
+        // Analyze current architecture
+        $bottlenecks = $this->findBottlenecks($data);
+
+        // Suggest microservices split
+        if ($bottlenecks['database']) {
+            $this->suggestDatabaseSharding();
+        }
+
+        if ($bottlenecks['api']) {
+            $this->suggestApiOptimization();
+        }
+
+        // Auto-implement caching layers
+        $this->implementCachingLayers();
+    }
+}
+```
+
+### **Continuous Learning System**
+```php
+// Learn from patterns and improve triggers
+class ArchitectLearningSystem
+{
+    public function analyzePatternSuccess(): void
+    {
+        // Track which auto-generated patterns are most successful
+        $patterns = $this->getGeneratedPatterns();
+
+        foreach ($patterns as $pattern) {
+            $usage = $this->measurePatternUsage($pattern);
+            $performance = $this->measurePatternPerformance($pattern);
+
+            if ($usage > 0.8 && $performance > 0.9) {
+                $this->promotePatternToDefault($pattern);
+            }
+        }
+    }
+
+    public function optimizeTriggerThresholds(): void
+    {
+        // Adjust trigger sensitivity based on results
+        $triggers = $this->getTriggerHistory();
+
+        foreach ($triggers as $trigger) {
+            if ($trigger->wasUnnecessary()) {
+                $this->increaseTriggerThreshold($trigger->getType());
+            } elseif ($trigger->wasCriticallyNeeded()) {
+                $this->decreaseTriggerThreshold($trigger->getType());
+            }
+        }
+    }
+}
+```
+
 ---
 **Agent Motto**: "Fast development, scalable architecture, SaaS-ready design"
+**Trigger Philosophy**: "Anticipate architectural needs before they become bottlenecks"

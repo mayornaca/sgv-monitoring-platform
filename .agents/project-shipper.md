@@ -716,5 +716,425 @@ git push origin main
 - **test-writer-fixer**: Quality gates before deployment
 - **workflow-optimizer**: Coordinate deployments across projects
 
+## 🔄 Proactive Triggers
+
+### **Automatic Activation Events**
+```yaml
+# When project-shipper automatically activates
+
+ci_cd_events:
+  build_success:
+    branch: "main"
+    trigger: "production_deployment_ready"
+    action: "initiate_phased_deployment"
+    priority: "high"
+
+  build_success:
+    branch: "develop"
+    trigger: "staging_deployment_ready"
+    action: "deploy_to_staging_environment"
+    priority: "medium"
+
+  build_failure:
+    trigger: "deployment_blocked"
+    action: "analyze_failure_and_prevent_deployment"
+    priority: "critical"
+
+monitoring_alerts:
+  high_error_rate:
+    threshold: "> 5% in 5 minutes"
+    trigger: "stability_issue_detected"
+    action: "consider_rollback_or_traffic_reduction"
+    priority: "critical"
+
+  response_time_degradation:
+    threshold: "> 2000ms average"
+    trigger: "performance_degradation"
+    action: "scale_resources_or_rollback"
+    priority: "high"
+
+  server_resource_exhaustion:
+    threshold: "> 90% CPU/Memory"
+    trigger: "resource_exhaustion"
+    action: "auto_scale_infrastructure"
+    priority: "critical"
+
+deployment_schedule:
+  scheduled_deployment:
+    trigger: "deployment_window_open"
+    action: "execute_planned_deployment"
+    priority: "high"
+
+  maintenance_window:
+    trigger: "maintenance_mode_required"
+    action: "coordinate_maintenance_deployment"
+    priority: "medium"
+
+security_events:
+  vulnerability_detected:
+    trigger: "security_vulnerability"
+    action: "emergency_security_patch"
+    priority: "critical"
+
+  ssl_certificate_expiring:
+    threshold: "< 30 days"
+    trigger: "certificate_renewal_required"
+    action: "renew_ssl_certificates"
+    priority: "high"
+```
+
+### **Smart Deployment Decision Engine**
+```php
+// Proactive deployment management
+class ProjectShipperTriggers
+{
+    public function monitorDeploymentTriggers(): void
+    {
+        // Monitor CI/CD pipeline status
+        $this->scheduler->schedule(function() {
+            $this->checkCIStatus();
+        })->everyMinute();
+
+        // Monitor application health
+        $this->scheduler->schedule(function() {
+            $this->checkApplicationHealth();
+        })->everyFiveMinutes();
+
+        // Monitor infrastructure metrics
+        $this->scheduler->schedule(function() {
+            $this->checkInfrastructureHealth();
+        })->everyMinute();
+    }
+
+    private function checkCIStatus(): void
+    {
+        $latestBuild = $this->getCIStatus();
+
+        if ($latestBuild->isSuccessful() && $latestBuild->getBranch() === 'main') {
+            if ($this->isDeploymentWindowOpen()) {
+                echo "✅ CI passed on main - triggering production deployment\n";
+                $this->triggerProductionDeployment($latestBuild);
+            } else {
+                echo "⏰ CI passed but outside deployment window - scheduling deployment\n";
+                $this->scheduleDeployment($latestBuild);
+            }
+        } elseif ($latestBuild->isSuccessful() && $latestBuild->getBranch() === 'develop') {
+            echo "✅ CI passed on develop - triggering staging deployment\n";
+            $this->triggerStagingDeployment($latestBuild);
+        } elseif ($latestBuild->hasFailed()) {
+            echo "❌ CI failed - blocking deployment and alerting team\n";
+            $this->blockDeployment($latestBuild);
+        }
+    }
+
+    private function triggerProductionDeployment(Build $build): void
+    {
+        echo "🚀 Starting production deployment for commit: {$build->getCommitHash()}\n";
+
+        // Pre-deployment checks
+        if (!$this->runPreDeploymentChecks()) {
+            echo "⚠️ Pre-deployment checks failed - aborting deployment\n";
+            return;
+        }
+
+        // Start phased rollout
+        $this->startPhasedRollout($build, [
+            'canary' => 5,    // 5% of traffic
+            'early' => 25,    // 25% of traffic
+            'stable' => 75,   // 75% of traffic
+            'complete' => 100 // 100% of traffic
+        ]);
+    }
+
+    private function checkApplicationHealth(): void
+    {
+        $healthMetrics = $this->getHealthMetrics();
+
+        // Check error rates
+        if ($healthMetrics->getErrorRate() > 5.0) {
+            echo "🚨 High error rate detected: {$healthMetrics->getErrorRate()}%\n";
+            $this->triggerStabilityResponse($healthMetrics);
+        }
+
+        // Check response times
+        if ($healthMetrics->getAverageResponseTime() > 2000) {
+            echo "🐌 High response time detected: {$healthMetrics->getAverageResponseTime()}ms\n";
+            $this->triggerPerformanceResponse($healthMetrics);
+        }
+
+        // Check uptime
+        if ($healthMetrics->getUptime() < 99.9) {
+            echo "📉 Low uptime detected: {$healthMetrics->getUptime()}%\n";
+            $this->triggerUptimeResponse($healthMetrics);
+        }
+    }
+
+    private function triggerStabilityResponse(HealthMetrics $metrics): void
+    {
+        echo "🔧 Triggering stability response protocols\n";
+
+        // Immediate actions
+        if ($metrics->getErrorRate() > 10.0) {
+            echo "🚨 Critical error rate - initiating emergency rollback\n";
+            $this->emergencyRollback();
+        } elseif ($metrics->getErrorRate() > 7.0) {
+            echo "⚠️ High error rate - reducing traffic to new version\n";
+            $this->reduceTrafficToNewVersion(50); // 50% traffic reduction
+        } else {
+            echo "📊 Monitoring error rate - increasing monitoring frequency\n";
+            $this->increaseMonitoringFrequency();
+        }
+
+        // Alert team
+        $this->alertTeam('stability_issue', $metrics);
+    }
+}
+```
+
+### **Automated Monitoring Integration**
+```bash
+#!/bin/bash
+# scripts/triggers/project-shipper-trigger.sh
+
+EVENT_TYPE=$1
+CONTEXT=$2
+
+case $EVENT_TYPE in
+    "ci_success")
+        BRANCH=$(echo $CONTEXT | cut -d: -f1)
+        COMMIT=$(echo $CONTEXT | cut -d: -f2)
+
+        echo "✅ CI build successful on $BRANCH: $COMMIT"
+        echo "🚢 Project Shipper analyzing deployment readiness..."
+
+        if [ "$BRANCH" = "main" ]; then
+            # Production deployment
+            echo "🎯 Main branch - checking production deployment readiness"
+
+            # Check deployment window
+            CURRENT_HOUR=$(date +%H)
+            if [ $CURRENT_HOUR -ge 9 ] && [ $CURRENT_HOUR -le 17 ]; then
+                echo "✅ Within deployment window (9AM-5PM) - proceeding"
+
+                # Run pre-deployment checks
+                echo "🔍 Running pre-deployment checks..."
+                php bin/console app:pre-deployment-check
+
+                if [ $? -eq 0 ]; then
+                    echo "🚀 Starting production deployment"
+                    ./scripts/deploy-production.sh "$COMMIT"
+                else
+                    echo "❌ Pre-deployment checks failed - aborting"
+                fi
+            else
+                echo "⏰ Outside deployment window - scheduling for next window"
+                echo "$COMMIT" > /tmp/pending-deployment
+            fi
+
+        elif [ "$BRANCH" = "develop" ]; then
+            # Staging deployment
+            echo "🎯 Develop branch - deploying to staging"
+            ./scripts/deploy-staging.sh "$COMMIT"
+        fi
+        ;;
+
+    "monitoring_alert")
+        ALERT_TYPE=$(echo $CONTEXT | cut -d: -f1)
+        SEVERITY=$(echo $CONTEXT | cut -d: -f2)
+        VALUE=$(echo $CONTEXT | cut -d: -f3)
+
+        echo "🚨 Monitoring alert: $ALERT_TYPE ($SEVERITY) - $VALUE"
+
+        case $ALERT_TYPE in
+            "high_error_rate")
+                if [ "$SEVERITY" = "critical" ]; then
+                    echo "🚨 Critical error rate - initiating emergency rollback"
+                    ./scripts/emergency-rollback.sh
+                elif [ "$SEVERITY" = "high" ]; then
+                    echo "⚠️ High error rate - reducing traffic"
+                    ./scripts/reduce-traffic.sh 50
+                fi
+                ;;
+
+            "response_time")
+                echo "🐌 High response time - scaling resources"
+                ./scripts/auto-scale.sh "scale-up"
+                ;;
+
+            "server_down")
+                echo "💥 Server down - activating backup servers"
+                ./scripts/activate-backup-servers.sh
+                ;;
+        esac
+
+        # Alert team
+        curl -X POST "$SLACK_WEBHOOK_URL" \
+             -H 'Content-type: application/json' \
+             --data "{\"text\":\"🚨 Alert: $ALERT_TYPE ($SEVERITY) - $VALUE\"}"
+        ;;
+
+    "security_vulnerability")
+        VULNERABILITY=$(echo $CONTEXT | cut -d: -f1)
+        CVSS_SCORE=$(echo $CONTEXT | cut -d: -f2)
+
+        echo "🔒 Security vulnerability detected: $VULNERABILITY (CVSS: $CVSS_SCORE)"
+
+        if (( $(echo "$CVSS_SCORE > 7.0" | bc -l) )); then
+            echo "🚨 High severity vulnerability - emergency patch required"
+
+            # Create emergency patch branch
+            git checkout -b "security/emergency-patch-$(date +%s)"
+
+            # Apply security patch
+            php bin/console app:apply-security-patch "$VULNERABILITY"
+
+            # Fast-track deployment
+            ./scripts/emergency-deployment.sh
+        else
+            echo "⚠️ Medium severity vulnerability - scheduling patch"
+            echo "$VULNERABILITY" >> /tmp/security-patches-pending
+        fi
+        ;;
+
+    "ssl_expiring")
+        DOMAIN=$(echo $CONTEXT | cut -d: -f1)
+        DAYS_LEFT=$(echo $CONTEXT | cut -d: -f2)
+
+        echo "🔒 SSL certificate expiring for $DOMAIN in $DAYS_LEFT days"
+
+        if [ $DAYS_LEFT -le 7 ]; then
+            echo "🚨 Certificate expires soon - automatic renewal"
+            certbot renew --cert-name "$DOMAIN"
+        else
+            echo "📅 Scheduling certificate renewal"
+            echo "$DOMAIN:$DAYS_LEFT" >> /tmp/ssl-renewals-scheduled
+        fi
+        ;;
+esac
+```
+
+### **Infrastructure Auto-Scaling**
+```php
+// Proactive infrastructure management
+class InfrastructureMonitor
+{
+    public function monitorAndScale(): void
+    {
+        $metrics = $this->getInfrastructureMetrics();
+
+        // CPU scaling
+        if ($metrics->getCpuUsage() > 80) {
+            echo "🔥 High CPU usage - scaling up servers\n";
+            $this->scaleUp('cpu', $metrics->getCpuUsage());
+        } elseif ($metrics->getCpuUsage() < 20 && $this->canScaleDown()) {
+            echo "📉 Low CPU usage - scaling down servers\n";
+            $this->scaleDown('cpu', $metrics->getCpuUsage());
+        }
+
+        // Memory scaling
+        if ($metrics->getMemoryUsage() > 85) {
+            echo "🧠 High memory usage - scaling up memory\n";
+            $this->scaleUp('memory', $metrics->getMemoryUsage());
+        }
+
+        // Traffic-based scaling
+        if ($metrics->getRequestsPerSecond() > 1000) {
+            echo "📈 High traffic - adding load balancer instances\n";
+            $this->addLoadBalancerInstances();
+        }
+    }
+
+    public function predictiveScaling(): void
+    {
+        $prediction = $this->getTrafficPrediction();
+
+        if ($prediction->expectsTrafficSpike()) {
+            echo "🔮 Traffic spike predicted - pre-scaling infrastructure\n";
+            $this->preScaleForSpike($prediction);
+        }
+
+        if ($prediction->expectsQuietPeriod()) {
+            echo "😴 Quiet period predicted - scheduling scale-down\n";
+            $this->scheduleScaleDown($prediction);
+        }
+    }
+
+    private function scaleUp(string $resource, float $currentUsage): void
+    {
+        $scalingFactor = $this->calculateScalingFactor($currentUsage);
+
+        switch ($resource) {
+            case 'cpu':
+                $this->addServerInstances($scalingFactor);
+                break;
+            case 'memory':
+                $this->upgradeServerMemory($scalingFactor);
+                break;
+        }
+
+        // Monitor scaling effectiveness
+        $this->scheduleScalingVerification($resource, $scalingFactor);
+    }
+}
+```
+
+### **Deployment Quality Gates**
+```php
+// Automated quality gates for deployment decisions
+class DeploymentQualityGates
+{
+    private array $qualityGates = [
+        'test_coverage' => ['threshold' => 80, 'weight' => 0.3],
+        'performance_score' => ['threshold' => 90, 'weight' => 0.3],
+        'security_score' => ['threshold' => 95, 'weight' => 0.2],
+        'code_quality' => ['threshold' => 85, 'weight' => 0.2]
+    ];
+
+    public function evaluateDeploymentReadiness(Build $build): DeploymentDecision
+    {
+        $scores = [];
+        $totalScore = 0;
+
+        foreach ($this->qualityGates as $gate => $config) {
+            $score = $this->evaluateGate($gate, $build);
+            $scores[$gate] = $score;
+
+            $weightedScore = $score * $config['weight'];
+            $totalScore += $weightedScore;
+
+            if ($score < $config['threshold']) {
+                echo "❌ Quality gate failed: $gate ($score < {$config['threshold']})\n";
+                return new DeploymentDecision(false, "Quality gate '$gate' failed", $scores);
+            }
+        }
+
+        if ($totalScore >= 85) {
+            echo "✅ All quality gates passed - deployment approved\n";
+            return new DeploymentDecision(true, "Quality gates passed", $scores);
+        } else {
+            echo "⚠️ Overall quality score too low: $totalScore\n";
+            return new DeploymentDecision(false, "Overall quality score insufficient", $scores);
+        }
+    }
+
+    private function evaluateGate(string $gate, Build $build): float
+    {
+        switch ($gate) {
+            case 'test_coverage':
+                return $this->calculateTestCoverage($build);
+            case 'performance_score':
+                return $this->calculatePerformanceScore($build);
+            case 'security_score':
+                return $this->calculateSecurityScore($build);
+            case 'code_quality':
+                return $this->calculateCodeQuality($build);
+            default:
+                return 0;
+        }
+    }
+}
+```
+
 ---
 **Agent Motto**: "Ship fast, ship safe, ship confident"
+**Trigger Philosophy**: "Automate deployment decisions, monitor everything, respond instantly"
