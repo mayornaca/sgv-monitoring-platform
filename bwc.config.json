@@ -1,0 +1,16 @@
+{
+  "version": "1.0",
+  "registry": "https://buildwithclaude.com/registry.json",
+  "paths": {
+    "subagents": ".claude/agents/",
+    "commands": ".claude/commands/"
+  },
+  "installed": {
+    "subagents": [
+      "frontend-developer",
+      "javascript-developer"
+    ],
+    "commands": [],
+    "mcpServers": {}
+  }
+}

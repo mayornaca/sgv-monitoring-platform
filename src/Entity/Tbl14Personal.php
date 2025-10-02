@@ -225,9 +225,19 @@ class Tbl14Personal
     /**
      * Get idPersonal
      *
-     * @return integer 
+     * @return integer
      */
     public function getIdPersonal()
+    {
+        return $this->idPersonal;
+    }
+
+    /**
+     * Get id (alias for getIdPersonal for Doctrine compatibility)
+     *
+     * @return integer
+     */
+    public function getId()
     {
         return $this->idPersonal;
     }

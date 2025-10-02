@@ -61,11 +61,7 @@ class Tbl06Concesionaria
      *
      */
     #[ORM\ManyToOne(targetEntity: "App\Entity\Tbl14Personal")]
-    /**
-     * #[ORM\JoinColumn(
-     *   #[ORM\JoinColumn(name: "encargado", referencedColumnName: "id_personal")]
-     
-     *      */
+    #[ORM\JoinColumn(name: "encargado", referencedColumnName: "id_personal")]
     private $encargado;
 
     /**

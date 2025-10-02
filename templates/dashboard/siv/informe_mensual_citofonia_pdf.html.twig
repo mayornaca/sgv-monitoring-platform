@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Informe Mensual de Citofonía</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DejaVu Sans', Arial, sans-serif;
+            font-size: 11pt;
+            color: #333;
+            line-height: 1.4;
+        }
+
+        .header {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #2c3e50;
+        }
+
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .header-table td {
+            vertical-align: middle;
+            padding: 5px;
+        }
+
+        .logo-cell {
+            width: 25%;
+            text-align: center;
+        }
+
+        .logo {
+            max-width: 120px;
+            max-height: 60px;
+        }
+
+        .title-cell {
+            width: 50%;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 18pt;
+            color: #2c3e50;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        h2 {
+            font-size: 14pt;
+            color: #34495e;
+            font-weight: normal;
+        }
+
+        .info-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .info-table td {
+            padding: 5px 10px;
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: #2c3e50;
+            width: 150px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 10pt;
+        }
+
+        .data-table thead {
+            background-color: #2c3e50;
+            color: white;
+        }
+
+        .data-table th {
+            padding: 10px 8px;
+            text-align: left;
+            font-weight: bold;
+            border: 1px solid #2c3e50;
+        }
+
+        .data-table td {
+            padding: 8px;
+            border: 1px solid #ddd;
+        }
+
+        .data-table tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        .data-table tbody tr:hover {
+            background-color: #e9ecef;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 9pt;
+        }
+
+        .badge-info {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .badge-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .summary-row {
+            background-color: #e9ecef !important;
+            font-weight: bold;
+        }
+
+        .summary-row td {
+            padding: 12px 8px;
+            border-top: 2px solid #2c3e50;
+        }
+
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #ddd;
+            text-align: center;
+            font-size: 9pt;
+            color: #666;
+        }
+
+        .page-break {
+            page-break-after: always;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+
+        @media print {
+            body {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <table class="header-table">
+            <tr>
+                <td class="logo-cell">
+                    <!-- Logo Concesionaria -->
+                    <img src="{{ asset('images/concessions/HCSQELGZDdo.png') }}" alt="Costanera Norte" class="logo">
+                </td>
+                <td class="title-cell">
+                    <h1>INFORME MENSUAL DE CITOFONÍA</h1>
+                    <h2>Sociedad Concesionaria Costanera Norte</h2>
+                </td>
+                <td class="logo-cell">
+                    <!-- Logo MOP -->
+                    <img src="{{ asset('images/coordinacion_concesiones_obras_publicas.jpg') }}" alt="MOP" class="logo">
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="info-section">
+        <table class="info-table">
+            <tr>
+                <td class="info-label">Período del Informe:</td>
+                <td>{{ fechaInicio|date('d/m/Y H:i') }} - {{ fechaTermino|date('d/m/Y H:i') }}</td>
+                <td class="info-label">Fecha de Generación:</td>
+                <td>{{ "now"|date('d/m/Y H:i:s') }}</td>
+            </tr>
+            <tr>
+                <td class="info-label">Total de Registros:</td>
+                <td>{{ data_table|length }}</td>
+                <td class="info-label">Obra Concesionada:</td>
+                <td>Autopista Costanera Norte</td>
+            </tr>
+        </table>
+    </div>
+
+    {% if data_table is defined and data_table|length > 0 %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th width="5%" class="text-center">#</th>
+                    <th width="12%">Fecha</th>
+                    <th width="15%">Poste SOS</th>
+                    <th width="10%" class="text-center">Total Llamadas</th>
+                    <th width="12%" class="text-center">Tiempo Promedio (seg)</th>
+                    <th width="15%">Eje</th>
+                    <th width="18%">Calzada</th>
+                    <th width="8%" class="text-center">KM</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set total_llamadas = 0 %}
+                {% set suma_tiempos = 0 %}
+                {% set registros_con_tiempo = 0 %}
+
+                {% for row in data_table %}
+                    <tr>
+                        <td class="text-center">{{ loop.index }}</td>
+                        <td>{{ row.fecha|default('-') }}</td>
+                        <td>
+                            <span class="badge badge-secondary">
+                                {{ row.poste|default(row.sos|default('-')) }}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge badge-info">
+                                {{ row.total_llamadas|default(0) }}
+                            </span>
+                        </td>
+                        <td class="text-center">{{ row.tiempo_promedio|default('0') }}</td>
+                        <td>{{ row.eje|default('-') }}</td>
+                        <td>{{ row.calzada|default('-') }}</td>
+                        <td class="text-center">{{ row.km|default('-') }}</td>
+                    </tr>
+
+                    {% set total_llamadas = total_llamadas + (row.total_llamadas|default(0)) %}
+                    {% if row.tiempo_promedio|default(0) > 0 %}
+                        {% set suma_tiempos = suma_tiempos + row.tiempo_promedio %}
+                        {% set registros_con_tiempo = registros_con_tiempo + 1 %}
+                    {% endif %}
+
+                    {# Page break every 30 rows for better printing #}
+                    {% if loop.index is divisible by(30) and not loop.last %}
+                        </tbody>
+                        </table>
+                        <div class="page-break"></div>
+                        <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th width="5%" class="text-center">#</th>
+                                <th width="12%">Fecha</th>
+                                <th width="15%">Poste SOS</th>
+                                <th width="10%" class="text-center">Total Llamadas</th>
+                                <th width="12%" class="text-center">Tiempo Promedio (seg)</th>
+                                <th width="15%">Eje</th>
+                                <th width="18%">Calzada</th>
+                                <th width="8%" class="text-center">KM</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                    {% endif %}
+                {% endfor %}
+
+                <tr class="summary-row">
+                    <td colspan="3" class="text-right"><strong>TOTALES GENERALES</strong></td>
+                    <td class="text-center">
+                        <strong>{{ total_llamadas }}</strong>
+                    </td>
+                    <td class="text-center">
+                        <strong>
+                            {% if registros_con_tiempo > 0 %}
+                                {{ (suma_tiempos / registros_con_tiempo)|number_format(2) }}
+                            {% else %}
+                                0.00
+                            {% endif %}
+                        </strong>
+                    </td>
+                    <td colspan="3"></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div style="margin-top: 30px; padding: 15px; background-color: #f8f9fa; border-radius: 5px;">
+            <h3 style="color: #2c3e50; margin-bottom: 10px;">Resumen del Período</h3>
+            <ul style="list-style: none; padding: 0;">
+                <li style="margin-bottom: 5px;">
+                    <strong>• Total de llamadas registradas:</strong> {{ total_llamadas }}
+                </li>
+                <li style="margin-bottom: 5px;">
+                    <strong>• Promedio de tiempo de respuesta:</strong>
+                    {% if registros_con_tiempo > 0 %}
+                        {{ (suma_tiempos / registros_con_tiempo)|number_format(2) }} segundos
+                    {% else %}
+                        No disponible
+                    {% endif %}
+                </li>
+                <li style="margin-bottom: 5px;">
+                    <strong>• Cantidad de postes SOS monitoreados:</strong> {{ data_table|length }}
+                </li>
+                <li>
+                    <strong>• Período evaluado:</strong> {{ fechaInicio|date('d/m/Y') }} al {{ fechaTermino|date('d/m/Y') }}
+                </li>
+            </ul>
+        </div>
+
+    {% else %}
+        <div class="no-data">
+            <h3>No se encontraron registros para el período seleccionado</h3>
+            <p>Período consultado: {{ fechaInicio|date('d/m/Y H:i') }} - {{ fechaTermino|date('d/m/Y H:i') }}</p>
+        </div>
+    {% endif %}
+
+    <div class="footer">
+        <p>
+            <strong>Sociedad Concesionaria Costanera Norte</strong><br>
+            Informe generado el {{ "now"|date('d/m/Y H:i:s') }}<br>
+            Sistema de Gestión Vial - SGV
+        </p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,304 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block page_title %}Lista de Permisos de Trabajo{% endblock %}
+
+{% block head_stylesheets %}
+    {{ parent() }}
+    <style>
+        .btn-group.stick-top.go-to-graphic.affix {
+            top: 73px;
+            left: 1px;
+            z-index: 1000;
+        }
+        .bootstrap-table.fullscreen .fixed-table-toolbar {
+            background: #333;
+        }
+        .table>thead>tr>th {
+            vertical-align: middle;
+        }
+        .col9 {
+            background-color: cornsilk;
+        }
+    </style>
+{% endblock %}
+
+{% block page_content %}
+    <div class="container-fluid">
+        <h1 class="h2 mb-3">
+            <i class="fas fa-clipboard-list"></i> Lista de Permisos de Trabajo
+        </h1>
+
+        <!-- Panel de Filtros -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    Filtros & Opciones
+                    <button type="button" class="btn btn-sm btn-secondary float-end" data-bs-toggle="collapse" data-bs-target="#filter-panel">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </h5>
+            </div>
+            <div id="filter-panel" class="collapse show">
+                <div class="card-body">
+                    <form id="report_params" method="get" action="">
+                        <input type="hidden" value="1" id="ci" name="ci">
+
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="fechaInicio" class="form-label">Fecha de inicio</label>
+                                    <div class="input-group">
+                                        <input type="text" id="fechaInicio" name="fechaInicio"
+                                               class="form-control" placeholder="DD-MM-YYYY HH:mm:ss"
+                                               value="{{ fechaInicio }}">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-calendar"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="fechaTermino" class="form-label">Fecha de t�rmino</label>
+                                    <div class="input-group">
+                                        <input type="text" id="fechaTermino" name="fechaTermino"
+                                               class="form-control" placeholder="DD-MM-YYYY HH:mm:ss"
+                                               value="{{ fechaTermino }}">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-calendar"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="regStatus" class="form-label">Estado de Registros</label>
+                                    <select class="form-select" id="regStatus" name="regStatus[]" multiple>
+                                        <option value="all">Todos</option>
+                                        <optgroup label="A�n no comienzan">
+                                            <option value="0">Nuevos</option>
+                                            <option value="1">Programados</option>
+                                        </optgroup>
+                                        <optgroup label="En curso">
+                                            <option value="2">Menor que 9hs</option>
+                                            <option value="3">Entre 9hs y 24hs</option>
+                                            <option value="4">Mayor que 24hs</option>
+                                        </optgroup>
+                                        <optgroup label="Otros">
+                                            <option value="-1">Borradores</option>
+                                            <option value="5">Finalizados</option>
+                                            <option value="trash">Eliminados</option>
+                                        </optgroup>
+                                    </select>
+                                    <small class="text-muted">Ctrl+Click para selecci�n m�ltiple</small>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3 d-flex align-items-end">
+                                <div class="w-100 mb-3">
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="fas fa-search"></i> Buscar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label for="rowsPerPage" class="form-label">Filas por p�gina</label>
+                                <select class="form-select" id="rowsPerPage" name="rowsPerPage">
+                                    <option value="10">10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                    <option value="500" selected>500</option>
+                                    <option value="1000">1000</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label">Actualizaci�n Autom�tica</label>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="actualizacionAutomatica" checked>
+                                    <label class="form-check-label" for="actualizacionAutomatica">
+                                        Activada
+                                    </label>
+                                </div>
+
+                                <div class="mt-2">
+                                    <label for="timer-range-ajax-update" class="form-label">
+                                        <i class="fas fa-clock"></i> Intervalo (seg)
+                                    </label>
+                                    <input type="number" class="form-control" id="timer-range-ajax-update"
+                                           min="5" max="180" value="30" step="5">
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toolbar de acciones -->
+        <div class="btn-toolbar mb-3" role="toolbar">
+            <div class="btn-group me-2" role="group">
+                <button class="btn btn-info" type="button">
+                    Total registros: <span class="badge bg-light text-dark">{{ permisos|length|default(0) }}</span>
+                </button>
+                <button type="button" class="btn btn-success" onclick="getPTData()">
+                    <i class="fas fa-sync"></i> Actualizar
+                </button>
+                <button type="button" class="btn btn-danger" onclick="downloadPtList()">
+                    <i class="fas fa-file-pdf"></i> PDF
+                </button>
+                <button type="button" class="btn btn-primary" onclick="addPT()">
+                    <i class="fas fa-plus-circle"></i> Crear Permiso
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabla de datos -->
+        <div id="pt_table_container">
+            {% if permisos is defined and permisos|length > 0 %}
+                <div class="table-responsive">
+                    <table id="tbl_pt" class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Fecha Solicitud</th>
+                                <th>Solicitante</th>
+                                <th>Empresa</th>
+                                <th>Tipo Trabajo</th>
+                                <th>Ubicaci�n</th>
+                                <th>Estado</th>
+                                <th>Fecha Inicio</th>
+                                <th>Fecha T�rmino</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in permisos %}
+                                <tr>
+                                    <td>{{ row.numero|default('-') }}</td>
+                                    <td>{{ row.fecha_solicitud|default('-') }}</td>
+                                    <td>{{ row.solicitante|default('-') }}</td>
+                                    <td>{{ row.empresa|default('-') }}</td>
+                                    <td>{{ row.tipo_trabajo|default('-') }}</td>
+                                    <td>{{ row.ubicacion|default('-') }}</td>
+                                    <td>
+                                        {% set badge_class = 'secondary' %}
+                                        {% if row.estado == 'Nuevo' %}
+                                            {% set badge_class = 'info' %}
+                                        {% elseif row.estado == 'En curso' %}
+                                            {% set badge_class = 'warning' %}
+                                        {% elseif row.estado == 'Finalizado' %}
+                                            {% set badge_class = 'success' %}
+                                        {% elseif row.estado == 'Eliminado' %}
+                                            {% set badge_class = 'danger' %}
+                                        {% endif %}
+                                        <span class="badge bg-{{ badge_class }}">{{ row.estado|default('Desconocido') }}</span>
+                                    </td>
+                                    <td>{{ row.fecha_inicio|default('-') }}</td>
+                                    <td>{{ row.fecha_termino|default('-') }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button type="button" class="btn btn-outline-primary" onclick="editPT({{ row.id }})">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-info" onclick="viewPT({{ row.id }})">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-danger" onclick="deletePT({{ row.id }})">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info text-center">
+                    <i class="fas fa-info-circle fa-2x mb-3"></i>
+                    <h5>No se encontraron permisos de trabajo</h5>
+                    <p>Ajuste los filtros de b�squeda o cree un nuevo permiso</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        var timer_interval;
+        var omit_refresh_on_focus = 0;
+
+        function getPTData() {
+            var data = {
+                fechaInicio: $('#fechaInicio').val(),
+                fechaTermino: $('#fechaTermino').val(),
+                regStatus: $('#regStatus').val(),
+                rowsPerPage: $('#rowsPerPage').val()
+            };
+
+            $('#pt_table_container').html('<div class="alert alert-info"><i class="fas fa-spinner fa-spin"></i> Cargando datos...</div>');
+
+            $.ajax({
+                url: "{{ path('siv_dashboard_lista_permisos_trabajos') }}",
+                type: "GET",
+                data: data,
+                success: function (response) {
+                    location.reload();
+                },
+                error: function() {
+                    $('#pt_table_container').html('<div class="alert alert-danger">Error al cargar los datos</div>');
+                }
+            });
+        }
+
+        function SetPTTimer() {
+            var interval = $('#timer-range-ajax-update').val() * 1000;
+
+            timer_interval = setInterval(function () {
+                if($('#actualizacionAutomatica').is(":checked")) {
+                    getPTData();
+                }
+            }, interval);
+        }
+
+        function addPT() {
+            alert('Funci�n para agregar permiso de trabajo');
+        }
+
+        function editPT(id) {
+            alert('Editar permiso ID: ' + id);
+        }
+
+        function viewPT(id) {
+            alert('Ver permiso ID: ' + id);
+        }
+
+        function deletePT(id) {
+            if(confirm('�Est� seguro de eliminar este permiso?')) {
+                alert('Eliminar permiso ID: ' + id);
+            }
+        }
+
+        function downloadPtList() {
+            window.print();
+        }
+
+        $(document).ready(function() {
+            SetPTTimer();
+
+            $('#timer-range-ajax-update').on('change', function() {
+                clearInterval(timer_interval);
+                SetPTTimer();
+            });
+        });
+    </script>
+{% endblock %}

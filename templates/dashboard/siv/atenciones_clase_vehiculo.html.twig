@@ -1,0 +1,135 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block page_title %}Atenciones por Clase de Vehículo{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .chart-container {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+    </style>
+{% endblock %}
+
+{% block page_content %}
+    <div class="container-fluid py-4">
+        <h1 class="h3 mb-4">
+            <i class="fas fa-car text-primary me-2"></i>
+            Atenciones por Clase de Vehículo
+        </h1>
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="fechaInicio" class="form-label">Fecha Inicio</label>
+                        <input type="text" class="form-control" id="fechaInicio" name="fechaInicio"
+                               value="{{ fechaInicio }}" placeholder="DD-MM-YYYY HH:mm:ss">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="fechaTermino" class="form-label">Fecha Término</label>
+                        <input type="text" class="form-control" id="fechaTermino" name="fechaTermino"
+                               value="{{ fechaTermino }}" placeholder="DD-MM-YYYY HH:mm:ss">
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search me-2"></i>Buscar
+                        </button>
+                        <button type="button" class="btn btn-outline-success" onclick="exportExcel()">
+                            <i class="fas fa-file-excel me-2"></i>Excel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <figure class="highcharts-figure">
+                <div id="container-chart"></div>
+            </figure>
+        </div>
+
+        {% if data is defined and data|length > 0 %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Detalle de Atenciones</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Tipo de Vehículo</th>
+                                    <th>Cantidad</th>
+                                    <th>Porcentaje</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set total = data|map(d => d.cantidad)|reduce((a, b) => a + b, 0) %}
+                                {% for item in data %}
+                                    <tr>
+                                        <td>{{ item.tipo_vehiculo }}</td>
+                                        <td>{{ item.cantidad }}</td>
+                                        <td>{{ ((item.cantidad / total) * 100)|number_format(1) }}%</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr class="fw-bold">
+                                    <td>Total</td>
+                                    <td>{{ total }}</td>
+                                    <td>100%</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+
+    <script>
+        const chartData = {{ chartData|default('{}')|raw }};
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (chartData.categories) {
+                Highcharts.chart('container-chart', {
+                    chart: { type: 'column' },
+                    title: { text: 'Distribución de Atenciones por Tipo de Vehículo' },
+                    xAxis: {
+                        categories: chartData.categories,
+                        title: { text: 'Tipo de Vehículo' }
+                    },
+                    yAxis: {
+                        title: { text: 'Cantidad de Atenciones' }
+                    },
+                    series: chartData.series || [{
+                        name: 'Atenciones',
+                        data: [],
+                        colorByPoint: true
+                    }],
+                    plotOptions: {
+                        column: {
+                            dataLabels: {
+                                enabled: true
+                            }
+                        }
+                    }
+                });
+            }
+        });
+
+        function exportExcel() {
+            window.location.href = window.location.href + '&export=excel';
+        }
+    </script>
+{% endblock %}

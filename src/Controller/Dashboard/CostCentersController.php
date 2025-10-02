@@ -103,10 +103,11 @@ class CostCentersController extends BaseController
         ));
     }
 
-    //CREA EL FORMULARIO QUE SE UTILIZARÁ PARA CREAR UN NUEVO REGISTRO
-    #[Route('/add', name: 'add', methods: ['GET', 'POST'])]
 
-    public function addAction(): Response
+    //FUNCIÓN PARA CREAR EL REGISTRO EN LA BASE DE DATOS
+    #[Route('/create', name: 'create', methods: ['GET', 'POST'])]
+
+    public function createAction(Request $request): Response
     {
         // TODO: Migrate to new permission system using PermissionService
         // Old entity 'ntty_07' should map to MODULE_COST_CENTERS with CREATE permission
@@ -118,41 +119,28 @@ class CostCentersController extends BaseController
             throw new AccessDeniedException();
         }// FIN ACL
         */
+
         $costcenters = new Tbl07CentroDeCosto();
-        $form = $this->createCreateForm($costcenters);
-
-        return $this->render('dashboard/CostCenters/edit.html.twig', array('form' => $form->createView()));
-    }
-
-    //FUNCIÓN PARA CREAR EL FORMULARIO
-    private function createCreateForm(Tbl07CentroDeCosto $entity)
-    {
-        $form = $this->createForm(new Tbl07CentroDeCostoType(), $entity, array(
+        $form = $this->createForm(new Tbl07CentroDeCostoType(), $costcenters, array(
             'action' => $this->generateUrl('sgv_costcenters_create'),
             'method' => 'POST'
         ));
-        return $form;
-    }
 
-    //FUNCIÓN PARA CREAR EL REGISTRO EN LA BASE DE DATOS
-    #[Route('/create', name: 'create', methods: ['GET', 'POST'])]
+        // Handle GET request (show form)
+        if ($request->getMethod() === 'GET') {
+            return $this->render('dashboard/CostCenters/edit.html.twig', array('form' => $form->createView()));
+        }
 
-    public function createAction(Request $request): Response
-    {
-        $costcenters = new Tbl07CentroDeCosto();
-
-        // Se pasan los valores a la entidad para auditoria
-        $current_user = $this->getUser();
-        //dump($current_user->getId());
-        $costcenters->SetCreatedBy($current_user->getId());
-        $costcenters->SetCreatedAt(new \DateTime());
-        $costcenters->SetRegStatus(true);
-        //----------------------------------------------------
-
-        $form = $this->createCreateForm($costcenters);
+        // Handle POST request (process form)
         $form->handleRequest($request);
 
         if ($form->isValid()) {
+            // Se pasan los valores a la entidad para auditoria
+            $current_user = $this->getUser();
+            $costcenters->SetCreatedBy($current_user->getId());
+            $costcenters->SetCreatedAt(new \DateTime());
+            $costcenters->SetRegStatus(true);
+
             $em = $this->entityManager;
             $em->persist($costcenters);
             $em->flush();

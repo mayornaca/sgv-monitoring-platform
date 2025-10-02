@@ -1,22 +1,22 @@
 <!-- Modern Fixed Status Footer -->
 <footer class="bg-dark text-light shadow-lg" id="status-footer">
-    <div class="container-fluid px-4 py-2">
+    <div class="container-fluid px-4 py-1">
         <div class="row align-items-center">
             <!-- Device Statistics -->
-            <div class="col-lg-4 col-md-6">
-                <div class="d-flex align-items-center gap-3">
+            <div class="col-lg-6 col-md-6">
+                <div class="d-flex align-items-center gap-1">
                     <div class="d-flex align-items-center">
-                        <i class="fas fa-database text-info me-1"></i>
+                        <i class="fas fa-database text-info me-1 d-none"></i>
                         <span class="small">Total:</span>
                         <span id="total_devices_count" class="badge bg-info ms-1">{{ dispositivos|length }}</span>
                     </div>
                     <div class="d-flex align-items-center">
-                        <i class="fas fa-check-circle text-success me-1"></i>
+                        <i class="fas fa-check-circle text-success me-1  d-none"></i>
                         <span class="small">Activos:</span>
                         <span id="active_devices_count" class="badge bg-success ms-1">{{ active_devices_count ?? 0 }}</span>
                     </div>
                     <div class="d-flex align-items-center">
-                        <i class="fas fa-exclamation-triangle text-danger me-1"></i>
+                        <i class="fas fa-exclamation-triangle text-danger me-1  d-none"></i>
                         <span class="small">Inactivos:</span>
                         <span id="unactive_devices_count" class="badge bg-danger ms-1">{{ unactive_devices_count ?? 0 }}</span>
                     </div>
@@ -24,8 +24,8 @@
             </div>
 
             <!-- System Status -->
-            <div class="col-lg-4 col-md-6 text-center">
-                <div class="d-flex align-items-center justify-content-center gap-3 d-none">
+            <div class="col-lg-2 d-md-none text-center">
+                <div class="d-flex align-items-center justify-content-center gap-1 d-none">
                     <div class="d-flex align-items-center">
                         <div id="connection-indicator" class="status-indicator bg-success me-2"></div>
                         <span class="small">Estado:</span>
@@ -47,8 +47,8 @@
             </div>
 
             <!-- Timestamps - Right Side -->
-            <div class="col-lg-4 col-md-12 text-end">
-                <div class="d-flex align-items-center justify-content-end gap-3">
+            <div class="col-lg-6 col-md-6 text-end">
+                <div class="d-flex align-items-center justify-content-end gap-1">
                     <!-- Server time -->
                     <div class="d-flex align-items-center d-none">
                         <i class="fas fa-clock text-secondary me-1"></i>
@@ -59,15 +59,15 @@
                     <!-- IP update time -->
                     <div class="d-flex align-items-center">
                         <i class="fas fa-sync-alt text-info me-1 d-none" id="refresh-icon"></i>
-                        <small>Última Actualización IP:</small>
-                        <span id="datetime_update" class="badge bg-info ms-1">{{ SwIpDevicesMonitorLastUpdateDateTime ? SwIpDevicesMonitorLastUpdateDateTime|date("d-m-Y H:i:s") : "now"|date("d-m-Y H:i:s") }}</span>
+                        <small>Última Act. IP:</small>
+                        <span id="datetime_update" class="badge bg-info ms-1">{{ SwIpDevicesMonitorLastUpdateDateTime is defined and SwIpDevicesMonitorLastUpdateDateTime ? SwIpDevicesMonitorLastUpdateDateTime|date("d-m-Y H:i:s") : '25-09-2024 14:17:12' }}</span>
                     </div>
 
                     <!-- Stentofon update time -->
                     <div class="d-flex align-items-center">
                         <i class="fas fa-phone text-info me-1 d-none"></i>
-                        <small>Act Stentofon:</small>
-                        <span id="stentofon-time" class="badge bg-info ms-1">{{ StentofonLastUpdateDateTime ? StentofonLastUpdateDateTime|date("d-m-Y H:i:s") : "now"|date("d-m-Y H:i:s") }}</span>
+                        <small>Act. Stentofon:</small>
+                        <span id="stentofon-time" class="badge bg-info ms-1">{{ StentofonLastUpdateDateTime|default('25-09-2024 14:17:12') }}</span>
                     </div>
                 </div>
             </div>
@@ -86,8 +86,8 @@ body {
     bottom: 0;
     left: 0;
     right: 0;
-    margin-left: var(--sidebar-width, 250px);
-    z-index: 1030;
+    margin-left: var(--sidebar-max-width, 100%);
+    /*z-index: 1030;*/
     border-top: 2px solid #0d6efd;
     background: linear-gradient(135deg, #212529 0%, #343a40 100%) !important;
 }
@@ -144,7 +144,7 @@ body {
 
 /* EasyAdmin sidebar width adjustments */
 body.ea-sidebar-width-compact #status-footer {
-    margin-left: 60px; /* Compact sidebar width */
+    margin-left: 43px; /* Compact sidebar width */
 }
 
 /* Responsive adjustments */

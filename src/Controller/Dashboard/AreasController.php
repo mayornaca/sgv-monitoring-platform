@@ -103,10 +103,11 @@ class AreasController extends BaseController
         ));
     }
 
-    //CREA EL FORMULARIO QUE SE UTILIZARÁ PARA CREAR UN NUEVO REGISTRO
-    #[Route('/add', name: 'add', methods: ['GET', 'POST'])]
 
-    public function addAction(): Response
+    //FUNCIÓN PARA CREAR EL REGISTRO EN LA BASE DE DATOS
+    #[Route('/create', name: 'create', methods: ['GET', 'POST'])]
+
+    public function createAction(Request $request): Response
     {
         // TODO: Migrate to new permission system using PermissionService
         // Old entity 'ntty_08' should map to MODULE_AREAS with CREATE permission
@@ -118,41 +119,28 @@ class AreasController extends BaseController
             throw new AccessDeniedException();
         }// FIN ACL
         */
+
         $areas = new Tbl08Areas();
-        $form = $this->createCreateForm($areas);
-
-        return $this->render('dashboard/Areas/edit.html.twig', array('form' => $form->createView()));
-    }
-
-    //FUNCIÓN PARA CREAR EL FORMULARIO
-    private function createCreateForm(Tbl08Areas $entity)
-    {
-        $form = $this->createForm(new Tbl08AreasType(), $entity, array(
+        $form = $this->createForm(new Tbl08AreasType(), $areas, array(
             'action' => $this->generateUrl('sgv_areas_create'),
             'method' => 'POST'
         ));
-        return $form;
-    }
 
-    //FUNCIÓN PARA CREAR EL REGISTRO EN LA BASE DE DATOS
-    #[Route('/create', name: 'create', methods: ['GET', 'POST'])]
+        // Handle GET request (show form)
+        if ($request->getMethod() === 'GET') {
+            return $this->render('dashboard/Areas/edit.html.twig', array('form' => $form->createView()));
+        }
 
-    public function createAction(Request $request): Response
-    {
-        $areas = new Tbl08Areas();
-
-        // Se pasan los valores a la entidad para auditoria
-        $current_user = $this->getUser();
-        //dump($current_user->getId());
-        $areas->SetRegStatus(true);
-        $areas->SetCreatedBy($current_user->getId());
-        $areas->SetCreatedAt(new \DateTime());
-        //----------------------------------------------------
-
-        $form = $this->createCreateForm($areas);
+        // Handle POST request (process form)
         $form->handleRequest($request);
 
         if ($form->isValid()) {
+            // Se pasan los valores a la entidad para auditoria
+            $current_user = $this->getUser();
+            $areas->SetRegStatus(true);
+            $areas->SetCreatedBy($current_user->getId());
+            $areas->SetCreatedAt(new \DateTime());
+
             $em = $this->entityManager;
             $em->persist($areas);
             $em->flush();

@@ -1,0 +1,802 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block page_title %}Monitor de sensores SOS{% endblock %}
+
+{% block page_content %}
+<style id="modal_ui">
+    .ui-draggable .modal-header {
+        cursor: -webkit-grab;
+        cursor: -moz-grab;
+        cursor: grab;
+    }
+    .ui-draggable-dragging .modal-header  {
+        cursor: -webkit-grabbing;
+    }
+    .cot_device_container{
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+        width: 152px;
+        padding-left: 1px;
+        margin: 0 4px 4px 0;
+        background-color: #9E9E9E;
+        border-radius: 30px;
+        padding-top: 1px;
+        overflow: hidden;
+        transition-timing-function: ease;
+        transition: width 0.3s;
+    }
+    .cot_device_container:hover{
+        width:153.5px;
+        transition-timing-function: ease;
+        transition:all 0.4s;
+    }
+    .cot_device_container:active{
+        width:153.5px;
+        transition-timing-function: ease;
+        transition:all 0.4s;
+    }
+    .opc_device_container {
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+        width: 152px;
+        margin: 0 4px 4px 0;
+        background-color: #9E9E9E;
+        padding: 2px 1px 2px 1.45px;
+        overflow: hidden;
+        height: auto;
+        border-radius: 3px;
+        transition-timing-function: ease;
+        transition: width 0.3s;
+    }
+    .opc_device_container .opc_vars_container{
+        background: rgba(255, 255, 255, 0.57);
+        margin-bottom: 3px;
+        height: 160px;
+        border-radius: 3px;
+        padding: 3px;
+        margin-top: 3px;
+    }
+    .btn_circle_icon_left{
+        float: left;
+        padding: 7px 0 0 0;
+        background: #fff;
+        margin-left: -11px;
+        margin-right: 1px;
+        margin-top: 2px;
+        width: 30px;
+        height: 30px;
+    }
+    .btn_circle_text{
+        font-size: 10pt;
+        word-wrap: break-word;
+        overflow: hidden;
+        text-align: left;
+    }
+    .mini_device{
+        width: 35px;
+        height: 36px;
+    }
+    .device_active .btn_circle_icon_left{
+        background: rgba(137, 255, 142, 0.58);
+        border: 1px solid #00ff0d;
+    }
+
+    .filter-button-active{
+        background-color: #5bc0de !important;
+    }
+    .affix{
+        z-index: 1;
+        padding: 15px 5px 4px 5px;
+        top: 53px;
+    }
+    .icon-btn {
+        margin-left: 0px;
+    }
+
+    span.badge-expand-s {
+        width: 26px;
+        height: 21px;
+        overflow: hidden;
+        white-space: nowrap;
+        -webkit-transition: width 1s;
+        transition: width 1s;
+    }
+    span.badge-expand-s:hover {
+        width: 60px;
+        -webkit-transition: width 0.4s;
+        transition: width 0.4s;
+    }
+    span.badge-expand-s:hover::after {
+        content: 'Editar';
+    }
+    .reporte-panel-expand{
+        display: block;
+    }
+    .reporte-panel-collapsed{
+        display: none;
+    }
+    .grid {
+        margin-top: 115px;
+    }
+    .grid-item {
+        float: left;
+        min-width: 300px;
+        max-width: {{ 159.9166666666667 * grid_items_width }}px;
+        width: 99.9%;
+        min-height: 80px;
+        padding: 10px 0 5px 3px;
+        margin: 1px;
+    }
+    .devices_grid_item {
+        transition: all 0.3s ease-out;
+    }
+    .devices_grid{
+        margin-top: 65px;
+    }
+    .devices_grid_sizer{
+        width: 1px;
+    }
+    .devices_grid:after {
+        content: '';
+        display: block;
+        clear: both;
+    }
+    .modal-content {
+        -webkit-box-shadow: none;
+        box-shadow: none;
+    }
+    .alarm-sensor-popup .modal-header {
+        animation: pulsecolor 2.5s infinite;
+    }
+    @keyframes pulsecolor {
+        0% {
+            background-color: #2e3338;
+        }
+        75%{
+            background-color: #F44336;
+        }
+        100% {
+            background-color: #2e3338;
+        }
+    }
+</style>
+
+<script src="{{ asset('public/js/isotope.pkgd.min.js') }}"></script>
+
+{% set active_devices_count = 0 %}
+{% set unactive_devices_count = 0 %}
+
+<div id="control-panel-container" class="container col-lg-12 col-md-12 col-sm-12" style="z-index: 2;">
+    <div id="reporte-panel" class="reporte-panel reporte-panel-collapsed col-lg-12 col-md-12 col-sm-12">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <h3>Opciones de configuración del monitor de sensores SOS</h3>
+                <div class="form-group col-md-2 col-xs-12">
+                    <div class="row">
+                        <label><span class="glyphicon glyphicon-time"></span> Intervalo de actualización </label>
+                        </br>
+                        <input id="timer-range-ajax-update"  type="text" min="1" max="120" value="5" name="points" step="0.5">
+                    </div>
+                    <label class="control-label" for="id_device_type_fr">Tipo de dispositivo</label>
+                    <select class="form-select" id="id_device_type_fr" name="id_device_type_fr">
+                        <option value="0" {% if 0 == id_device_type_fr %}selected="selected"{% endif %}>Todos</option>
+                        {% for tipo_dispositivo in all_tipos_dispositivos %}
+                            <option value="{{ tipo_dispositivo.id }}" {% if tipo_dispositivo.id == id_device_type_fr %}selected="selected"{% endif %}>{{ tipo_dispositivo.tipo }}</option>
+                        {% endfor %}
+                    </select>
+                    <hr>
+                </div>
+                <div class="form-group col-md-1 col-xs-7">
+                    <label>Actualización</label>
+                    <button class="btn btn-default waves-effect btn-block btn-sm" onclick="getDevicesStatus();">
+                        <i class="fa fa-refresh" aria-hidden="true"></i>Actualizar ahora
+                    </button>
+                </div>
+                <div class="form-group col-md-2 col-xs-5">
+                    <label>Automática</label>
+                    <div class="form-check form-switch">
+                        <input type="checkbox" class="form-check-input" id="actualizacionAutomatica" checked>
+                        <label class="form-check-label" for="actualizacionAutomatica"></label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div align="left" class="col-md-8">
+        <label class="control-label">Opciones y filtros</label>
+        <br/>
+        <div class="pull-left col-md-8" style="z-index: 1;">
+            <div class="input-group col-md-12">
+                <div class="input-group-btn">
+                    <button id="btn-reporte-panel-toggle" type="button" class="btn btn-default waves-effect btn_responsive_hide_text">
+                        <span class="glyphicon glyphicon-cog is-blue"></span>Más opciones
+                    </button>
+                    {# TODO: Create sosreport_status route #}
+                    {# <a href="{{ path('cot_sosreport_status') }}" type="button" class="btn btn-default waves-effect btn_responsive_hide_text">
+                        <span class="glyphicon glyphicon-list is-blue"></span>Ir al reporte
+                    </a> #}
+                    <script>
+                        $('#btn-reporte-panel-toggle').click(function () {
+                            var panel = $('#reporte-panel');
+                            if(panel.hasClass('reporte-panel-collapsed')){
+                                panel.removeClass('reporte-panel-collapsed');
+                                panel.addClass('reporte-panel-expand');
+                            }
+                            else{
+                                panel.removeClass('reporte-panel-expand');
+                                panel.addClass('reporte-panel-collapsed');
+                            }
+                        });
+                    </script>
+                    <button type="button" class="btn btn-default waves-effect dropdown-toggle btn_responsive_hide_text" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <span class="glyphicon glyphicon glyphicon-filter is-blue"></span> Filtro de estado <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu" style="margin-left: 252px;">
+                        <li><a id="btn_show_all" class="filter-button" data-filter="all">Mostrar Todos</a></li>
+                        <li><a id="btn_show_actives" class="filter-button" data-filter="device_active">Sin Alarmas</a></li>
+                        <li><a id="btn_show_unactives" class="filter-button" data-filter="device_unactive">Con Alarmas</a></li>
+                    </ul>
+                </div>
+                <input id="input_device_finder" type="text" class="form-control" placeholder="Escriba al menos dos caracteres..." style="height: 36px;">
+                <span class="input-group-btn">
+                    <button id="btn_device_finder" class="btn btn-default waves-effect btn_responsive_hide_text" type="button">
+                        <span class="glyphicon glyphicon glyphicon-search is-blue"></span>Buscar
+                    </button>
+                </span>
+            </div>
+        </div>
+    </div>
+    <div align="right" class="col-md-4">
+        <div class="form-group">
+            <label class="control-label" for="contract_ui">Interfaz Reducida</label>
+            <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="contract_ui">
+                <label class="form-check-label" for="contract_ui"></label>
+            </div>
+        </div>
+    </div>
+    <br/>
+    <div id="dialog-bg" class="modal-backdrop fade in windows-modal" style="display: none;" oncontextmenu="return false"></div>
+</div>
+
+<div class="grid">
+    {{ include('dashboard/cot/SensorsAlarms/devices_container.html.twig') }}
+</div>
+
+<script>
+    var $grid = $('.grid').isotope({
+        itemSelector: '.grid-item',
+        masonry: {
+            columnWidth: '.col-lg-{{ grid_items_width }}'
+        }
+    });
+
+    var $devices_grid = $('.devices_grid').isotope({
+        itemSelector: '.devices_grid_item',
+        masonry: {
+            columnWidth: '.devices_grid_sizer'
+        }
+    });
+
+    function masonryLayout() {
+        setTimeout(function () {
+            $devices_grid.isotope('layout');
+        }, 250);
+    }
+
+    var cot_index_ui_config = {
+        id_type: {{ id_device_type_fr }},
+        generate_pdf: false,
+        device_status: '{{ device_status }}',
+        input_device_finder: '{{ input_device_finder }}',
+        contract_ui: {% if contract_ui is defined and contract_ui is same as(true) %}true{% else %}false{% endif %},
+        videowall: {% if videowall is defined and videowall is same as(true) %}true{% else %}false{% endif %}
+    };
+
+    $(document).ready(function(){
+        $(".filter-button").click(function(){
+            if ($(".filter-button").removeClass("filter-button-active")){
+                $(this).removeClass("filter-button-active");
+            }
+            $(this).addClass("filter-button-active");
+            filterState();
+        });
+
+        $("#btn_device_finder").click(function (e) {
+            e.preventDefault();
+            elementsFinder();
+        });
+
+        $("#input_device_finder").on('keyup',function(){
+            var key = event.keyCode || event.charCode;
+            if(key){
+                elementsFinder();
+            }
+            $("#input_device_finder").css("background-color", "#eee");
+        });
+
+        $("#id_device_type_fr").on('change',function(){
+            var id_type = $("#id_device_type_fr").val();
+            cot_index_ui_config.id_type = id_type;
+            saveUiConfig();
+            var path_url_encoded = "{{ path('admin_cot_sosindex', { id: '__ID__' }) }}";
+            path_url_encoded = path_url_encoded.replace('__ID__', $(this).val());
+            window.location.replace(path_url_encoded);
+        });
+
+        $('#contract_ui').change(function (e) {
+          e.preventDefault();
+          contractUi();
+        });
+
+        getUiConfig();
+        saveUiConfig();
+        SetCotDevicesTimer();
+    });
+
+    var cot_devices_timer_interval;
+    function SetCotDevicesTimer(){
+        var interval = $('#timer-range-ajax-update').val() * 1000;
+        cot_devices_timer_interval = setInterval(function () {
+            if($('#actualizacionAutomatica').is(":checked")) {
+                getDevicesStatus();
+            }
+        },interval);
+    }
+
+    $("#timer-range-ajax-update").on('change', function (e) {
+        clearInterval(cot_devices_timer_interval);
+        SetCotDevicesTimer();
+    });
+
+    $(document).ready(function(){
+        getDevicesStatus();
+        document.addEventListener("visibilitychange", function() {
+            if(document.visibilityState === 'visible'){
+                getDevicesStatus();
+            }
+            else {
+                clearInterval(cot_devices_timer_interval);
+            }
+        });
+    });
+
+    var isGettingDevicesStatus = false;
+    var show_msj_error_zero_devices = true;
+
+    function getDevicesStatus() {
+        var id = $("#id_device_type_fr").val();
+        // Using same route as main endpoint for status - will return JSON for AJAX
+        var path_url = "{{ path('admin_cot_sosindex', { id: '__ID__' }) }}";
+        var url_string = window.location.href;
+        var current_url = new URL(url_string);
+        path_url= path_url.replace('__ID__', id + current_url.search);
+        console.log('get status');
+
+        if(!isGettingDevicesStatus) {
+            isGettingDevicesStatus = true;
+            $.ajax({
+                url: path_url,
+                type: "GET",
+                data: {},
+                async: true,
+                success: function (response) {
+                    if (response.dispositivos.length > 0) {
+                        $('#datetime_update').html(response.SwIpDevicesMonitorLastUpdateDateTime);
+                        renderTypesStatus(response.count_status_type);
+                        renderDevicesStatus(response.dispositivos);
+                        renderDevicesAlarms(response.asd_ds);
+                    }
+                    else {
+                        if (show_msj_error_zero_devices) {
+                            alert("No se encontró información para este tipo de dispositivo. Intente seleccionando otro.");
+                        }
+                    }
+                    isGettingDevicesStatus = false;
+                }
+            }).fail(function (jqXHR){
+                isGettingDevicesStatus = false;
+                if (jqXHR.status === 0 || jqXHR.readyState === 0) {
+                    return;
+                }
+                alert("Ha ocurrido un error al intentar procesar los datos. Intente recargar la página.");
+            });
+        }
+    }
+
+    function renderTypesStatus(count_status_type) {
+        $.each(count_status_type, function(i,status_type_data){
+            $("#count_total_type_"+i).text("/" + status_type_data.total);
+            var count_unactive_type = $("#count_unactive_type_"+i);
+            if(status_type_data.unactive >0){
+                if(count_unactive_type.hasClass('btn-success waves-effect waves-light')){
+                    count_unactive_type.removeClass('btn-success waves-effect waves-light');
+                    count_unactive_type.addClass('btn-danger waves-effect waves-light');
+                }
+                count_unactive_type.text(status_type_data.unactive);
+            }
+            else{
+                if(count_unactive_type.hasClass('btn-danger waves-effect waves-light')){
+                    count_unactive_type.removeClass('btn-danger waves-effect waves-light');
+                    count_unactive_type.addClass('btn-success waves-effect waves-light');
+                }
+                count_unactive_type.html('<i class="fa fa-check" aria-hidden="true"></i>');
+            }
+        });
+    }
+
+    var renderingAlarms = {};
+
+    function renderDevicesAlarms(asd_ds){
+        // TODO: Create sos_alarm_process route in CotController
+        var path_url = "{{ path('admin_cot_sosindex', { id: 1 }) }}"; // Placeholder until route is created
+        $.each(asd_ds, function(i,alarm_data) {
+            var exist_el_device = ($('#asd_' + alarm_data.id).length > 0);
+
+            if (!exist_el_device && !renderingAlarms[alarm_data.id]) {
+                var txt_sensor;
+                switch (parseInt(alarm_data.id_sensor)){
+                    case 1:
+                        txt_sensor = 'Extintor 1';
+                        break;
+                    case 2:
+                        txt_sensor = 'Extintor 2';
+                        break;
+                    case 3:
+                        txt_sensor = 'Red Húmeda';
+                        break;
+                    default:
+                        return true;
+                }
+
+                var msg = `<h3>Puerta de <strong><q>${txt_sensor}</q></strong> abierta</h3>
+                    <p><strong>Detección: </strong>${alarm_data.created_at}</p>
+                    <p><strong>Eje: </strong>${alarm_data.eje_nombre}</p>
+                    <p><strong>Kilómetro: </strong>${alarm_data.km}</p>
+                    <p><strong>Orientación: </strong>${alarm_data.orientacion}</p>`;
+
+                var msg2 = `Puerta de ${txt_sensor} abierta \nDetección: ${alarm_data.created_at}`;
+                switchTitleTimer(msg2);
+
+                if (typeof bootbox !== 'undefined') {
+                    var dialog = bootbox.dialog({
+                        title: 'Alarma en poste ' + alarm_data.nombre,
+                        message: msg,
+                        size: 'large',
+                        backdrop: true,
+                        className: "alarm-sensor-popup",
+                        buttons: {
+                            ok: {
+                                label: "Aceptar",
+                                className: 'btn-danger',
+                                callback: function () {
+                                    var data ={
+                                        action: 'process',
+                                        id: alarm_data.id
+                                    };
+                                    $.ajax({
+                                        url: path_url,
+                                        type: "POST",
+                                        data: data,
+                                        async: true,
+                                        success: function (response) {
+                                            renderingAlarms[alarm_data.id] = false;
+                                            restoreTitle();
+                                            getDevicesStatus()
+                                        }
+                                    });
+                                }
+                            },
+                        }
+                    });
+                    dialog.init(function() {
+                        dialog.attr("id", 'asd_' + alarm_data.id)
+                    });
+                }
+                renderingAlarms[alarm_data.id] = true;
+            }
+        });
+    }
+
+    var oldTitle = document.title;
+    var switchTitleTimerInterval;
+    var runSwitchTitleTimerInterval = true;
+
+    function switchTitleTimer(newTitle){
+        if(runSwitchTitleTimerInterval){
+            runSwitchTitleTimerInterval = false;
+            switchTitleTimerInterval = setInterval(function () {
+                let url_icon;
+                if(document.title === oldTitle){
+                    document.title = newTitle;
+                    url_icon = '/public/images/alert-png-128wh.png';
+                }
+                else {
+                    document.title = oldTitle;
+                    url_icon = '/favicon.ico';
+                }
+                let icon = document.querySelector("link[rel*='icon']") || document.createElement('link');
+                icon.type = 'image/x-icon';
+                icon.rel = 'shortcut icon';
+                icon.href = url_icon;
+                document.getElementsByTagName('head')[0].appendChild(icon);
+            },1500);
+        }
+    }
+
+    function restoreTitle(){
+        var restore = true;
+        Object.entries(renderingAlarms).forEach(([key, value]) => {
+            if(value){
+                restore=false;
+            }
+        });
+        if(restore){
+            clearInterval(switchTitleTimerInterval);
+            runSwitchTitleTimerInterval=true;
+            var url_icon = '/favicon.ico';
+            document.title = oldTitle;
+            var icon = document.querySelector("link[rel*='icon']") || document.createElement('link');
+            icon.type = 'image/x-icon';
+            icon.rel = 'shortcut icon';
+            icon.href = url_icon;
+            document.getElementsByTagName('head')[0].appendChild(icon);
+        }
+    }
+
+    function renderDevicesStatus(DevicesStatusResponse) {
+        var active_devices_count =0;
+        var unactive_devices_count =0;
+
+        $.each(DevicesStatusResponse, function(i,device_status_data){
+            var exist_el_device = ($('#device_'+device_status_data.id).length > 0);
+
+            if (exist_el_device){
+                var el_device = $('#device_'+device_status_data.id);
+                el_device.attr('title',device_status_data.ip);
+                el_device.children('.btn_circle_text').text(device_status_data.nombre);
+                el_device.data('id_tipo',device_status_data.idTipo.id);
+                el_device.data('nombre_tipo',device_status_data.idTipo.tipo);
+                el_device.data('ip',device_status_data.ip);
+                el_device.data('nombre',device_status_data.nombre);
+                el_device.data('descripcion',device_status_data.descripcion);
+                el_device.data('km',device_status_data.km);
+                el_device.data('eje',device_status_data.eje.nombre);
+                el_device.data('tramo',device_status_data.tramo.nombre);
+                el_device.data('orientacion',device_status_data.orientacion);
+                el_device.data('concesionaria',device_status_data.concesionaria);
+                el_device.data('atributos',JSON.stringify(device_status_data.atributos));
+
+                var device_atributes_data = device_status_data.atributos;
+                var device_status_value = 1;
+
+                if( 'sos_sensors' in device_atributes_data){
+                    var sos_sensors = device_atributes_data.sos_sensors;
+
+                    if( 'f_all_est' in sos_sensors){
+                        if(sos_sensors.f_all_est === 1){
+                            device_status_value = 0;
+                        }
+                    }
+                    if( 'f_all_idr' in sos_sensors){
+                        if(sos_sensors.f_all_idr === 1){
+                            device_status_value = 0;
+                        }
+                    }
+                    if( 'f_all_est2' in sos_sensors){
+                        if(sos_sensors.f_all_est2 === 1){
+                            device_status_value = 0;
+                        }
+                    }
+                }
+
+                el_device.data('estado',device_status_value);
+
+                if(device_status_value === 0){
+                    if (el_device.hasClass('device_indeterminate')){
+                        el_device.removeClass('device_indeterminate');
+                    }
+                    if (el_device.hasClass('btn-success')){
+                        el_device.removeClass('btn-success');
+                    }
+                    if (el_device.hasClass('device_active')){
+                        el_device.removeClass('device_active');
+                    }
+                    if (el_device.hasClass('waves-dark')){
+                        el_device.removeClass('waves-dark');
+                    }
+
+                    el_device.addClass('btn-danger waves-effect waves-light device_unactive');
+                    unactive_devices_count++;
+                }
+                else if(device_status_value === 1){
+                    if (el_device.hasClass('device_indeterminate')){
+                        el_device.removeClass('device_indeterminate');
+                    }
+                    if (el_device.hasClass('btn-danger')){
+                        el_device.removeClass('btn-danger');
+                    }
+                    if (el_device.hasClass('device_unactive')){
+                        el_device.removeClass('device_unactive');
+                    }
+                    if (el_device.hasClass('waves-dark')){
+                        el_device.removeClass('waves-dark');
+                    }
+                    el_device.addClass('btn-success waves-effect waves-light device_active');
+                    active_devices_count++;
+                }
+                else if(device_status_value === 2){
+                    if (el_device.hasClass('btn-success') || el_device.hasClass('device_active')){
+                        el_device.removeClass('btn-success device_active');
+                    }
+                    if (el_device.hasClass('btn-danger') || el_device.hasClass('device_unactive')){
+                        el_device.removeClass('btn-danger device_active');
+                    }
+                    if (el_device.hasClass('waves-light')){
+                        el_device.removeClass('waves-light');
+                    }
+                    el_device.addClass('device_indeterminate waves-effect waves-dark');
+                    active_devices_count++;
+                }
+            }
+        });
+
+        $('.cot_device_container, .opc_device_container').each(function (i, device) {
+            var device_id = $(device).data('id');
+            var enabled = DevicesStatusResponse.find(x => x.id === device_id);
+            if(enabled === undefined){
+                $(device).remove();
+            }
+        });
+
+        contractUi();
+        filterState();
+        masonryLayout();
+        $('#total_devices_count').html((active_devices_count + unactive_devices_count));
+        $('#active_devices_count').html(active_devices_count);
+        $('#unactive_devices_count').html(+ unactive_devices_count);
+    }
+
+    function contractUi() {
+        var contract_ui = $('#contract_ui').is(":checked");
+        if (contract_ui){
+            $('.cot_device_container, .opc_device_container').each(function (i,device) {
+                if(!$(device).hasClass('device_unactive')){
+                    $(device).addClass('mini_device');
+                }
+                else{
+                    $(device).removeClass('mini_device');
+                }
+            });
+        }
+        else{
+            $('.cot_device_container, .opc_device_container').removeClass('mini_device');
+        }
+        cot_index_ui_config.contract_ui = contract_ui;
+        setTimeout(function () {
+            saveUiConfig();
+        }, 300);
+        return true;
+    }
+
+    function elementsFinder() {
+        var input_device_finder = $("#input_device_finder");
+        var btn_filter = $(".filter-button.filter-button-active");
+        var btn_filter_value = btn_filter.data('filter');
+
+        if(input_device_finder.val().length >= 2){
+            var str_searched = input_device_finder.val().toLowerCase();
+
+            $('.cot_device_container, .opc_device_container').each(function (i,device) {
+                var d_nombre = String($(device).data('nombre'));
+                var d_descripcion = String($(device).data('descripcion'));
+                var d_ip = String($(device).data('ip'));
+
+                if( ( d_nombre !== null && d_nombre.toLowerCase().indexOf(str_searched) >= 0 ) ||
+                    ( d_descripcion !== null && d_descripcion.toLowerCase().indexOf(str_searched) >= 0 ) ||
+                    ( d_ip !== null && d_ip.toLowerCase().indexOf(str_searched) >= 0)){
+
+                    if(btn_filter_value === "all") {
+                        $(device).show();
+                    }
+                    else {
+                        if($(device).hasClass(btn_filter_value)){
+                            $(device).show();
+                        }else {
+                            $(device).hide();
+                        }
+                    }
+                }
+                else{
+                    $(device).hide();
+                }
+            });
+        }
+        else if (input_device_finder.val().length === 0){
+            $('.cot_device_container, .opc_device_container').show();
+        }
+        else{
+            filterState();
+        }
+        cot_index_ui_config.input_device_finder = input_device_finder.val();
+        saveUiConfig();
+    }
+
+    function filterState() {
+        var btn_filter = $(".filter-button.filter-button-active");
+        var btn_filter_value = btn_filter.data('filter');
+        var input_device_finder = $("#input_device_finder");
+
+        if(input_device_finder.val().length >= 2){
+            elementsFinder();
+        }
+        else{
+            if(btn_filter_value === "all") {
+                $('.cot_device_container, .opc_device_container').show();
+            }
+            else {
+                $(".cot_device_container, .opc_device_container").not('.'+btn_filter_value).hide();
+                $('.cot_device_container, .opc_device_container').filter('.'+btn_filter_value).show();
+            }
+        }
+        cot_index_ui_config.device_status = btn_filter_value;
+        saveUiConfig();
+    }
+
+    function saveUiConfig() {
+        if (typeof $.cookie !== 'undefined') {
+            $.cookie('cot_index_ui_config', JSON.stringify(cot_index_ui_config), { expires: 7, path: '/', raw: true });
+        }
+        masonryLayout();
+    }
+
+    function getUiConfig() {
+        if(cot_index_ui_config.videowall){
+            saveUiConfig();
+        }
+
+        if(typeof $.cookie !== 'undefined' && $.cookie('cot_index_ui_config')) {
+            var ui_config = $.parseJSON($.cookie('cot_index_ui_config'));
+            try{
+                if (ui_config.device_status === 'all') {
+                    $('#btn_show_all').click();
+                }
+                else if (ui_config.device_status === 'device_active') {
+                    $('#btn_show_actives').click();
+                }
+                else if (ui_config.device_status === 'device_unactive') {
+                    $('#btn_show_unactives').click();
+                }
+                else{
+                    $('#btn_show_unactives').click();
+                }
+
+                if (ui_config.input_device_finder.length >= 2) {
+                    $('#input_device_finder').val(ui_config.input_device_finder);
+                    elementsFinder();
+                }
+
+                $('#contract_ui').prop('checked', ui_config.contract_ui).trigger('change');
+            }
+            catch (ex){
+                console.log('error cookie');
+            }
+        }
+    }
+
+    $(function(){
+        $('.cot_device_container, .opc_device_container').on('click', function(e){
+            if($(this).hasClass('active')){
+                $(this).removeClass('active');
+            }
+            else{
+                $(this).addClass('active');
+            }
+        });
+    });
+
+    $('.devices_grid_item').hover(function () {
+        if(!!$(this).hasClass('mini_device')){
+            masonryLayout();
+        }
+    });
+</script>
+{% endblock %}

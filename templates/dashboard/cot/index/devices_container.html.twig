@@ -18,15 +18,23 @@
     {% set alertWidth = 12 %}
 {% else %}
     {% set id_route_params = 5 %}
-    {% set basicWidth = 2 %}
-    {% set alertWidth = 4 %}
+    {# Use grid_items_width from the selector to determine device widths #}
+    {% if grid_items_width is defined %}
+        {% set basicWidth = grid_items_width %}
+        {% set alertWidth = grid_items_width %}
+    {% else %}
+        {% set basicWidth = 2 %}
+        {% set alertWidth = 4 %}
+    {% endif %}
 {% endif %}
 
 {% for tipo_dispositivo in tipos_dispositivos %}
     {% set type_devices_count = 0 %}
     {% set type_devices_count_u = 0 %}
+    {% set dispositivos_por_tipo = [] %}
     {% for dispositivo in dispositivos %}
         {% if dispositivo.idTipo.id == tipo_dispositivo.id %}
+            {% set dispositivos_por_tipo = dispositivos_por_tipo|merge([dispositivo]) %}
             {% set type_devices_count = type_devices_count + 1 %}
             {% if dispositivo.estado == 0 %}
                 {% set type_devices_count_u = type_devices_count_u + 1 %}
@@ -36,33 +44,51 @@
 
     {% set id_route_params = id_device_type_fr ?? 0 %}
     {% if id_route_params > 0 %}
-        {% set basicWidth = 12 %}
-        {% set alertWidth = 12 %}
+        {# When viewing a single device type, use full width #}
+        {% set apliedWidth = 12 %}
     {% else %}
-        {% set basicWidth = 2 %}
-        {% if type_devices_count > 200 %}{% set basicWidth = 4 %}{% endif %}
-        {% set alertWidth = 4 %}
-    {% endif %}
+        {# Use grid_items_width to determine both container and device widths #}
+        {% if grid_items_width is defined %}
+            {# Map grid_items_width values: 1=3cols, 2=6cols, 3=4cols, 4=2cols, 12=1col #}
+            {% if grid_items_width == 1 %}
+                {% set apliedWidth = 4 %}  {# 3 columns #}
+            {% elseif grid_items_width == 2 %}
+                {% set apliedWidth = 2 %}  {# 6 columns - default #}
+            {% elseif grid_items_width == 3 %}
+                {% set apliedWidth = 3 %}  {# 4 columns #}
+            {% elseif grid_items_width == 4 %}
+                {% set apliedWidth = 6 %}  {# 2 columns #}
+            {% elseif grid_items_width == 12 %}
+                {% set apliedWidth = 12 %} {# 1 column #}
+            {% else %}
+                {% set apliedWidth = 2 %}  {# Default to 6 columns #}
+            {% endif %}
 
-    {% set apliedWidth = 2 %}
-    {% if type_devices_count_u < 3 %}
-        {% set apliedWidth = basicWidth %}
-    {% else %}
-        {% set apliedWidth = alertWidth %}
+            {# Override for types with many failed devices #}
+            {% if type_devices_count_u >= 3 and apliedWidth < 4 %}
+                {% set apliedWidth = 4 %}  {# Minimum 3 columns for alert state #}
+            {% endif %}
+        {% else %}
+            {# Fallback if grid_items_width not defined #}
+            {% set apliedWidth = 2 %}
+            {% if type_devices_count_u >= 3 %}
+                {% set apliedWidth = 4 %}
+            {% endif %}
+        {% endif %}
     {% endif %}
 
     {% if type_devices_count > 0 %}
-        <div class="grid-item-block col-sm-{{ apliedWidth }} col-lg-{{ apliedWidth }}" style="padding: 1px;"
+        <div class="grid-item-block col-6 col-sm-6 col-md-4 col-lg-{{ apliedWidth }}" style="padding: 1px;"
              data-order="{{ type_devices_count_u }}">
             <div id="cot-main-wrapper_type_{{ tipo_dispositivo.id }}"
-                 class="container col-sm-12 col-lg-12"
+                 class="col-sm-12 col-lg-12 px-1 py-1"
                  style="margin-bottom: 0px !important;padding-top:10px;padding-bottom:10px;">
                 <div class="gallery col-lg-12 col-md-12 col-sm-12 col-12">
                     <span class="gallery-title" style="font-size: 18px;">
-{% if grid_items_width == 2 %}{{ tipo_dispositivo.tipo|slice(0,14) }}{% if tipo_dispositivo.tipo|length > 14 %}...{% endif %}{% else %}{{ tipo_dispositivo.tipo }}{% endif %}
+                        {% if grid_items_width == 2 %}{{ tipo_dispositivo.tipo|slice(0,14) }}{% if tipo_dispositivo.tipo|length > 14 %}...{% endif %}{% else %}{{ tipo_dispositivo.tipo }}{% endif %}
                         <span class="float-end">
                             <span id="count_unactive_type_{{ tipo_dispositivo.id }}"
-                                  class="badge status_count btn-danger waves-effect waves-light">{{ type_devices_count_u }}</span>
+                                  class="badge status_count {% if type_devices_count_u == 0 %}btn-success{% else %}btn-danger{% endif %} waves-effect waves-light">{% if type_devices_count_u == 0 %}<i class="fa fa-check" aria-hidden="true"></i>{% else %}{{ type_devices_count_u }}{% endif %}</span>
                             <span id="count_total_type_{{ tipo_dispositivo.id }}"
                                   style="font-size: 18px;">/{{ type_devices_count }}</span>
                         </span>
@@ -70,12 +96,11 @@
                 </div>
                 <div class="devices_grid">
                     <div class="devices_grid_sizer"></div>
-                    {% for dispositivo in dispositivos %}
-                        {% if dispositivo.idTipo.id == tipo_dispositivo.id %}
+                    {% for dispositivo in dispositivos_por_tipo %}
                             {# NO OPC: Si es diferente de metodo OPC se carga vista normal #}
                             {% if tipo_dispositivo.metodoMonitoreo not in [3,4,6,7] %}
                                 <div id="device_{{ dispositivo.id }}" title="{{ dispositivo.ip }}"
-                                     class="col-sm-1 text-center float-start devices_grid_item cot_device_container btn icon-btn type_{{ tipo_dispositivo.id }}
+                                     class="text-center float-start devices_grid_item cot_device_container icon-btn type_{{ tipo_dispositivo.id }}
                                         {% if dispositivo.estado == 1 or dispositivo.id == 787 %}
                                             device_active btn-success waves-effect waves-light
                                         {% elseif dispositivo.estado == 0 %}
@@ -110,7 +135,7 @@
                             {% elseif tipo_dispositivo.metodoMonitoreo == 3 %}
                                 {# SI OPC: Si metodo == OPC se carga vista OPC #}
                                 <div id="device_{{ dispositivo.id }}" title="{{ dispositivo.nombre }}"
-                                     class="col-sm-1 text-center float-start devices_grid_item opc_device_container btn icon-btn type_{{ tipo_dispositivo.id }}
+                                     class="text-center float-start devices_grid_item opc_device_container icon-btn type_{{ tipo_dispositivo.id }}
                                         {% if dispositivo.estado == 1 %}
                                             device_active btn-success waves-effect waves-light
                                         {% elseif dispositivo.estado == 0 %}
@@ -135,7 +160,7 @@
                                      data-concesionaria=""
                                      data-atributos=""
                                      data-nupdates="0">
-                                    <div style="width: 100%;">
+                                    <div class="devices_grid_header" style="width: 100%;">
                                         <i class="fa {{ dispositivo.idTipo.icono ?? 'fa-newspaper-o' }} btn-glyphicon img-circle btn_circle_icon_left"
                                            style="margin:0 1px 0 0;"></i>
                                         <div class="btn_circle_text">
@@ -147,7 +172,7 @@
                                         {% if opc_vars.opc_vars is defined %}
                                             {% for opc_var in opc_vars.opc_vars %}
                                                 <span id="{{ opc_var.opc_var|preg_replace("/[^A-Za-z0-9\\-]/", "-") }}"
-                                                      class="opc_var_device_container btn icon-btn
+                                                      class="opc_var_device_container icon-btn
                                                 {% if opc_var.opc_value == opc_var.result_success_value %}
                                                     device_active btn-success waves-effect waves-light
                                                 {% elseif opc_var.opc_value == 2 %}
@@ -166,7 +191,7 @@
                             {% elseif tipo_dispositivo.metodoMonitoreo == 4 or tipo_dispositivo.metodoMonitoreo == 6 or tipo_dispositivo.metodoMonitoreo == 7 %}
                                 {# SI Espiras #}
                                 <div id="device_{{ dispositivo.id }}" title="{{ dispositivo.nombre }}"
-                                     class="col-sm-1 text-center float-start devices_grid_item opc_device_container btn icon-btn type_{{ tipo_dispositivo.id }} monitoreo{{ tipo_dispositivo.metodoMonitoreo }}
+                                     class="text-center float-start devices_grid_item opc_device_container icon-btn type_{{ tipo_dispositivo.id }} monitoreo{{ tipo_dispositivo.metodoMonitoreo }}
                                         {% if dispositivo.estado == 1 %}
                                             device_active btn-success waves-effect waves-light
                                         {% elseif dispositivo.estado == 0 %}
@@ -215,7 +240,7 @@
                                         {% if obj_vars.sensors is defined %}
                                             {% for obj_var in obj_vars.sensors %}
                                                 <span id="esp_{{ dispositivo.id }}_sen_{{ obj_var.id }}"
-                                                      class="opc_var_device_container btn icon-btn
+                                                      class="opc_var_device_container icon-btn
                                                     {% if obj_var.status == 1 %}
                                                         device_active btn-success waves-effect waves-light
                                                     {% elseif obj_var.status == 0 %}
@@ -239,7 +264,6 @@
                                     </div>
                                 </div>
                             {% endif %}
-                        {% endif %}
                     {% endfor %}
                 </div>
             </div>

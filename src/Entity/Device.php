@@ -5,6 +5,8 @@ namespace App\Entity;
 use App\Repository\DeviceRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use App\Entity\TblCot04Ejes;
+use App\Entity\TblCot05Tramos;
 
 #[ORM\Entity(repositoryClass: DeviceRepository::class)]
 #[ORM\Table(name: 'tbl_cot_02_dispositivos')]
@@ -24,8 +26,9 @@ class Device
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $idExterno = null;
 
-    #[ORM\Column]
-    private ?int $idTipo = null;
+    #[ORM\ManyToOne(targetEntity: DeviceType::class)]
+    #[ORM\JoinColumn(name: 'id_tipo', referencedColumnName: 'id')]
+    private ?DeviceType $idTipo = null;
 
     #[ORM\Column(length: 15, nullable: true)]
     private ?string $ip = null;
@@ -42,11 +45,13 @@ class Device
     #[ORM\Column(type: Types::DECIMAL, precision: 5, scale: 3, nullable: true)]
     private ?string $km = null;
 
-    #[ORM\Column(type: 'smallint', options: ['default' => 0])]
-    private ?int $eje = 0;
+    #[ORM\ManyToOne(targetEntity: TblCot04Ejes::class)]
+    #[ORM\JoinColumn(name: 'eje', referencedColumnName: 'id')]
+    private ?TblCot04Ejes $eje = null;
 
-    #[ORM\Column(type: 'smallint', options: ['default' => 0])]
-    private ?int $tramo = 0;
+    #[ORM\ManyToOne(targetEntity: TblCot05Tramos::class)]
+    #[ORM\JoinColumn(name: 'tramo', referencedColumnName: 'id')]
+    private ?TblCot05Tramos $tramo = null;
 
     #[ORM\Column(length: 2, nullable: true)]
     private ?string $orientacion = null;
@@ -60,8 +65,9 @@ class Device
     #[ORM\Column(options: ['default' => 1])]
     private ?bool $supervisado = true;
 
-    #[ORM\Column(type: 'smallint')]
-    private ?int $concesionaria = null;
+    #[ORM\ManyToOne(targetEntity: Tbl06Concesionaria::class)]
+    #[ORM\JoinColumn(name: 'concesionaria', referencedColumnName: 'id_concesionaria')]
+    private ?Tbl06Concesionaria $concesionaria = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $atributos = null;
@@ -89,13 +95,6 @@ class Device
 
     #[ORM\Column(length: 20, options: ['default' => '0'])]
     private ?string $critical = '0';
-
-    // TODO(human): Add relationships with other entities
-    // - ManyToOne with DeviceType (idTipo -> DeviceType.id)
-    // - OneToMany with DeviceAlarms 
-    // - OneToMany with DeviceStatusHistory
-    // - ManyToOne with User entities for created/updated/deleted tracking
-    // - Consider relationship with Concessionaire entity if created
 
     public function __construct()
     {
@@ -125,12 +124,12 @@ class Device
         return $this;
     }
 
-    public function getIdTipo(): ?int
+    public function getIdTipo(): ?DeviceType
     {
         return $this->idTipo;
     }
 
-    public function setIdTipo(int $idTipo): static
+    public function setIdTipo(?DeviceType $idTipo): static
     {
         $this->idTipo = $idTipo;
         return $this;
@@ -191,23 +190,23 @@ class Device
         return $this;
     }
 
-    public function getEje(): ?int
+    public function getEje(): ?TblCot04Ejes
     {
         return $this->eje;
     }
 
-    public function setEje(int $eje): static
+    public function setEje(?TblCot04Ejes $eje): static
     {
         $this->eje = $eje;
         return $this;
     }
 
-    public function getTramo(): ?int
+    public function getTramo(): ?TblCot05Tramos
     {
         return $this->tramo;
     }
 
-    public function setTramo(int $tramo): static
+    public function setTramo(?TblCot05Tramos $tramo): static
     {
         $this->tramo = $tramo;
         return $this;
@@ -257,12 +256,12 @@ class Device
         return $this;
     }
 
-    public function getConcesionaria(): ?int
+    public function getConcesionaria(): ?Tbl06Concesionaria
     {
         return $this->concesionaria;
     }
 
-    public function setConcesionaria(int $concesionaria): static
+    public function setConcesionaria(?Tbl06Concesionaria $concesionaria): static
     {
         $this->concesionaria = $concesionaria;
         return $this;

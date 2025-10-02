@@ -359,65 +359,7 @@ class StaffController extends BaseController
      }*/
 
     //CREA EL FORMULARIO QUE SE UTILIZARÁ PARA CREAR UN NUEVO REGISTRO
-    #[Route('/add', name: 'add', methods: ['GET', 'POST'])]
-
-    public function addAction(Request $request): Response
-    {
-        // TODO: Migrate to new permission system using PermissionService
-        // Old entity 'ntty_14' should map to MODULE_STAFF with CREATE permission
-        // Example: $this->permissionService->hasModulePermission(ModuleVoter::MODULE_STAFF, ModuleVoter::CREATE)
-        /*
-        //INICIO ACL--
-        $securityController = $this->get('sgv_user.security_controller');
-        if (false === $securityController->isGrantedCheck('CREATE', 'ntty_14')) {
-            throw new AccessDeniedException();
-        }// FIN ACL
-        */
-        $params = $request->query->all();
-        //dump($params);
-        $staff = new Tbl14Personal();
-        $nombres = (isset($params['nombres']) and $params['nombres']) ? $params['nombres'] : null;
-        $apellidos = (isset($params['apellidos']) and $params['apellidos']) ? $params['apellidos'] : null;
-        $rut = (isset($params['rut']) and $params['rut']) ? $params['rut'] : null;
-
-        if ($nombres) {
-            $staff->setNombres($nombres);
-        }
-        if ($apellidos) {
-            $staff->setApellidos($apellidos);
-        }
-        if ($rut) {
-            $staff->setRut($rut);
-        }
-
-        $form = $this->createCreateForm($staff);
-        $em = $this->entityManager;
-        //Tbl13LicenciasDeConducir
-        $query_builder_licencias = $em->createQueryBuilder();
-        $query_builder_licencias->select('reg')
-            ->from('sgvDashboardBundle:Tbl13LicenciasDeConducir', 'reg')
-            //->groupBy('reg.tipoLicencia')
-            ->orderBy('reg.tipoLicencia', 'ASC')
-            ->orderBy('reg.aliasLicencia', 'ASC');
-
-        $licencias = $query_builder_licencias->getQuery()->getResult();
-
-        return $this->render('dashboard/Staff/add.html.twig', array(
-            'form' => $form->createView(),
-            'licencias' => $licencias
-
-        ));
-    }
-
-    //FUNCIÓN PARA CREAR EL FORMULARIO
-    private function createCreateForm(Tbl14Personal $entity)
-    {
-        $form = $this->createForm(new Tbl14PersonalType(), $entity, array(
-            'action' => $this->generateUrl('sgv_staff_create'),
-            'method' => 'POST'
-        ));
-        return $form;
-    }
+    // DUPLICATE ROUTE REMOVED - use 'create' route instead
 
     //FUNCIÓN PARA CREAR EL REGISTRO EN LA BASE DE DATOS
     #[Route('/create', name: 'create', methods: ['GET', 'POST'])]

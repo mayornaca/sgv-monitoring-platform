@@ -1,416 +1,493 @@
 {% extends '@EasyAdmin/page/content.html.twig' %}
 
-{% block title %}Diagrama de Red - COT{% endblock %}
-
-{% block page_title %}
-    <i class="fas fa-project-diagram"></i> Diagrama de Red - COT
-{% endblock %}
+{% block title %}Monitor de red{% endblock %}
 
 {% block head_stylesheets %}
     {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('gojs/ZoomSlider.css') }}">
     <style>
-        .network-container {
-            background-color: #fff;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-        .network-controls {
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-        .device-status-legend {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 5px;
-            margin-bottom: 20px;
-        }
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .legend-color {
-            width: 20px;
-            height: 20px;
-            border-radius: 3px;
-            border: 1px solid #ddd;
-        }
-        .alarm-sidebar {
-            max-height: 600px;
-            overflow-y: auto;
-        }
-        .alarm-item {
-            padding: 10px;
-            margin-bottom: 10px;
-            border-left: 3px solid #ffc107;
-            background: #fff;
-            border-radius: 5px;
-            transition: all 0.3s;
-        }
-        .alarm-item:hover {
-            transform: translateX(5px);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        #networkDiagram {
+        #myDiagramDiv {
+            background-color: #ffffff;
             width: 100%;
-            height: 600px;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            background: #fafafa;
+            height: 900px;
+            border: 1px solid #d4eaff;
+            position: relative;
         }
-        .network-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
+        /* Ajuste para el ZoomSlider */
+        .zoomSlider {
+            margin-top: 10px !important;
+            margin-right: 10px !important;
         }
-        .stat-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
+        .controls-panel {
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 5px;
         }
-        .stat-card.success {
-            background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
-        }
-        .stat-card.danger {
-            background: linear-gradient(135deg, #f2994a 0%, #f2c94c 100%);
-        }
-        .stat-card.info {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-        }
-        .stat-number {
-            font-size: 2rem;
-            font-weight: bold;
-        }
-        .stat-label {
-            font-size: 0.85rem;
-            opacity: 0.9;
+        .controls-panel button {
+            margin-right: 5px;
         }
     </style>
 {% endblock %}
 
 {% block head_javascript %}
     {{ parent() }}
-    <script src="https://unpkg.com/gojs@2.3.11/release/go.js"></script>
+    <script src="{{ asset('gojs/go.js') }}"></script>
+    <script src="{{ asset('gojs/ZoomSlider.js') }}"></script>
 {% endblock %}
 
-{% block body %}
-    <div class="content-wrapper">
-        <!-- Estadísticas de Red -->
-        <div class="network-stats">
-            <div class="stat-card success">
-                <div class="stat-number">
-                    {% set active_devices = 0 %}
-                    {% if json_graphic_template is defined %}
-                        {% set active_devices = json_graphic_template|split('"color":"#00de2a"')|length - 1 %}
-                    {% endif %}
-                    {{ active_devices }}
-                </div>
-                <div class="stat-label">Dispositivos Activos</div>
-            </div>
-            <div class="stat-card danger">
-                <div class="stat-number">
-                    {% set inactive_devices = 0 %}
-                    {% if json_graphic_template is defined %}
-                        {% set inactive_devices = json_graphic_template|split('"color":"#de0000"')|length - 1 %}
-                    {% endif %}
-                    {{ inactive_devices }}
-                </div>
-                <div class="stat-label">Dispositivos Inactivos</div>
-            </div>
-            <div class="stat-card info">
-                <div class="stat-number">
-                    {% set total_links = 0 %}
-                    {% if json_graphic_template is defined %}
-                        {% set total_links = json_graphic_template|split('"from":')|length - 1 %}
-                    {% endif %}
-                    {{ total_links }}
-                </div>
-                <div class="stat-label">Enlaces de Red</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">{{ alarmas_dispositivos|length|default(0) }}</div>
-                <div class="stat-label">Alarmas Activas</div>
-            </div>
-        </div>
+{% block main %}
+    <div class="content-panel">
+        <div class="content-panel-body">
+            <h2>DIAGRAMA DE RED COSTANERA NORTE</h2>
 
-        <div class="row">
-            <!-- Diagrama Principal -->
-            <div class="col-lg-9">
-                <div class="network-container">
-                    <!-- Controles del Diagrama -->
-                    <div class="network-controls">
-                        <div class="row align-items-center">
-                            <div class="col-md-6">
-                                <h4 class="mb-0">
-                                    <i class="fas fa-project-diagram"></i> Topología de Red
-                                </h4>
-                            </div>
-                            <div class="col-md-6 text-end">
-                                <div class="btn-group" role="group">
-                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="zoomToFit()">
-                                        <i class="fas fa-compress"></i> Ajustar
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="zoomIn()">
-                                        <i class="fas fa-search-plus"></i> Zoom +
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="zoomOut()">
-                                        <i class="fas fa-search-minus"></i> Zoom -
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-outline-success" onclick="refreshDiagram()">
-                                        <i class="fas fa-sync-alt"></i> Actualizar
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-outline-info" onclick="exportDiagram()">
-                                        <i class="fas fa-download"></i> Exportar
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Leyenda -->
-                    <div class="device-status-legend">
-                        <div class="legend-item">
-                            <div class="legend-color" style="background-color: #00de2a;"></div>
-                            <span>Dispositivo Activo</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color" style="background-color: #de0000;"></div>
-                            <span>Dispositivo Inactivo</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color" style="background-color: #ffc107;"></div>
-                            <span>Enlace Primario</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color" style="background-color: #1976d2;"></div>
-                            <span>Enlace Secundario</span>
-                        </div>
-                        <div class="legend-item">
-                            <div style="width: 40px; height: 2px; background: repeating-linear-gradient(90deg, #333 0, #333 5px, transparent 5px, transparent 10px);"></div>
-                            <span>RPL Link</span>
-                        </div>
-                    </div>
-
-                    <!-- Diagrama GoJS -->
-                    <div id="networkDiagram"></div>
-                </div>
+            <!-- Panel de controles -->
+            <div class="controls-panel">
+                <button id="SaveButton" class="btn btn-sm btn-primary" onclick="save()">
+                    <i class="fas fa-save"></i> Guardar
+                </button>
+                <button class="btn btn-sm btn-info" onclick="load()">
+                    <i class="fas fa-sync"></i> Recargar
+                </button>
+                <button class="btn btn-sm btn-warning" onclick="addPort('top')">
+                    <i class="fas fa-plus"></i> Agregar Puerto Superior
+                </button>
+                <button class="btn btn-sm btn-warning" onclick="addPort('bottom')">
+                    <i class="fas fa-plus"></i> Agregar Puerto Inferior
+                </button>
+                <button class="btn btn-sm btn-warning" onclick="addPort('left')">
+                    <i class="fas fa-plus"></i> Agregar Puerto Izquierdo
+                </button>
+                <button class="btn btn-sm btn-warning" onclick="addPort('right')">
+                    <i class="fas fa-plus"></i> Agregar Puerto Derecho
+                </button>
             </div>
 
-            <!-- Panel de Alarmas -->
-            <div class="col-lg-3">
-                <div class="network-container">
-                    <h5 class="mb-3">
-                        <i class="fas fa-bell text-warning"></i> 
-                        Alarmas de Red
-                        <span class="badge bg-warning">{{ alarmas_dispositivos|length|default(0) }}</span>
-                    </h5>
-                    
-                    <div class="alarm-sidebar">
-                        {% if alarmas_dispositivos is defined and alarmas_dispositivos|length > 0 %}
-                            {% for alarma in alarmas_dispositivos|slice(0, 10) %}
-                            <div class="alarm-item">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <span class="badge bg-warning">ID: {{ alarma.id }}</span>
-                                    <small class="text-muted">Hace 5 min</small>
-                                </div>
-                                
-                                {% if alarma.idDispositivo is defined %}
-                                <h6 class="mb-1">
-                                    <i class="fas fa-server"></i> 
-                                    {{ alarma.idDispositivo.nombre|default('Dispositivo') }}
-                                </h6>
-                                {% if alarma.idDispositivo.ip is defined %}
-                                <small class="text-muted d-block mb-2">
-                                    IP: {{ alarma.idDispositivo.ip }}
-                                </small>
-                                {% endif %}
-                                {% endif %}
-                                
-                                {% if alarma.idAlarma is defined %}
-                                <p class="mb-2 small">
-                                    {{ alarma.idAlarma.alarma|default('Sin descripción') }}
-                                </p>
-                                {% endif %}
-                                
-                                <div class="d-flex gap-2">
-                                    <button class="btn btn-sm btn-outline-primary flex-fill">
-                                        <i class="fas fa-eye"></i> Ver
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-success flex-fill">
-                                        <i class="fas fa-check"></i> Resolver
-                                    </button>
-                                </div>
-                            </div>
-                            {% endfor %}
-                            
-                            {% if alarmas_dispositivos|length > 10 %}
-                            <div class="text-center mt-3">
-                                <a href="#" class="btn btn-sm btn-outline-primary">
-                                    Ver todas ({{ alarmas_dispositivos|length }})
-                                </a>
-                            </div>
-                            {% endif %}
-                        {% else %}
-                            <div class="alert alert-success">
-                                <i class="fas fa-check-circle"></i>
-                                Sin alarmas en la red
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
+            <!-- Canvas para GoJS -->
+            <div id="myDiagramDiv" style="position: relative;"></div>
 
-                <!-- Información de Red -->
-                <div class="network-container mt-3">
-                    <h5 class="mb-3">
-                        <i class="fas fa-info-circle"></i> Información de Red
-                    </h5>
-                    <dl class="row small">
-                        <dt class="col-6">Anillo Principal:</dt>
-                        <dd class="col-6">ERPS ID 1</dd>
-                        
-                        <dt class="col-6">Sub Anillo 1:</dt>
-                        <dd class="col-6">ERPS ID 2</dd>
-                        
-                        <dt class="col-6">Sub Anillo 2:</dt>
-                        <dd class="col-6">ERPS ID 3</dd>
-                        
-                        <dt class="col-6">Última Actualización:</dt>
-                        <dd class="col-6">{{ "now"|date("H:i:s") }}</dd>
-                    </dl>
-                </div>
+            <!-- Textarea para guardar/editar modelo JSON -->
+            <div style="margin-top: 20px;">
+                <h4>Modelo JSON (Debug)</h4>
+                <textarea id="mySavedModel" style="width: 100%; height: 200px; font-family: monospace; font-size: 12px;">{{ json_graphic_template|raw }}</textarea>
             </div>
         </div>
     </div>
 
-    <!-- Script para GoJS -->
     <script>
-        var networkDiagram;
-        
+        var myDiagram;
+        var zoomSlider;
+
         function init() {
             var $ = go.GraphObject.make;
-            
-            networkDiagram = $(go.Diagram, "networkDiagram", {
-                initialContentAlignment: go.Spot.Center,
+
+            myDiagram = $(go.Diagram, "myDiagramDiv", {
                 "undoManager.isEnabled": true,
-                "animationManager.isEnabled": true,
-                layout: $(go.ForceDirectedLayout, {
-                    maxIterations: 200,
-                    defaultSpringLength: 30,
-                    defaultElectricalCharge: 100
-                })
+                "animationManager.isEnabled": false,
+                "grid.visible": false,
+                "grid.gridCellSize": new go.Size(5, 5),
+                isReadOnly: false,
+                initialContentAlignment: go.Spot.Center,
+                initialAutoScale: go.Diagram.UniformToFill
             });
 
-            // Template para nodos
-            networkDiagram.nodeTemplate = $(go.Node, "Auto",
-                {
-                    locationSpot: go.Spot.Center,
-                    cursor: "pointer"
-                },
-                new go.Binding("location", "loc", go.Point.parse).makeTwoWay(go.Point.stringify),
-                $(go.Shape, "RoundedRectangle",
-                    { strokeWidth: 2, stroke: "#555", fill: "white" },
-                    new go.Binding("fill", "color"),
-                    new go.Binding("desiredSize", "size", go.Size.parse).makeTwoWay(go.Size.stringify)
-                ),
-                $(go.TextBlock,
-                    { margin: 8, font: "bold 11px sans-serif", textAlign: "center" },
-                    new go.Binding("text", "name")
-                ),
-                {
-                    toolTip: $(go.Adornment, "Auto",
-                        $(go.Shape, { fill: "#FFFFCC" }),
-                        $(go.TextBlock, { margin: 4 },
-                            new go.Binding("text", "", function(data) {
-                                return "Dispositivo: " + data.name + "\nEstado: " + 
-                                    (data.color === "#00de2a" ? "Activo" : "Inactivo");
-                            })
-                        )
-                    )
+            // Listener para modificaciones
+            myDiagram.addDiagramListener("Modified", function(e) {
+                var button = document.getElementById("SaveButton");
+                if (button) button.disabled = !myDiagram.isModified;
+                var idx = document.title.indexOf("*");
+                if (myDiagram.isModified) {
+                    if (idx < 0) document.title += "*";
+                } else {
+                    if (idx >= 0) document.title = document.title.substr(0, idx);
                 }
+            });
+
+            // Función para crear botones de menú contextual
+            function makeButton(text, action, visiblePredicate) {
+                return $("ContextMenuButton",
+                    $(go.TextBlock, text),
+                    { click: action },
+                    visiblePredicate ? new go.Binding("visible", "", function(o, e) {
+                        return o.diagram ? visiblePredicate(o, e) : false;
+                    }).ofObject() : {});
+            }
+
+            // Menú contextual para nodos
+            var nodeMenu = $("ContextMenu",
+                makeButton("Copiar", function(e, obj) {
+                    e.diagram.commandHandler.copySelection();
+                }),
+                makeButton("Eliminar", function(e, obj) {
+                    e.diagram.commandHandler.deleteSelection();
+                }),
+                $(go.Shape, "LineH", { strokeWidth: 2, height: 1, stretch: go.GraphObject.Horizontal }),
+                makeButton("Add top port", function(e, obj) { addPort("top"); }),
+                makeButton("Add left port", function(e, obj) { addPort("left"); }),
+                makeButton("Add right port", function(e, obj) { addPort("right"); }),
+                makeButton("Add bottom port", function(e, obj) { addPort("bottom"); })
             );
 
-            // Template para enlaces
-            networkDiagram.linkTemplate = $(go.Link,
-                {
-                    routing: go.Link.AvoidsNodes,
-                    curve: go.Link.JumpOver,
-                    corner: 5,
-                    toShortLength: 4
+            var portSize = new go.Size(14, 13);
+
+            // Menú contextual para puertos
+            var portMenu = $("ContextMenu",
+                makeButton("Intercambiar orden", function(e, obj) {
+                    swapOrder(obj.part.adornedObject);
+                }),
+                makeButton("Eliminar puerto", function(e, obj) {
+                    removePort(obj.part.adornedObject);
+                }),
+                makeButton("Cambiar color", function(e, obj) {
+                    changeColor(obj.part.adornedObject);
+                }),
+                makeButton("Eliminar puertos de este costado", function(e, obj) {
+                    removeAll(obj.part.adornedObject);
+                })
+            );
+
+            // Template principal para nodos
+            myDiagram.nodeTemplate = $(go.Node, "Table", {
+                    locationObjectName: "BODY",
+                    locationSpot: go.Spot.Center,
+                    selectionObjectName: "BODY",
+                    contextMenu: nodeMenu,
+                    resizable: true,
+                    resizeObjectName: "BODY"
                 },
-                new go.Binding("points"),
-                $(go.Shape,
-                    { strokeWidth: 2, stroke: "#555" },
-                    new go.Binding("stroke", "color"),
-                    new go.Binding("strokeDashArray", "dash")
-                ),
-                $(go.Shape,
-                    { toArrow: "Standard", stroke: null },
-                    new go.Binding("fill", "color")
-                ),
-                $(go.Panel, "Auto",
-                    { visible: false },
-                    new go.Binding("visible", "text", function(t) { return t !== ""; }),
-                    $(go.Shape, "RoundedRectangle",
-                        { fill: "#FFFFCC", stroke: "#555" }
+                new go.Binding("location", "loc", go.Point.parse).makeTwoWay(go.Point.stringify),
+
+                // Cuerpo del nodo
+                $(go.Panel, "Auto", {
+                        row: 1, column: 1, name: "BODY",
+                        stretch: go.GraphObject.Fill
+                    },
+                    $(go.Shape, "Rectangle", {
+                            fill: "#AC193D",
+                            stroke: null,
+                            strokeWidth: 0,
+                            minSize: new go.Size(56, 56)
+                        },
+                        new go.Binding("desiredSize", "size", go.Size.parse).makeTwoWay(go.Size.stringify),
+                        new go.Binding("fill", "color")
                     ),
-                    $(go.TextBlock,
-                        { margin: 3, font: "9px sans-serif" },
-                        new go.Binding("text", "text")
+                    $(go.TextBlock, {
+                            margin: 10,
+                            textAlign: "center",
+                            font: "14px Segoe UI,sans-serif",
+                            stroke: "white",
+                            editable: true
+                        },
+                        new go.Binding("text", "name").makeTwoWay()
+                    )
+                ),
+
+                // Panel izquierdo de puertos
+                $(go.Panel, "Vertical",
+                    new go.Binding("itemArray", "leftArray"), {
+                        row: 1, column: 0,
+                        itemTemplate: $(go.Panel, {
+                                _side: "left",
+                                fromSpot: go.Spot.Left, toSpot: go.Spot.Left,
+                                fromLinkable: true, toLinkable: true, cursor: "pointer",
+                                contextMenu: portMenu
+                            },
+                            new go.Binding("portId", "portId"),
+                            $(go.Shape, "Rectangle", {
+                                    stroke: null, strokeWidth: 0,
+                                    desiredSize: portSize,
+                                    margin: new go.Margin(1, 0)
+                                },
+                                new go.Binding("fill", "portColor")
+                            ),
+                            $(go.TextBlock, "", {
+                                    margin: 0, textAlign: "center",
+                                    font: "9pt helvetica, arial, sans-serif",
+                                    stroke: "white", editable: true
+                                },
+                                new go.Binding("text", "text").makeTwoWay()
+                            )
+                        )
+                    }
+                ),
+
+                // Panel superior de puertos
+                $(go.Panel, "Horizontal",
+                    new go.Binding("itemArray", "topArray"), {
+                        row: 0, column: 1,
+                        itemTemplate: $(go.Panel, {
+                                _side: "top",
+                                fromSpot: go.Spot.Top, toSpot: go.Spot.Top,
+                                fromLinkable: true, toLinkable: true, cursor: "pointer",
+                                contextMenu: portMenu
+                            },
+                            new go.Binding("portId", "portId"),
+                            $(go.Shape, "Rectangle", {
+                                    stroke: null, strokeWidth: 0,
+                                    desiredSize: portSize,
+                                    margin: new go.Margin(0, 1)
+                                },
+                                new go.Binding("fill", "portColor")
+                            ),
+                            $(go.TextBlock, "", {
+                                    margin: 0, textAlign: "center",
+                                    font: "9pt helvetica, arial, sans-serif",
+                                    stroke: "white", editable: true
+                                },
+                                new go.Binding("text", "text").makeTwoWay()
+                            )
+                        )
+                    }
+                ),
+
+                // Panel derecho de puertos
+                $(go.Panel, "Vertical",
+                    new go.Binding("itemArray", "rightArray"), {
+                        row: 1, column: 2,
+                        itemTemplate: $(go.Panel, {
+                                _side: "right",
+                                fromSpot: go.Spot.Right, toSpot: go.Spot.Right,
+                                fromLinkable: true, toLinkable: true, cursor: "pointer",
+                                contextMenu: portMenu
+                            },
+                            new go.Binding("portId", "portId"),
+                            $(go.Shape, "Rectangle", {
+                                    stroke: null, strokeWidth: 0,
+                                    desiredSize: portSize,
+                                    margin: new go.Margin(1, 0)
+                                },
+                                new go.Binding("fill", "portColor")
+                            ),
+                            $(go.TextBlock, "", {
+                                    margin: 0, textAlign: "center",
+                                    font: "9pt helvetica, arial, sans-serif",
+                                    stroke: "white", editable: true
+                                },
+                                new go.Binding("text", "text").makeTwoWay()
+                            )
+                        )
+                    }
+                ),
+
+                // Panel inferior de puertos
+                $(go.Panel, "Horizontal",
+                    new go.Binding("itemArray", "bottomArray"), {
+                        row: 2, column: 1,
+                        itemTemplate: $(go.Panel, {
+                                _side: "bottom",
+                                fromSpot: go.Spot.Bottom, toSpot: go.Spot.Bottom,
+                                fromLinkable: true, toLinkable: true, cursor: "pointer",
+                                contextMenu: portMenu
+                            },
+                            new go.Binding("portId", "portId"),
+                            $(go.Shape, "Rectangle", {
+                                    stroke: null, strokeWidth: 0,
+                                    desiredSize: portSize,
+                                    margin: new go.Margin(0, 1)
+                                },
+                                new go.Binding("fill", "portColor")
+                            ),
+                            $(go.TextBlock, "", {
+                                    margin: 0, textAlign: "center",
+                                    font: "9pt helvetica, arial, sans-serif",
+                                    stroke: "white", editable: true
+                                },
+                                new go.Binding("text", "text").makeTwoWay()
+                            )
+                        )
+                    }
+                )
+            );
+
+            // Template para comentarios
+            myDiagram.nodeTemplateMap.add("Comment",
+                $(go.Node, "Auto",
+                    new go.Binding("location", "loc", go.Point.parse).makeTwoWay(go.Point.stringify),
+                    { locationSpot: go.Spot.Center },
+                    $(go.Shape, "Rectangle", { fill: "#ffffff26", strokeWidth: 0 }),
+                    $(go.TextBlock, {
+                            margin: 5,
+                            maxSize: new go.Size(200, NaN),
+                            wrap: go.TextBlock.WrapFit,
+                            textAlign: "center",
+                            editable: true,
+                            font: "bold 12pt Helvetica, Arial, sans-serif",
+                            stroke: '#454545'
+                        },
+                        new go.Binding("text").makeTwoWay()
                     )
                 )
             );
 
-            // Cargar datos del diagrama
-            {% if json_graphic_template is defined %}
-            var modelData = {{ json_graphic_template|raw }};
-            networkDiagram.model = go.Model.fromJson(JSON.stringify(modelData));
-            {% endif %}
-        }
+            // Template para títulos
+            myDiagram.nodeTemplateMap.add("Title",
+                $(go.Node, "Auto",
+                    new go.Binding("location", "loc", go.Point.parse).makeTwoWay(go.Point.stringify),
+                    { locationSpot: go.Spot.Center },
+                    $(go.Shape, "Rectangle", { fill: "#ffffff26", strokeWidth: 0 }),
+                    $(go.TextBlock, {
+                            margin: 5,
+                            wrap: go.TextBlock.WrapFit,
+                            textAlign: "center",
+                            editable: true,
+                            font: "bold 16pt Helvetica, Arial, sans-serif",
+                            stroke: '#000d33'
+                        },
+                        new go.Binding("text").makeTwoWay()
+                    )
+                )
+            );
 
-        // Funciones de control
-        function zoomToFit() {
-            networkDiagram.commandHandler.zoomToFit();
-        }
+            // Template para enlaces
+            myDiagram.linkTemplate = $(go.Link, {
+                    routing: go.Link.AvoidsNodes,
+                    corner: 4,
+                    curve: go.Link.JumpGap,
+                    reshapable: true,
+                    resegmentable: true,
+                    relinkableFrom: true,
+                    relinkableTo: true
+                },
+                new go.Binding("points").makeTwoWay(),
+                $(go.Shape, { stroke: "#2F4F4F", strokeWidth: 2 },
+                    new go.Binding("stroke", "color"),
+                    new go.Binding("strokeWidth", "width"),
+                    new go.Binding("strokeDashArray", "dash")
+                ),
+                $(go.TextBlock, "transition", {
+                        textAlign: "center",
+                        font: "10pt helvetica, arial, sans-serif",
+                        stroke: "black",
+                        margin: 4,
+                        editable: true
+                    },
+                    new go.Binding("text", "text").makeTwoWay()
+                )
+            );
 
-        function zoomIn() {
-            networkDiagram.commandHandler.increaseZoom();
-        }
+            // Soporte para doble-click en el fondo para agregar nodos
+            myDiagram.toolManager.clickCreatingTool.archetypeNodeData = {
+                name: "Nodo",
+                leftArray: [],
+                rightArray: [],
+                topArray: [],
+                bottomArray: []
+            };
 
-        function zoomOut() {
-            networkDiagram.commandHandler.decreaseZoom();
-        }
+            // Menú contextual del diagrama
+            myDiagram.contextMenu = $("ContextMenu",
+                makeButton("Pegar", function(e, obj) {
+                    e.diagram.commandHandler.pasteSelection(e.diagram.lastInput.documentPoint);
+                }, function(o) {
+                    return o.diagram.commandHandler.canPasteSelection();
+                }),
+                makeButton("Deshacer", function(e, obj) {
+                    e.diagram.commandHandler.undo();
+                }, function(o) {
+                    return o.diagram.commandHandler.canUndo();
+                }),
+                makeButton("Rehacer", function(e, obj) {
+                    e.diagram.commandHandler.redo();
+                }, function(o) {
+                    return o.diagram.commandHandler.canRedo();
+                })
+            );
 
-        function refreshDiagram() {
-            location.reload();
-        }
-
-        function exportDiagram() {
-            var img = networkDiagram.makeImage({
-                scale: 2,
-                background: "white"
+            // Zoom slider
+            zoomSlider = new ZoomSlider(myDiagram, {
+                alignment: go.Spot.TopRight,
+                alignmentFocus: go.Spot.TopRight,
+                size: 150,
+                buttonSize: 30,
+                orientation: 'vertical',
+                margin: 20  // Agregar margen para que no se superponga
             });
-            var link = document.createElement('a');
-            link.download = 'network-diagram-' + new Date().getTime() + '.png';
-            link.href = img.src;
-            link.click();
+
+            // Cargar el diagrama
+            load();
+        }
+
+        // Funciones para manejo de puertos
+        function addPort(side) {
+            myDiagram.startTransaction("addPort");
+            myDiagram.selection.each(function(node) {
+                if (!(node instanceof go.Node)) return;
+                var i = 0;
+                while (node.findPort(side + i.toString()) !== node) i++;
+                var name = side + i.toString();
+                var arr = node.data[side + "Array"];
+                if (arr) {
+                    var newportdata = {
+                        portId: name,
+                        portColor: go.Brush.randomColor(),
+                        text: ""
+                    };
+                    myDiagram.model.insertArrayItem(arr, -1, newportdata);
+                }
+            });
+            myDiagram.commitTransaction("addPort");
+        }
+
+        function swapOrder(port) {
+            var arr = port.panel.itemArray;
+            if (arr.length >= 2) {
+                for (var i = 0; i < arr.length; i++) {
+                    if (arr[i].portId === port.portId) {
+                        myDiagram.startTransaction("swap ports");
+                        if (i >= arr.length - 1) i--;
+                        var newarr = arr.slice(0);
+                        newarr[i] = arr[i + 1];
+                        newarr[i + 1] = arr[i];
+                        myDiagram.model.setDataProperty(port.part.data, port._side + "Array", newarr);
+                        myDiagram.commitTransaction("swap ports");
+                        break;
+                    }
+                }
+            }
+        }
+
+        function removePort(port) {
+            myDiagram.startTransaction("removePort");
+            var pid = port.portId;
+            var arr = port.panel.itemArray;
+            for (var i = 0; i < arr.length; i++) {
+                if (arr[i].portId === pid) {
+                    myDiagram.model.removeArrayItem(arr, i);
+                    break;
+                }
+            }
+            myDiagram.commitTransaction("removePort");
+        }
+
+        function removeAll(port) {
+            myDiagram.startTransaction("removePorts");
+            var nodedata = port.part.data;
+            var side = port._side;
+            myDiagram.model.setDataProperty(nodedata, side + "Array", []);
+            myDiagram.commitTransaction("removePorts");
+        }
+
+        function changeColor(port) {
+            myDiagram.startTransaction("colorPort");
+            var data = port.data;
+            myDiagram.model.setDataProperty(data, "portColor", go.Brush.randomColor());
+            myDiagram.commitTransaction("colorPort");
+        }
+
+        // Guardar y cargar
+        function save() {
+            document.getElementById("mySavedModel").value = myDiagram.model.toJson();
+            myDiagram.isModified = false;
+        }
+
+        function load() {
+            var modelText = document.getElementById("mySavedModel").value;
+            if (modelText) {
+                myDiagram.model = go.Model.fromJson(modelText);
+            }
         }
 
         // Inicializar cuando el DOM esté listo
         document.addEventListener('DOMContentLoaded', init);
-
-        // Auto-refresh cada 60 segundos
-        setTimeout(function() {
-            location.reload();
-        }, 60000);
     </script>
 {% endblock %}

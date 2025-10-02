@@ -1,0 +1,416 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block page_title %}Historial de Recursos{% endblock %}
+
+{% block head_stylesheets %}
+    {{ parent() }}
+    <style>
+        #timeline1 svg {
+            max-width: 1800px;
+        }
+
+        .y-tick {
+            stroke: black;
+            fill: none;
+            stroke-width: 1px;
+        }
+
+        .line-separator, .x-axis {
+            stroke: #777;
+            fill: none;
+            stroke-width: 1px;
+        }
+
+        .drop-line:last-child .line-separator {
+            display: none;
+        }
+
+        text {
+            stroke: none;
+            fill: black;
+        }
+
+        .legend {
+            display: none;
+        }
+
+        #timeline1 div {
+            position: fixed;
+            padding: 10px;
+            margin: 0 0 0 0;
+            left: 76px;
+            right: auto;
+            bottom: 10px;
+            background-color: rgba(255, 255, 255, 0.86);
+        }
+
+        .filter-card {
+            margin-bottom: 20px;
+        }
+
+        .estado-legend {
+            display: inline-block;
+            height: 18px;
+            width: 18px;
+            margin-right: 5px;
+        }
+
+        .btn-navigation {
+            margin: 0 2px;
+        }
+    </style>
+{% endblock %}
+
+{% block page_content %}
+    <div class="container-fluid">
+        <h1 class="h2 mb-3">
+            <i class="fas fa-history"></i> Historial de Cambios de Estado - Recursos
+        </h1>
+
+        <!-- Filtros -->
+        <div class="card filter-card">
+            <div class="card-body">
+                <form id="filterForm" method="get" action="">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label for="fechaInicio" class="form-label">Fecha Inicio</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="fechaInicio" name="fechaInicio"
+                                       value="{{ fechaInicio }}" placeholder="DD-MM-YYYY HH:mm:ss" required>
+                                <span class="input-group-text">
+                                    <i class="fas fa-calendar"></i>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="fechaTermino" class="form-label">Fecha Término</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="fechaTermino" name="fechaTermino"
+                                       value="{{ fechaTermino }}" placeholder="DD-MM-YYYY HH:mm:ss" required>
+                                <span class="input-group-text">
+                                    <i class="fas fa-calendar"></i>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="itemsSelected" class="form-label">Recursos</label>
+                            <select class="form-select" id="itemsSelected" name="itemsSelected[]" multiple size="5">
+                                {% for item in all_items %}
+                                    <option value="{{ item.codigo_recurso }}"
+                                        {% if item.codigo_recurso in itemsSelected %}selected{% endif %}>
+                                        {{ item.descripcion }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">Ctrl+Click para selección múltiple</small>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search"></i> Buscar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Timeline Controls and Visualization -->
+        {% if arr_reg_items is defined %}
+            <!-- Navigation Controls -->
+            <div class="mb-3">
+                <div class="btn-group">
+                    <button id="btn-prev-day" type="button" class="btn btn-primary btn-navigation">
+                        <i class="fas fa-backward"></i> -1 Día
+                    </button>
+                    <button id="btn-prev" type="button" class="btn btn-info btn-navigation">
+                        <i class="fas fa-backward"></i> -1 Hora
+                    </button>
+                    <button id="btn-next" type="button" class="btn btn-info btn-navigation">
+                        +1 Hora <i class="fas fa-forward"></i>
+                    </button>
+                    <button id="btn-next-day" type="button" class="btn btn-primary btn-navigation">
+                        +1 Día <i class="fas fa-forward"></i>
+                    </button>
+                </div>
+
+                <!-- Legend -->
+                <div class="float-end">
+                    <span class="estado-legend" style="background-color: grey;"></span> Receso
+                    <span class="estado-legend" style="background-color: green;"></span> Disponible
+                    <span class="estado-legend" style="background-color: red;"></span> Asignado
+                    <span class="estado-legend" style="background-color: orange;"></span> Reparación
+                </div>
+            </div>
+
+            <!-- Timeline Chart -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Timeline de Estados</h5>
+                </div>
+                <div class="card-body">
+                    <div id="timeline1"></div>
+                </div>
+            </div>
+
+            <!-- Tabla de datos -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Detalle de Cambios</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Fecha/Hora</th>
+                                    <th>Recurso</th>
+                                    <th>Estado Anterior</th>
+                                    <th>Estado Nuevo</th>
+                                    <th>Duración</th>
+                                    <th>Observaciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if data_table is defined and data_table|length > 0 %}
+                                    {% for item in data_table %}
+                                        <tr>
+                                            <td>{{ item.fecha|default('-') }}</td>
+                                            <td>{{ item.recurso|default('-') }}</td>
+                                            <td>
+                                                <span class="badge bg-secondary">
+                                                    {{ item.estado_anterior|default('-') }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-primary">
+                                                    {{ item.estado_nuevo|default('-') }}
+                                                </span>
+                                            </td>
+                                            <td>{{ item.duracion|default('-') }}</td>
+                                            <td>{{ item.observaciones|default('-') }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="6" class="text-center">No hay datos para mostrar</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                No se encontraron cambios de estado en el período seleccionado.
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <!-- Scripts adicionales necesarios -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="https://unpkg.com/timelines-chart@2"></script>
+
+    <script>
+        // Crear variable global de datos
+        var data = [];
+        {% if arr_reg_items is defined and arr_reg_items is not empty %}
+            {% if arr_reg_items is iterable %}
+                // PHP array passed directly
+                data = {{ arr_reg_items|json_encode|raw }};
+            {% else %}
+                // String JSON passed
+                try {
+                    data = JSON.parse('{{ arr_reg_items|raw }}');
+                } catch (e) {
+                    console.error('Error parsing resources data:', e);
+                    data = [];
+                }
+            {% endif %}
+        {% endif %}
+
+        // Inicializar chart global con colores de estados de recursos
+        var myChart = TimelinesChart()(document.getElementById('timeline1'))
+            .timeFormat('%d-%m-%Y %H:%M:%S')
+            .zQualitative(true)
+            .maxLineHeight(20)
+            .leftMargin(120)
+            .rightMargin(180)
+            .bottomMargin(150)
+            .enableOverview(true)
+            .enableAnimations(false)
+            .zColorScale(d3.scaleOrdinal()
+                .domain(["REC", "DIS", "OCC", "MAN"])
+                .range(["grey", "green", "red", "orange"])
+            );
+
+        // REC: RECESO (grey)
+        // DIS: DISPONIBLE (green)
+        // OCC: ASIGNADO (red)
+        // MAN: REPARACIÓN (orange)
+
+        async function renderGraphic(data) {
+            console.log('renderizando:', data);
+
+            if (!data || data.length === 0) {
+                console.log('No hay datos para renderizar');
+                document.getElementById('timeline1').innerHTML =
+                    '<div class="alert alert-warning"><i class="fas fa-info-circle"></i> No hay datos para mostrar en el período seleccionado</div>';
+                return;
+            }
+
+            var sensors_count = 0;
+            for (var prop in data) {
+                if (data[prop].hasOwnProperty('d')) {
+                    sensors_count += Object.keys(data[prop].d).length;
+                }
+            }
+
+            var maxHeight = 640;
+            if ((sensors_count * 25) > 640) {
+                maxHeight = sensors_count * 25;
+            }
+
+            try {
+                myChart.maxHeight(maxHeight);
+                myChart.data(data).refresh();
+            } catch (e) {
+                console.error('Error al renderizar el gráfico:', e);
+                document.getElementById('timeline1').innerHTML =
+                    '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> Error al renderizar el gráfico</div>';
+            }
+        }
+
+        function getResourcesHistory() {
+            var params = {
+                fechaInicio: $('#fechaInicio').val(),
+                fechaTermino: $('#fechaTermino').val(),
+                'itemsSelected[]': $('#itemsSelected').val() || []
+            };
+
+            // Mostrar loading
+            $('#timeline1').html('<div class="alert alert-info"><i class="fas fa-spinner fa-spin"></i> Cargando datos...</div>');
+
+            $.ajax({
+                url: '{{ path('siv_dashboard_historial_recursos') }}',
+                type: "GET",
+                data: params,
+                async: true,
+                cache: false,
+                success: function (response) {
+                    if (response.arr_reg_items && response.arr_reg_items.length > 0) {
+                        try {
+                            // arr_reg_items ya viene como string JSON del controller
+                            data = typeof response.arr_reg_items === 'string'
+                                ? JSON.parse(response.arr_reg_items)
+                                : response.arr_reg_items;
+                            renderGraphic(data);
+
+                            // Actualizar tabla de datos si existe
+                            if (response.data_table && response.data_table.length > 0) {
+                                updateDataTable(response.data_table);
+                            }
+                        } catch (e) {
+                            console.error('Error parseando datos:', e);
+                            $('#timeline1').html('<div class="alert alert-danger">Error al procesar los datos</div>');
+                        }
+                    } else {
+                        $("#timeline1").html(
+                            '<div class="alert alert-warning">No se encontró información para el período seleccionado</div>'
+                        );
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error:', error);
+                    $('#timeline1').html('<div class="alert alert-danger">Error al obtener los datos</div>');
+                }
+            });
+        }
+
+        function updateDataTable(dataTable) {
+            // Función para actualizar la tabla de datos dinámicamente si es necesario
+            console.log('Tabla actualizada con', dataTable.length, 'registros');
+        }
+
+        // Botones de navegación temporal
+        $('#btn-prev').click(function () {
+            var fechaInicio_val = $('#fechaInicio').val();
+            fechaInicio_val = moment(fechaInicio_val, 'DD-MM-YYYY HH:mm:ss', true).add(-1, 'hour').format('DD-MM-YYYY HH:mm:ss');
+            $('#fechaInicio').val(fechaInicio_val);
+
+            var fechaTermino_val = $('#fechaTermino').val();
+            fechaTermino_val = moment(fechaTermino_val, 'DD-MM-YYYY HH:mm:ss', true).add(-1, 'hour').format('DD-MM-YYYY HH:mm:ss');
+            $('#fechaTermino').val(fechaTermino_val);
+
+            getResourcesHistory();
+        });
+
+        $('#btn-next').click(function () {
+            var fechaInicio_val = $('#fechaInicio').val();
+            fechaInicio_val = moment(fechaInicio_val, 'DD-MM-YYYY HH:mm:ss', true).add(1, 'hour').format('DD-MM-YYYY HH:mm:ss');
+            $('#fechaInicio').val(fechaInicio_val);
+
+            var fechaTermino_val = $('#fechaTermino').val();
+            fechaTermino_val = moment(fechaTermino_val, 'DD-MM-YYYY HH:mm:ss', true).add(1, 'hour').format('DD-MM-YYYY HH:mm:ss');
+            $('#fechaTermino').val(fechaTermino_val);
+
+            getResourcesHistory();
+        });
+
+        $('#btn-prev-day').click(function () {
+            var fechaInicio_val = $('#fechaInicio').val();
+            var dt_ini = moment(fechaInicio_val, 'DD-MM-YYYY HH:mm:ss', true);
+            var fechaTermino_val = $('#fechaTermino').val();
+            var dt_end = moment(fechaTermino_val, 'DD-MM-YYYY HH:mm:ss', true);
+
+            if (dt_end.diff(dt_ini, 'days') >= 1 && dt_end.diff(dt_ini, 'days') <= 4) {
+                fechaTermino_val = dt_end.add(-1, 'day').format('DD-MM-YYYY HH:mm:ss');
+            }
+
+            fechaInicio_val = dt_ini.add(-1, 'day').format('DD-MM-YYYY HH:mm:ss');
+            $('#fechaInicio').val(fechaInicio_val);
+            $('#fechaTermino').val(fechaTermino_val);
+
+            getResourcesHistory();
+        });
+
+        $('#btn-next-day').click(function () {
+            var fechaInicio_val = $('#fechaInicio').val();
+            var dt_ini = moment(fechaInicio_val, 'DD-MM-YYYY HH:mm:ss', true);
+            var fechaTermino_val = $('#fechaTermino').val();
+            var dt_end = moment(fechaTermino_val, 'DD-MM-YYYY HH:mm:ss', true);
+
+            if (dt_end.diff(dt_ini, 'days') >= 1 && dt_end.diff(dt_ini, 'days') <= 4) {
+                fechaInicio_val = dt_ini.add(1, 'day').format('DD-MM-YYYY HH:mm:ss');
+            }
+
+            fechaTermino_val = dt_end.add(1, 'day').format('DD-MM-YYYY HH:mm:ss');
+            $('#fechaInicio').val(fechaInicio_val);
+            $('#fechaTermino').val(fechaTermino_val);
+
+            getResourcesHistory();
+        });
+
+        jQuery(document).ready(function() {
+            console.log('Inicializando historial de recursos');
+
+            {% if arr_reg_items is defined %}
+                renderGraphic(data);
+            {% endif %}
+
+            {% if fechaInicio %}
+            $('#fechaInicio').val('{{ fechaInicio }}');
+            {% endif %}
+
+            {% if fechaTermino %}
+            $('#fechaTermino').val('{{ fechaTermino }}');
+            {% endif %}
+        });
+    </script>
+{% endblock %}

@@ -117,10 +117,11 @@ class ConcessionariesController extends BaseController
         ));
     }
 
-    //CREA EL FORMULARIO QUE SE UTILIZARÁ PARA CREAR UN NUEVO REGISTRO
-    #[Route('/add', name: 'add', methods: ['GET', 'POST'])]
 
-    public function addAction(): Response
+    //FUNCIÓN PARA CREAR EL REGISTRO EN LA BASE DE DATOS
+    #[Route('/create', name: 'create', methods: ['GET', 'POST'])]
+
+    public function createAction(Request $request): Response
     {
         // TODO: Migrate to new permission system using PermissionService
         // Old entity 'ntty_06' should map to MODULE_CONCESSIONARIES with CREATE permission
@@ -132,41 +133,28 @@ class ConcessionariesController extends BaseController
             throw new AccessDeniedException();
         }// FIN ACL
         */
+
         $concessionaries = new Tbl06Concesionaria();
-        $form = $this->createCreateForm($concessionaries);
-
-        return $this->render('dashboard/Concessionaries/add.html.twig', array('form' => $form->createView()));
-    }
-
-    //FUNCIÓN PARA CREAR EL FORMULARIO
-    private function createCreateForm(Tbl06Concesionaria $entity)
-    {
-        $form = $this->createForm(new Tbl06ConcesionariaType(), $entity, array(
+        $form = $this->createForm(new Tbl06ConcesionariaType(), $concessionaries, array(
             'action' => $this->generateUrl('sgv_concessionaries_create'),
             'method' => 'POST'
         ));
-        return $form;
-    }
 
-    //FUNCIÓN PARA CREAR EL REGISTRO EN LA BASE DE DATOS
-    #[Route('/create', name: 'create', methods: ['GET', 'POST'])]
+        // Handle GET request (show form)
+        if ($request->getMethod() === 'GET') {
+            return $this->render('dashboard/Concessionaries/add.html.twig', array('form' => $form->createView()));
+        }
 
-    public function createAction(Request $request): Response
-    {
-        $concessionaries = new Tbl06Concesionaria();
-
-        // Se pasan los valores a la entidad para auditoria
-        $current_user = $this->getUser();
-        //dump($current_user->getId());
-        $concessionaries->SetRegStatus(true);
-        $concessionaries->SetCreatedBy($current_user->getId());
-        $concessionaries->SetCreatedAt(new \DateTime());
-        //----------------------------------------------------
-
-        $form = $this->createCreateForm($concessionaries);
+        // Handle POST request (process form)
         $form->handleRequest($request);
 
         if ($form->isValid()) {
+            // Se pasan los valores a la entidad para auditoria
+            $current_user = $this->getUser();
+            $concessionaries->SetRegStatus(true);
+            $concessionaries->SetCreatedBy($current_user->getId());
+            $concessionaries->SetCreatedAt(new \DateTime());
+
             // $file stores the uploaded PDF file
             /** @var Symfony\Component\HttpFoundation\File\UploadedFile $file */
             if ($concessionaries->getLogo()) {
@@ -177,7 +165,6 @@ class ConcessionariesController extends BaseController
                 }
                 // Generate a unique name for the file before saving it
                 $fileName = $this->get('nzo_url_encryptor')->encrypt($concessionaries->getIdConcesionaria()) . '.' . $extension;
-                //dump($fileName);
                 // Move the file to the directory where brochures are stored
                 $file->move(
                     $this->getParameter('concessionaries_directory'),

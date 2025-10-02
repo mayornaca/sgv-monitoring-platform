@@ -1,0 +1,177 @@
+#!/usr/bin/env php
+<?php
+/**
+ * Script de verificación automatizada para migraciones de reportes
+ * Ejecutar después de cada migración para validar que todo esté correcto
+ */
+
+require_once dirname(__DIR__).'/vendor/autoload.php';
+
+use Symfony\Component\Console\Output\ConsoleOutput;
+use Symfony\Component\Console\Helper\Table;
+use Symfony\Component\Console\Formatter\OutputFormatterStyle;
+
+$output = new ConsoleOutput();
+$output->getFormatter()->setStyle('success', new OutputFormatterStyle('green'));
+$output->getFormatter()->setStyle('error', new OutputFormatterStyle('red'));
+$output->getFormatter()->setStyle('warning', new OutputFormatterStyle('yellow'));
+
+$output->writeln("\n<info>🔍 VERIFICACIÓN DE MIGRACIÓN DE REPORTES</info>\n");
+
+// Configuración
+$routeName = $argv[1] ?? null;
+if (!$routeName) {
+    $output->writeln("<error>❌ USO: php bin/verify-migration [nombre_ruta]</error>");
+    $output->writeln("<comment>Ejemplo: php bin/verify-migration admin_siv_dashboard_registro_incidente</comment>\n");
+    exit(1);
+}
+
+$checklist = [];
+$errors = [];
+
+// 1. Verificar que la ruta existe
+$output->write("1. Verificando que la ruta existe... ");
+exec("php bin/console debug:router | grep '$routeName'", $routeOutput, $routeCode);
+if ($routeCode === 0 && !empty($routeOutput)) {
+    $output->writeln("<success>✓</success>");
+    $checklist['Ruta registrada'] = '✓';
+
+    // Extraer la URL de la ruta
+    preg_match('/\s+(\/\S+)\s+$/', $routeOutput[0], $matches);
+    $routeUrl = $matches[1] ?? null;
+} else {
+    $output->writeln("<error>✗</error>");
+    $checklist['Ruta registrada'] = '✗';
+    $errors[] = "La ruta '$routeName' no está registrada";
+}
+
+// 2. Verificar que la ruta está en el menú
+$output->write("2. Verificando enlace en el menú... ");
+$menuFile = dirname(__DIR__) . '/src/Controller/Admin/DashboardController.php';
+$menuContent = file_get_contents($menuFile);
+if (strpos($menuContent, $routeName) !== false) {
+    $output->writeln("<success>✓</success>");
+    $checklist['Enlace en menú'] = '✓';
+} else {
+    $output->writeln("<warning>⚠</warning>");
+    $checklist['Enlace en menú'] = '⚠';
+    $errors[] = "La ruta '$routeName' no está en el menú (puede ser intencional)";
+}
+
+// 3. Verificar que las vistas existen y usan el template correcto
+$output->write("3. Verificando vistas Twig... ");
+$viewsDir = dirname(__DIR__) . '/templates/dashboard/siv';
+$viewErrors = [];
+
+// Buscar archivos Twig relacionados
+exec("find $viewsDir -name '*.html.twig' -type f", $twigFiles);
+foreach ($twigFiles as $file) {
+    $content = file_get_contents($file);
+
+    // Verificar extends correcto
+    if (preg_match('/{% extends [\'"]([^\'"]*)[\'"]\s*%}/', $content, $matches)) {
+        $extends = $matches[1];
+        if ($extends === 'base_modern.html.twig') {
+            $viewErrors[] = basename($file) . " extiende de template inexistente: $extends";
+        }
+    }
+
+    // Verificar rutas rotas
+    if (preg_match_all("/{{ path\('([^']+)'/", $content, $matches)) {
+        foreach ($matches[1] as $pathName) {
+            exec("php bin/console debug:router | grep '$pathName'", $pathOutput, $pathCode);
+            if ($pathCode !== 0 || empty($pathOutput)) {
+                $viewErrors[] = basename($file) . " contiene ruta rota: $pathName";
+            }
+        }
+    }
+}
+
+if (empty($viewErrors)) {
+    $output->writeln("<success>✓</success>");
+    $checklist['Vistas Twig'] = '✓';
+} else {
+    $output->writeln("<error>✗</error>");
+    $checklist['Vistas Twig'] = '✗';
+    $errors = array_merge($errors, $viewErrors);
+}
+
+// 4. Limpiar cache
+$output->write("4. Limpiando cache... ");
+exec("php bin/console cache:clear", $cacheOutput, $cacheCode);
+if ($cacheCode === 0) {
+    $output->writeln("<success>✓</success>");
+    $checklist['Cache limpiado'] = '✓';
+} else {
+    $output->writeln("<error>✗</error>");
+    $checklist['Cache limpiado'] = '✗';
+    $errors[] = "Error al limpiar el cache";
+}
+
+// 5. Verificar que la ruta responde (HTTP check)
+if (isset($routeUrl)) {
+    $output->write("5. Verificando respuesta HTTP... ");
+    $baseUrl = 'http://localhost:8000'; // Ajustar según tu configuración
+    $fullUrl = $baseUrl . $routeUrl;
+
+    // Intenta hacer una petición HEAD
+    $ch = curl_init($fullUrl);
+    curl_setopt($ch, CURLOPT_NOBODY, true);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode >= 200 && $httpCode < 400) {
+        $output->writeln("<success>✓</success> (HTTP $httpCode)");
+        $checklist['Respuesta HTTP'] = "✓ ($httpCode)";
+    } else {
+        $output->writeln("<error>✗</error> (HTTP $httpCode)");
+        $checklist['Respuesta HTTP'] = "✗ ($httpCode)";
+        if ($httpCode === 0) {
+            $errors[] = "No se pudo conectar al servidor. ¿Está ejecutándose?";
+        } else {
+            $errors[] = "La ruta responde con código HTTP $httpCode";
+        }
+    }
+}
+
+// 6. Verificar funciones PostgreSQL
+$output->write("6. Verificando función PostgreSQL... ");
+$controllerFile = dirname(__DIR__) . '/src/Controller/Dashboard/SivController.php';
+$controllerContent = file_get_contents($controllerFile);
+if (preg_match_all('/(?:FROM|from)\s+(fn_\w+|FN_\w+)\s*\(/', $controllerContent, $matches)) {
+    $functions = array_unique($matches[1]);
+    $output->writeln("<info>Encontradas: " . implode(', ', $functions) . "</info>");
+    $checklist['Funciones PG'] = implode(', ', $functions);
+} else {
+    $output->writeln("<warning>⚠ No se encontraron funciones</warning>");
+    $checklist['Funciones PG'] = '⚠';
+}
+
+// Mostrar resumen
+$output->writeln("\n<info>📊 RESUMEN DE VERIFICACIÓN</info>\n");
+
+$table = new Table($output);
+$table->setHeaders(['Verificación', 'Estado']);
+foreach ($checklist as $item => $status) {
+    $table->addRow([$item, $status]);
+}
+$table->render();
+
+// Mostrar errores si los hay
+if (!empty($errors)) {
+    $output->writeln("\n<error>❌ ERRORES ENCONTRADOS:</error>\n");
+    foreach ($errors as $error) {
+        $output->writeln("  • <error>$error</error>");
+    }
+    exit(1);
+} else {
+    $output->writeln("\n<success>✅ TODAS LAS VERIFICACIONES PASARON</success>\n");
+}
+
+// Sugerencia de captura de pantalla
+$output->writeln("<comment>📸 RECORDATORIO: Toma una captura de pantalla del reporte funcionando</comment>");
+$output->writeln("<comment>📝 COMANDO: gnome-screenshot -a</comment>\n");

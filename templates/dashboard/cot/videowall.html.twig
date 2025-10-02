@@ -1,14 +1,28 @@
 {% extends '@EasyAdmin/page/content.html.twig' %}
 
-{% block title %}Monitor de dispositivos CN{% endblock %}
+{% block title %}
+    {% if not videowall %}Monitor de dispositivos CN{% endif %}
+{% endblock %}
 
 {% block page_title %}
-    <i class="fas fa-th-large"></i> Monitor de Dispositivos - COT
+    {% if not videowall %}
+        <i class="fas fa-th-large"></i> Monitor de Dispositivos - COT
+    {% endif %}
 {% endblock %}
 
 {% block head_stylesheets %}
     {{ parent() }}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.9.2/jquery.contextMenu.min.css">
+
+    <style>
+        /* Override EasyAdmin CSS Variables with custom values */
+        :root {
+            --content-padding-left: 2px !important;
+            --content-padding-right: 2px !important;
+            --lg-content-padding-left: 5px !important;
+            --lg-content-padding-right: 5px !important;
+        }
+    </style>
 
     <!-- Bootstrap 3 Compatible Modal and JSON Editor CSS -->
     <style>
@@ -69,10 +83,12 @@
         }
 
         .device-color-warning {
-            background-color: #f0ad4e !important;
-            border-color: #eea236 !important;
-            color: #fff !important;
+            color: #000000 !important;
+            background-image: linear-gradient(to bottom, #FFEB3B 0, #ebbd16 100%);
+            background-repeat: repeat-x;
+            border-color: #e38d13;
         }
+
 
         .device-color-indeterminate {
             background-image: -webkit-linear-gradient(top, #f7f7f7 0, #777 100%) !important;
@@ -81,33 +97,54 @@
             color: black !important;
         }
 
-        /* Base definitions for circular icon buttons */
-        .btn_circle_image_left {
+        /* Base definitions for circular icon buttons - CONSOLIDATED */
+
+        .devices_grid_item:not(.mini_device) div.devices_grid_header{
+            position: relative;
+            /*left: -7px;*/
+        }
+        .devices_grid_item.mini_device div.devices_grid_header div.btn_circle_text{
+            display: none;
+        }
+
+        .btn_circle_image_left,
+        .btn_circle_icon_left {
             float: left;
-            background: #fff;
-            margin-right: 1px;
             width: 30px;
             height: 30px;
             border-radius: 50%;
+            background: rgb(255 255 255 / 68%);
+        }
+
+        .btn_circle_image_left {
+            margin-right: 1px;
         }
 
         .btn_circle_icon_left {
-            float: left;
             padding: 7px 0 0 0;
-            background: #fff;
-            margin-left: -11px;
-            margin-right: 1px;
-            margin-top: 2px;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
         }
+
+/*        .btn_circle_image_left:not(.mini_device), .btn_circle_icon_left:not(.mini_device) {
+            border-top-left-radius: 0px;
+            border-bottom-left-radius: 0px;
+            position: relative;
+            left: -7px;
+        }*/
+
+
 
         .btn_circle_text {
             font-size: 10pt;
             word-wrap: break-word;
             overflow: hidden;
             text-align: left;
+            padding: 6px 0 0 2px;
+            display: inline-flex;
+            max-width: calc(99% - 31px);
+            flex-direction: row;
+            flex-wrap: nowrap;
+            align-content: center;
+            justify-content: flex-start;
         }
 
         /* Device state specific styling */
@@ -116,22 +153,9 @@
         }
 
         .device_unactive .btn_circle_icon_left {
-            background: #fff;
+            /*background: #fff;*/
         }
 
-        /* Ensure circular borders are preserved even with Bootstrap button classes */
-        .btn_circle_icon_left.img-circle,
-        .btn_circle_image_left.img-circle,
-        .img-circle.btn-success,
-        .img-circle.btn-danger,
-        .img-circle.btn-warning,
-        .img-circle.device_indeterminate,
-        .btn_circle_icon_left,
-        .btn_circle_image_left {
-            -webkit-border-radius: 50% !important;
-            -moz-border-radius: 50% !important;
-            border-radius: 50% !important;
-        }
     </style>
     <style id="modal_ui">
         .ui-draggable .modal-header {
@@ -158,9 +182,11 @@
         }
 
         .cot_device_container:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.35);
         {% if transitions == 2 %} transition-timing-function: ease;
             transition: all 0.4s;
-        {% endif %} z-index: 1;
+        {% endif %} z-index: 10;
         }
 
         .cot_device_container:active {
@@ -168,31 +194,56 @@
 
         /* Modern responsive grid behavior - equivalent to col-sm-1 */
         .cot_device_container:not(.mini_device) {
-            width: calc(8.33% - 2px); /* Equivalent to col-sm-1 with margin compensation */
-            min-width: 120px; /* Minimum width for readability */
-            max-width: 160px; /* Maximum width to prevent oversized devices */
+            max-height: 36px;
+        }
+
+        .cot_device_container:not(.mini_device) div.btn_circle_text{
+            max-height: 30px;
         }
 
         .opc_device_container:not(.mini_device) {
-            width: calc(8.33% - 2px); /* Equivalent to col-sm-1 with margin compensation */
-            min-width: 120px;
-            max-width: 160px;
+
         }
 
-        /* Responsive adjustments for smaller screens */
-        @media (max-width: 768px) {
-            .cot_device_container:not(.mini_device),
-            .opc_device_container:not(.mini_device) {
-                width: calc(16.66% - 2px); /* Equivalent to col-sm-2 on mobile */
-                min-width: 100px;
+        /* Dispositivos con ancho fijo para formar columnas y filas */
+        .devices_grid_item:not(.mini_device) {
+            width: 143px;
+            min-width: 100px;
+            /* margin: 2px; */
+            display: inline-block;
+        }
+
+        /* Extra small screens (<576px): Ajustes para móvil */
+        @media (max-width: 575px) {
+            .h1, h1 {
+                font-size: 24px;
+            }
+
+            /* En móvil, dispositivos ocupan todo el ancho disponible */
+            .devices_grid_item:not(.mini_device) {
+                width: 100%;
+                margin: 0 0 4px 0;
+            }
+
+            /* Panel de control más compacto */
+            #modern-control-panel .row {
+                margin: 0;
+            }
+
+            #modern-control-panel .col-sm-3 {
+                padding: 4px;
+            }
+
+            #modern-control-panel label {
+                font-size: 0.85rem;
+                margin-bottom: 4px;
             }
         }
 
-        @media (max-width: 576px) {
-            .cot_device_container:not(.mini_device),
-            .opc_device_container:not(.mini_device) {
-                width: calc(25% - 2px); /* Equivalent to col-sm-3 on very small screens */
-                min-width: 80px;
+        /* Tablets: dispositivos más pequeños pero en columnas */
+        @media (min-width: 576px) and (max-width: 991px) {
+            .devices_grid_item:not(.mini_device) {
+                width: 140px;  /* Ligeramente más pequeños en tablets */
             }
         }
 
@@ -200,22 +251,38 @@
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
             margin: 0 1px 4px 0;
             background-color: #9E9E9E;
-            padding: 2px 1px 2px 1.45px;
+            padding: 1px 0px 0px 0px;
             overflow: hidden;
             height: auto;
             border-radius: 3px;
+            left: -10px;
+        {% if transitions == 2 %} transition-timing-function: ease;
+            transition: all 0.3s;
+        {% endif %}
+        }
+
+        .opc_device_container:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.35);
+        {% if transitions == 2 %} transition-timing-function: ease;
+            transition: all 0.4s;
+        {% endif %} z-index: 10;
+        }
+
+        /* Solo aplicar scroll cuando el contenedor supera cierta altura */
+        .opc_device_container.has-many-sensors {
+            max-height: 250px; /* Altura máxima para dispositivos con muchos sensores */
+            overflow-y: auto;  /* Scroll vertical cuando sea necesario */
+        }
+
+        /* En móvil, altura más restrictiva para dispositivos con muchos sensores */
+        @media (max-width: 575px) {
+            .opc_device_container.has-many-sensors {
+                max-height: 180px;
+            }
         }
 
         /* OPC Device Bootstrap Override - COMMENTED FOR RESPONSIVE GRID */
-        /*
-        .col-sm-1.opc_device_container,
-        .devices_grid_item.opc_device_container {
-            width: 151px !important;
-            flex: none !important;
-            max-width: none !important;
-        }
-        */
-
         .opc_device_container .opc_vars_container {
             height: auto;
             display: flex;
@@ -227,8 +294,15 @@
             margin-bottom: 3px;
             border-radius: 3px;
             margin-top: 3px;
-            overflow: hidden;
+            overflow: hidden; /* Sin scroll por defecto */
             background: rgba(255, 255, 255, 0.57);
+        }
+
+        /* Solo aplicar scroll a dispositivos NO miniaturizados con muchos sensores */
+        .opc_device_container:not(.mini_device).has-many-sensors .opc_vars_container {
+            max-height: 200px;
+            overflow-y: auto;
+            overflow-x: hidden;
         }
 
         .opc_device_container .device_unactive {
@@ -237,10 +311,8 @@
 
         /* Sensores individuales dentro del contenedor OPC/Espiras - RESPONSIVE */
         .opc_var_device_container {
-            width: calc(100% - 4px) !important; /* Responsive width with margin compensation */
-            min-width: 114px !important; /* Minimum width for readability */
-            max-width: 140px !important; /* Maximum width to prevent oversized sensors */
-            height: 25px !important;
+            width: calc(100% - 1px) !important;
+            height: 33px !important;
             margin: 2px 0 !important;
             padding: 2px 5px !important;
             float: none !important;
@@ -252,9 +324,9 @@
 
         .opc_var_device_container .btn_circle_text {
             font-size: 9px !important;
-            padding: 0 2px !important;
-            margin: 0 0 0 24px !important;
-            display: inline-block;
+            /* padding: 0 2px !important; */
+            margin: -1px 0 0 20px !important;
+            display: inherit;
             vertical-align: top !important;
             text-align: left !important;
             line-height: 21px !important;
@@ -268,22 +340,26 @@
             width: 20px !important;
             height: 20px !important;
             border-radius: 50% !important;
-            background: #fff !important;
+            background: hsla(0, 0%, 100%, .15) !important;
             position: absolute;
-            left: 2px;
-            top: 2px;
+            left: -1px;
+            top: 5px;
             margin: 1px 2px 0 0px !important;
-            padding: 3px 0 0 0 !important;
+            padding: 5px 0 0 0 !important;
             text-align: center;
             font-size: 10px !important;
             color: #333333 !important;
+        }
+        .opc_var_device_container .btn_circle_icon_left{
+            color: rgba(51, 51, 51, 0.78) !important;
+            margin: 2px 0 2px 2px !important;
         }
 
         /* Estilos específicos del sistema original */
         .cot_device_container i.btn_circle_icon_left,
         .opc_device_container i.btn_circle_icon_left,
         .opc_var_device_container i.btn_circle_icon_left {
-            margin: 1px 2px 0 0px !important;
+            margin: 2px 0 2px 2px !important;
             color: #333333 !important;
         }
 
@@ -298,6 +374,7 @@
             margin-bottom: 10px;
         }
 
+        /* Filter button styling - CONSOLIDATED */
         .filter-button-active {
             background-color: #007bff !important;
             color: white !important;
@@ -325,77 +402,14 @@
             margin: 0 !important;
         }
 
-        .btn_circle_image_left {
-            float: left;
-            background: #fff;
-            margin-right: 1px;
-            width: 30px;
-            height: 30px;
+        .grid-item-block {
+            background-color: var(--sidebar-bg);
+            border-radius: 3px;
         }
 
-        .btn_circle_icon_left {
-            float: left;
-            padding: 7px 0 0 0;
-            background: #fff;
-            margin-left: -11px;
-            margin-right: 1px;
-            margin-top: 2px;
-            width: 30px;
-            height: 30px;
-        }
+        /* DUPLICATE BASE CLASSES REMOVED - consolidated above */
 
-        .btn_circle_text {
-            font-size: 10pt;
-            word-wrap: break-word;
-            overflow: hidden;
-            text-align: left !important;
-            /* line-height: 1.2; */
-            padding: 2px 4px;
-            display: block;
-            width: 70%;
-        }
-
-        /* Sensor styling - vertical stacking like original - RESPONSIVE DUPLICATE REMOVED */
-        /* This duplicate CSS rule has been removed - see main responsive rule above */
-
-        .opc_var_device_container .btn_circle_text {
-            font-size: 9px !important;
-            padding: 0 2px !important;
-            margin: 0 0 0 24px !important;
-            display: inline-block;
-            vertical-align: top !important;
-            text-align: left !important;
-            line-height: 21px !important;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: calc(100% - 28px);
-        }
-
-        .opc_var_device_container .btn_circle_icon_left {
-            width: 20px !important;
-            height: 20px !important;
-            border-radius: 50% !important;
-            background: #fff !important;
-            position: absolute;
-            left: 2px;
-            top: 2px;
-            margin: 1px 2px 0 0px !important;
-            padding: 3px 0 0 0 !important;
-            text-align: center;
-            font-size: 10px !important;
-            color: #333333 !important;
-        }
-
-        .opc_var_device_container .btn_circle_image_left {
-            width: 20px !important;
-            height: 20px !important;
-            border-radius: 50% !important;
-            position: absolute;
-            left: 2px;
-            top: 2px;
-            margin: 0 !important;
-        }
+        /* DUPLICATES REMOVED - All OPC sensor styling consolidated above */
 
         /* SCROLLBAR-AWARE RESPONSIVE BREAKPOINTS FOR SENSORS */
 
@@ -411,27 +425,6 @@
             width: 8px; /* Webkit browsers */
         }
 
-        /* For devices with many sensors, make them smaller - ENHANCED RESPONSIVE */
-        .opc_device_container:has(.opc_vars_container span:nth-child(5)) .opc_var_device_container {
-            width: calc(50% - 4px) !important; /* Two column layout */
-            flex: 0 0 calc(50% - 4px);
-            min-height: 40px;
-            max-width: none; /* Override global max-width for multi-column */
-        }
-
-        .opc_device_container:has(.opc_vars_container span:nth-child(7)) .opc_var_device_container {
-            width: calc(33.33% - 4px) !important; /* Three column layout */
-            flex: 0 0 calc(33.33% - 4px);
-            min-height: 35px;
-            max-width: none; /* Override global max-width for multi-column */
-        }
-
-        .opc_device_container:has(.opc_vars_container span:nth-child(10)) .opc_var_device_container {
-            width: calc(25% - 4px) !important; /* Four column layout for many sensors */
-            flex: 0 0 calc(25% - 4px);
-            min-height: 30px;
-            max-width: none;
-        }
 
         /* SIMPLE EASYADMIN FULL WIDTH OVERRIDE */
 
@@ -459,20 +452,15 @@
             max-width: none !important;
         }
 
-        /* Mini device Bootstrap override */
-        .col-sm-1.mini_device,
-        .devices_grid_item.mini_device,
-        .cot_device_container.mini_device,
-        .opc_device_container.mini_device {
-            width: 35px !important;
-            height: 36px !important;
-            flex: none !important;
-            max-width: none !important;
-        }
-
-        /* Isotope Masonry Grid Configuration - Reverted */
+        /* Isotope Masonry Grid Configuration - CONSOLIDATED */
         .devices_grid {
+            background-color: var(--blue-gray-50);
             position: relative;
+            margin-top: 34px;
+            border-radius: 4px;
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
         }
 
         .devices_grid_sizer {
@@ -490,9 +478,7 @@
             background: rgba(255, 255, 255, 0.81);
         }
 
-        .filter-button-active {
-            background-color: #5bc0de !important;
-        }
+        /* DUPLICATE REMOVED - filter-button-active consolidated above */
 
         .affix {
             z-index: 1;
@@ -582,6 +568,7 @@
             /* Estilo específico para dispositivos inactivos */
         }
 
+        /* Device indeterminate state - CONSOLIDATED */
         .device_indeterminate {
             text-shadow: 0 1px 0 #fff;
             background-image: -webkit-linear-gradient(top, #f7f7f7 0, #777 100%);
@@ -670,14 +657,7 @@
             height: auto;
         }
 
-        /* ---- grid ---- */
-        .devices_grid {
-            margin-top: 34px;
-        }
-
-        .devices_grid_sizer {
-            width: 1px;
-        }
+        /* DUPLICATE REMOVED - devices_grid consolidated above */
 
         /* clear fix */
         .devices_grid:after {
@@ -693,8 +673,34 @@
     </style>
     {% if videowall %}
         <style>
+            /* Hide all UI elements in videowall mode */
             #control-panel-container, nav {
-                display: none;
+                display: none !important;
+            }
+
+            /* Hide EasyAdmin navbar */
+            .ea-content-header,
+            .content-header,
+            header.main-header,
+            nav.main-header {
+                display: none !important;
+            }
+
+            /* Hide/collapse EasyAdmin sidebar */
+            #sidebar,
+            .ea-sidebar,
+            .main-sidebar,
+            aside.main-sidebar {
+                display: none !important;
+            }
+
+            /* Adjust content to use full width */
+            .ea-content-wrapper,
+            .content-wrapper,
+            .ea-content,
+            main {
+                margin-left: 0 !important;
+                padding-left: 0 !important;
             }
 
             html, body {
@@ -703,13 +709,23 @@
 
             body {
                 font-family: sans-serif;
+                padding-top: 0 !important;
+            }
+
+            /* Hide page title and breadcrumbs */
+            .ea-page-title,
+            .page-header,
+            .content-header-title {
+                display: none !important;
             }
         </style>
     {% endif %}
 {% endblock %}
 
 {% block main %}
-    {% include 'dashboard/cot/index/modern_control_panel.html.twig' %}
+    {% if not videowall %}
+        {% include 'dashboard/cot/index/modern_control_panel.html.twig' %}
+    {% endif %}
 
     <main class="container-fluid px-0 py-3">
         <div class="grid">
@@ -717,79 +733,12 @@
         </div>
     </main>
 
-    <!-- Device Details Modal -->
-    <div class="modal fade" id="deviceDetailsModal" tabindex="-1" aria-labelledby="deviceDetailsModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="deviceDetailsModalLabel">
-                        <i class="fas fa-info-circle me-2"></i>Detalles del Dispositivo
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <table class="table table-borderless">
-                                <tr>
-                                    <td class="fw-bold text-muted">ID:</td>
-                                    <td id="modal-device-id">-</td>
-                                </tr>
-                                <tr>
-                                    <td class="fw-bold text-muted">Nombre:</td>
-                                    <td id="modal-device-nombre">-</td>
-                                </tr>
-                                <tr>
-                                    <td class="fw-bold text-muted">Tipo:</td>
-                                    <td id="modal-device-tipo">-</td>
-                                </tr>
-                                <tr>
-                                    <td class="fw-bold text-muted">Descripción:</td>
-                                    <td id="modal-device-descripcion">-</td>
-                                </tr>
-                            </table>
-                        </div>
-                        <div class="col-md-6">
-                            <table class="table table-borderless">
-                                <tr>
-                                    <td class="fw-bold text-muted">IP:</td>
-                                    <td id="modal-device-ip">-</td>
-                                </tr>
-                                <tr>
-                                    <td class="fw-bold text-muted">Estado:</td>
-                                    <td><span id="modal-device-estado" class="badge">-</span></td>
-                                </tr>
-                                <tr>
-                                    <td class="fw-bold text-muted">KM:</td>
-                                    <td id="modal-device-km">-</td>
-                                </tr>
-                                <tr>
-                                    <td class="fw-bold text-muted">Eje:</td>
-                                    <td id="modal-device-eje">-</td>
-                                </tr>
-                                <tr>
-                                    <td class="fw-bold text-muted">Tramo:</td>
-                                    <td id="modal-device-tramo">-</td>
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-1"></i>Cerrar
-                    </button>
-                    <button type="button" class="btn btn-primary" id="btn-edit-device">
-                        <i class="fas fa-edit me-1"></i>Editar
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+    {# Old static Bootstrap modal removed - now using dynamic Bootbox.js modals #}
 
-    {% include 'dashboard/cot/index/ajax_edit_popup.html.twig' %}
-    {% include 'dashboard/cot/index/ajax_report.html.twig' %}
-    {% include 'dashboard/cot/index/modern_status_footer.html.twig' %}
+    {# Old modal includes removed - now using Bootbox.js for all modals #}
+    {% if not videowall %}
+        {% include 'dashboard/cot/index/modern_status_footer.html.twig' %}
+    {% endif %}
 {% endblock %}
 
 {% block body_javascript %}
@@ -806,6 +755,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/11.0.2/css/bootstrap-slider.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/11.0.2/bootstrap-slider.min.js"></script>
 
+    <!-- Bootbox.js for Professional Modals (Bootstrap 5 compatible) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootbox.js/6.0.0/bootbox.min.js"></script>
+
     <script>
         var $grid = $('.grid').isotope({
             itemSelector: '.grid-item-block',
@@ -813,9 +765,9 @@
                 columnWidth: '.col-lg-2'
             },
             getSortData: {
-                status_count: '[data-order]',
+                status_count: '[data-order] parseInt'  // Parse as integer for proper sorting
             },
-            sortBy: '[status_count]',
+            sortBy: 'status_count',  // Fixed: use key name, not selector
             sortAscending: false,
         });
 
@@ -824,7 +776,10 @@
             masonry: {
                 columnWidth: '.devices_grid_sizer'
             },
-            sortBy: '[data-estado]',
+            getSortData: {
+                estado: '[data-estado] parseInt'  // Added getSortData for estado
+            },
+            sortBy: 'estado',  // Fixed: use key name, not selector
             sortAscending: true,
         });
 
@@ -841,11 +796,13 @@
         }
 
         $(window).on("load", function () {
-            // Configurar scroll nativo para contenedores de sensores
-            $('.opc_vars_container').css({
-                'max-height': '200px',
-                'overflow-y': 'auto',
-                'scrollbar-width': 'thin'
+            // Aplicar clase has-many-sensors solo a dispositivos con más de 4 sensores
+            $('.opc_device_container').each(function() {
+                var sensorCount = $(this).find('.opc_var_device_container').length;
+                // Solo aplicar si tiene más de 4 sensores Y no es mini_device
+                if (sensorCount > 4 && !$(this).hasClass('mini_device')) {
+                    $(this).addClass('has-many-sensors');
+                }
             });
         });
 
@@ -857,6 +814,12 @@
             contract_ui: {% if contract_ui is defined and contract_ui is same as(true) %}true{% else %}false{% endif %},
             videowall: {% if videowall is defined and videowall is same as(true) %}true{% else %}false{% endif %}
         };
+
+        // Variable para detectar si la ventana/pestaña está visible (performance optimization)
+        var _isWindowsVisible = true;
+        document.addEventListener('visibilitychange', function() {
+            _isWindowsVisible = document.visibilityState === 'visible';
+        });
 
         $(document).ready(function () {
             $(".filter-button").click(function () {
@@ -908,7 +871,7 @@
 
             SetCotDevicesTimer();
 
-            $('#contract_ui').change(function (e) {
+            $('#contract-ui-toggle').change(function (e) {
                 e.preventDefault();
                 contractUi();
             });
@@ -916,10 +879,11 @@
             getUiConfig();
             saveUiConfig();
 
-            // Configurar estado inicial del contract_ui (por defecto interfaz normal)
-            cot_index_ui_config.contract_ui = false;  // Forzar modo normal por defecto
-            $('#contract_ui').prop('checked', false);
-            // No llamar contractUi() para mantener dispositivos en tamaño normal
+            // Cargar configuración guardada del contract_ui
+            if (typeof cot_index_ui_config !== 'undefined' && cot_index_ui_config.contract_ui) {
+                $('#contract-ui-toggle').prop('checked', cot_index_ui_config.contract_ui);
+                contractUi(); // Aplicar estado guardado
+            }
 
             // Inicializar Bootstrap Slider para intervalo de actualización
             if ($('#timer-range-ajax-update').length) {
@@ -976,14 +940,33 @@
                     async: true,
                     cache: false,
                     dataType: 'json',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
                     success: function (response) {
+                        console.log('AJAX Response received:', response);
                         if (response.dispositivos && response.dispositivos.length > 0) {
-                            renderDevicesStatus(response.dispositivos, response);
+                            console.log('Dispositivos count:', response.dispositivos.length);
+                            // Solo renderizar si la ventana está visible (optimización de performance)
+                            if (_isWindowsVisible) {
+                                // Actualizar timestamps en footer antes de renderizar
+                                if (response.StentofonLastUpdateDateTime) {
+                                    $('#stentofon-time').html(response.StentofonLastUpdateDateTime);
+                                }
+                                if (response.SwIpDevicesMonitorLastUpdateDateTime) {
+                                    $('#datetime_update').html(response.SwIpDevicesMonitorLastUpdateDateTime);
+                                }
+                                renderDevicesStatus(response.dispositivos, response);
+                            }
+                        } else {
+                            console.warn('No devices in response');
                         }
                         isGettingDevicesStatus = false;
                     },
                     error: function(xhr, status, error) {
-                        console.log('Error actualizando dispositivos:', error);
+                        console.error('Error actualizando dispositivos:', error);
+                        console.error('Status:', status);
+                        console.error('Response:', xhr.responseText);
                         isGettingDevicesStatus = false;
                     }
                 });
@@ -993,6 +976,20 @@
         function renderDevicesStatus(DevicesStatusResponse, fullResponse) {
             var active_devices_count = 0;
             var unactive_devices_count = 0;
+
+            // Limpiar duplicados antes de procesar nuevos datos
+            var processedDeviceIds = new Set();
+
+            // Eliminar dispositivos duplicados basándose en data-id
+            $('.devices_grid_item').each(function() {
+                var deviceId = $(this).data('id');
+                if (processedDeviceIds.has(deviceId)) {
+                    // Si ya existe, eliminar este duplicado
+                    $(this).remove();
+                } else {
+                    processedDeviceIds.add(deviceId);
+                }
+            });
 
             $.each(DevicesStatusResponse, function (i, device_status_data) {
                 var exist_el_device = ($('#device_' + device_status_data.id).length > 0);
@@ -1005,6 +1002,7 @@
                 // Si el dispositivo existe en el DOM
                 if (exist_el_device) {
                     var el_device = $('#device_' + device_status_data.id);
+                    console.log('Updating device', device_status_data.id, '- Estado from AJAX:', device_status_data.estado, '- Current classes:', el_device.attr('class'));
                     el_device.attr('title', device_status_data.ip);
 
                     /********************
@@ -1107,8 +1105,33 @@
                         el_device.addClass('device_indeterminate device-color-indeterminate waves-effect waves-light');
                     }
 
-                    // Actualizar data attributes
+                    // Actualizar TODOS los data attributes (como en el proyecto antiguo)
+                    el_device.data('id_tipo', device_status_data.idTipo.id);
+                    el_device.data('nombre_tipo', device_status_data.idTipo.tipo);
+                    el_device.data('ip', device_status_data.ip);
+                    el_device.data('nombre', device_status_data.nombre);
+                    el_device.data('descripcion', device_status_data.descripcion);
+                    el_device.data('km', device_status_data.km);
+
+                    if (device_status_data.eje && device_status_data.eje.nombre) {
+                        el_device.data('eje', device_status_data.eje.nombre);
+                    }
+                    if (device_status_data.tramo && device_status_data.tramo.nombre) {
+                        el_device.data('tramo', device_status_data.tramo.nombre);
+                    }
+
+                    el_device.data('orientacion', device_status_data.orientacion);
+                    el_device.data('estado', device_status_data.estado);
+                    el_device.data('concesionaria', device_status_data.concesionaria);
+
+                    // Actualizar data-estado attribute para sorting
                     el_device.attr('data-estado', device_status_data.estado);
+
+                    // Actualizar atributos JSON para el editor
+                    if (device_status_data.atributos) {
+                        el_device.attr('data-atributos', device_status_data.atributos);
+                        el_device.data('atributos', device_status_data.atributos);
+                    }
                 }
             });
 
@@ -1116,10 +1139,51 @@
             $('#count_active_devices').text(active_devices_count);
             $('#count_unactive_devices').text(unactive_devices_count);
 
+            // Actualizar prioridad de ordenamiento después de cambios de estado
+            updateDevicePriority();
+
+            // Re-aplicar contractUi si está activado (para aplicar mini_device a dispositivos que pasaron a activos)
+            if ($('#contract-ui-toggle').is(':checked')) {
+                contractUi();
+            }
+
             // Recalcular layout después de los cambios
             masonryLayout();
 
             console.log('Estados actualizados:', active_devices_count, 'activos,', unactive_devices_count, 'inactivos');
+        }
+
+        // Function to dynamically update priority sorting when device states change
+        function updateDevicePriority() {
+            // Update data-order for each type group based on inactive device count
+            $('.grid-item-block').each(function() {
+                // Count only main device containers (cot_device_container, opc_device_container),
+                // NOT child sensors (opc_var_device_container)
+                var unactiveCount = $(this).find('.cot_device_container.device_unactive, .opc_device_container.device_unactive').length;
+                $(this).attr('data-order', unactiveCount);
+
+                // Update the badge counter
+                var typeWrapper = $(this).find('[id^="cot-main-wrapper_type_"]');
+                if (typeWrapper.length) {
+                    var typeId = typeWrapper.attr('id').split('_').pop();
+                    var countBadge = $('#count_unactive_type_' + typeId);
+                    if (countBadge.length) {
+                        if (unactiveCount === 0) {
+                            countBadge.removeClass('btn-danger').addClass('btn-success');
+                            countBadge.html('<i class="fa fa-check" aria-hidden="true"></i>');
+                        } else {
+                            countBadge.removeClass('btn-success').addClass('btn-danger');
+                            countBadge.text(unactiveCount);
+                        }
+                    }
+                }
+            });
+
+            // Re-sort the grid with updated priorities
+            if (typeof $grid !== 'undefined' && $grid) {
+                $grid.isotope('updateSortData');
+                $grid.isotope({sortBy: 'status_count'});
+            }
         }
 
         function filterState() {
@@ -1144,8 +1208,26 @@
 
         function elementsFinder() {
             var input_device_finder = $("#input_device_finder");
+            // Fallback to modern panel search if old doesn't exist
+            if (input_device_finder.length === 0) {
+                input_device_finder = $("#device-search");
+            }
+
             var btn_filter = $(".filter-button.filter-button-active");
-            var btn_filter_value = btn_filter.data('filter');
+            // If no old buttons, check modern panel status filter
+            if (btn_filter.length === 0) {
+                var statusFilter = $('#status-filter');
+                if (statusFilter.length) {
+                    // Create a pseudo button object with the data we need
+                    btn_filter = {
+                        data: function(key) {
+                            return key === 'filter' ? statusFilter.val() : null;
+                        },
+                        length: 1
+                    };
+                }
+            }
+            var btn_filter_value = typeof btn_filter.data === 'function' ? btn_filter.data('filter') : 'all';
 
             if (input_device_finder.val().length >= 2) {
                 var str_searched = input_device_finder.val().toLowerCase();
@@ -1182,19 +1264,23 @@
         }
 
         function contractUi() {
-            var contract_ui = $('#contract_ui').is(":checked");
+            var contract_ui = $('#contract-ui-toggle').is(":checked");
             if (contract_ui) {
                 $('.cot_device_container, .opc_device_container').each(function (i, device) {
-                    if (!$(device).hasClass('device_unactive')) {
+                    // CONDICIÓN CORRECTA: Solo miniaturizar device_active (estado=1)
+                    if ($(device).hasClass('device_active')) {
                         $(device).addClass('mini_device');
                     } else {
+                        // NO miniaturizar: device_unactive (estado=0) Y device_indeterminate (estado=2)
                         $(device).removeClass('mini_device');
                     }
                 });
             } else {
                 $('.cot_device_container, .opc_device_container').removeClass('mini_device');
             }
+            // Actualizar configuración global
             cot_index_ui_config.contract_ui = contract_ui;
+            saveUiConfig();
 
             // Force style recalculation by triggering reflow
             $('.cot_device_container, .opc_device_container').each(function() {
@@ -1228,22 +1314,33 @@
             }
 
             try {
-                if (cot_index_ui_config.device_status === 'all') {
+                // Check buttons exist before clicking
+                if (cot_index_ui_config.device_status === 'all' && $('#btn_show_all').length) {
                     $('#btn_show_all').click();
-                } else if (cot_index_ui_config.device_status === 'device_active') {
+                } else if (cot_index_ui_config.device_status === 'device_active' && $('#btn_show_actives').length) {
                     $('#btn_show_actives').click();
-                } else if (cot_index_ui_config.device_status === 'device_unactive') {
+                } else if (cot_index_ui_config.device_status === 'device_unactive' && $('#btn_show_unactives').length) {
                     $('#btn_show_unactives').click();
-                } else {
+                } else if ($('#btn_show_unactives').length) {
                     $('#btn_show_unactives').click();
                 }
 
-                if (cot_index_ui_config.input_device_finder.length >= 2) {
-                    $('#input_device_finder').val(cot_index_ui_config.input_device_finder);
-                    elementsFinder();
+                // Check input exists - try both old and new IDs
+                if (cot_index_ui_config.input_device_finder && cot_index_ui_config.input_device_finder.length >= 2) {
+                    var $searchInput = $('#input_device_finder');
+                    if ($searchInput.length === 0) {
+                        $searchInput = $('#device-search'); // Try modern panel ID
+                    }
+                    if ($searchInput.length) {
+                        $searchInput.val(cot_index_ui_config.input_device_finder);
+                        elementsFinder();
+                    }
                 }
 
-                $('#contract_ui').attr('checked', cot_index_ui_config.contract_ui).triggerHandler('change');
+                // Check contract UI toggle exists
+                if ($('#contract-ui-toggle').length) {
+                    $('#contract-ui-toggle').prop('checked', cot_index_ui_config.contract_ui);
+                }
             } catch (ex) {
                 console.log('Error configurando UI:', ex);
             }
@@ -1309,57 +1406,140 @@
             }
         });
 
-        // Función para mostrar detalles del dispositivo (formato original modernizado)
+        // Professional device details modal using Bootbox
         function showDeviceDetails(device) {
             var targetObjDevice = device;
+            var deviceData = $(targetObjDevice).data();
 
-            // Construir el HTML exactamente como el original pero con Bootstrap 5
-            var info = '<div>' +
-                '<table class="table table-striped">' +
-                '<tr>' +
-                '<th>Tipo:</th><td>' + ($(targetObjDevice).data('nombre_tipo') || '-') + '</td>' +
-                '</tr>' +
-                '<tr>' +
-                '<th>Tag:</th><td>' + ($(targetObjDevice).data('nombre') || '-') + '</td>' +
-                '</tr>' +
-                '<tr>' +
-                '<th>Descripción:</th><td>' + ($(targetObjDevice).data('descripcion') || '-') + '</td>' +
-                '</tr>' +
-                '<tr>' +
-                '<th>IP:</th><td>' + ($(targetObjDevice).data('ip') || '-') + '</td>' +
-                '</tr>' +
-                '<tr>' +
-                '<th>Eje:</th><td>' + ($(targetObjDevice).data('eje') || '-') + '</td>' +
-                '</tr>' +
-                '<tr>' +
-                '<th>Tramo:</th><td>' + ($(targetObjDevice).data('tramo') || '-') + '</td>' +
-                '</tr>' +
-                '<tr>' +
-                '<th>Kilómetro:</th><td>' + ($(targetObjDevice).data('km') || '-') + '</td>' +
-                '</tr>' +
-                '<tr>' +
-                '<th>Orientación:</th><td>' + ($(targetObjDevice).data('orientacion') || '-') + '</td>' +
-                '</tr>' +
-                '</table>' +
-                '</div>';
+            // Get device type specific info - minimal and professional
+            var metodoMonitoreo = deviceData.metodo_monitoreo || 0;
+            var deviceTypeInfo = '';
 
-            // Actualizar contenido del modal Bootstrap
-            $('#deviceDetailsModalLabel').html('<i class="fas fa-info-circle me-2"></i>Información de: ' + ($(targetObjDevice).data('nombre') || 'Dispositivo'));
-            $('#deviceDetailsModal .modal-body').html(info);
+            // Add subtle device type indicator
+            if (metodoMonitoreo == 3) {
+                deviceTypeInfo = `
+                    <div class="border-start border-3 ps-3 mt-3" style="border-color: #6c757d !important;">
+                        <small class="text-muted">Dispositivo OPC: Variables de monitoreo remoto</small>
+                    </div>`;
+            } else if ([4, 6, 7].includes(parseInt(metodoMonitoreo))) {
+                deviceTypeInfo = `
+                    <div class="border-start border-3 ps-3 mt-3" style="border-color: #6c757d !important;">
+                        <small class="text-muted">Dispositivo de Espiras: Sensores de tráfico vehicular</small>
+                    </div>`;
+            }
 
-            // Configurar botón editar
-            $('#btn-edit-device').off('click').on('click', function() {
-                $('#deviceDetailsModal').modal('hide');
-                editDevice($(targetObjDevice).data('id'));
+            // Clean and professional details table
+            var detailsHtml = `
+                <div class="device-details-container">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="fw-semibold mb-3 text-body-secondary">Información General</h6>
+                            <table class="table table-sm">
+                                <tbody>
+                                    <tr>
+                                        <th width="35%" class="text-body-tertiary fw-normal">ID</th>
+                                        <td><code class="text-body">${deviceData.id || '-'}</code></td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-body-tertiary fw-normal">Tipo</th>
+                                        <td><span class="badge bg-light text-dark border">${deviceData.nombre_tipo || '-'}</span></td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-body-tertiary fw-normal">Nombre</th>
+                                        <td class="fw-medium">${deviceData.nombre || '-'}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-body-tertiary fw-normal">Descripción</th>
+                                        <td>${deviceData.descripcion || '<span class="text-body-tertiary fst-italic">Sin descripción</span>'}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-semibold mb-3 text-body-secondary">Configuración Técnica</h6>
+                            <table class="table table-sm">
+                                <tbody>
+                                    <tr>
+                                        <th width="35%" class="text-body-tertiary fw-normal">IP</th>
+                                        <td><code class="text-body">${deviceData.ip || '-'}</code></td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-body-tertiary fw-normal">Estado</th>
+                                        <td>${getDeviceStatusBadge(deviceData.estado)}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-body-tertiary fw-normal">Ubicación</th>
+                                        <td>${deviceData.km ? deviceData.km + ' km' : '-'}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-body-tertiary fw-normal">Eje</th>
+                                        <td>${deviceData.eje || '-'}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-body-tertiary fw-normal">Tramo</th>
+                                        <td>${deviceData.tramo || '-'}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-body-tertiary fw-normal">Orientación</th>
+                                        <td>${deviceData.orientacion || '-'}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    ${deviceTypeInfo}
+                </div>
+            `;
+
+            // Use Bootbox for professional modal dialog
+            bootbox.dialog({
+                title: `${deviceData.nombre || 'Dispositivo'} - Detalles`,
+                message: detailsHtml,
+                size: 'large',
+                className: 'device-details-modal',
+                buttons: {
+                    edit: {
+                        label: 'Editar',
+                        className: 'btn-primary',
+                        callback: function() {
+                            editDevice(targetObjDevice);
+                            return true; // Close modal
+                        }
+                    },
+                    report: {
+                        label: 'Reporte',
+                        className: 'btn-info',
+                        callback: function() {
+                            generateDeviceReport(targetObjDevice);
+                            return false; // Keep modal open
+                        }
+                    },
+                    close: {
+                        label: 'Cerrar',
+                        className: 'btn-secondary'
+                    }
+                }
             });
+        }
 
-            // Mostrar modal
-            $('#deviceDetailsModal').modal('show');
+        // Helper function to get professional status badge - EasyAdmin style
+        function getDeviceStatusBadge(estado) {
+            switch(parseInt(estado)) {
+                case 1:
+                    return '<span class="badge bg-light text-dark border">Activo</span>';
+                case 0:
+                    return '<span class="badge bg-light text-dark border">Inactivo</span>';
+                case 2:
+                    return '<span class="badge bg-light text-muted border">Indeterminado</span>';
+                case -1:
+                    return '<span class="badge bg-light text-muted border">Oculto</span>';
+                default:
+                    return '<span class="badge bg-light text-muted border">Desconocido</span>';
+            }
         }
 
         // Función para editar dispositivo
         function editDevice(device) {
-            var deviceId = $(device).data('id');
             var deviceData = {
                 id: $(device).data('id'),
                 nombre: $(device).data('nombre'),
@@ -1368,40 +1548,141 @@
                 km: $(device).data('km'),
                 orientacion: $(device).data('orientacion'),
                 estado: $(device).data('estado'),
-                atributos: $(device).data('atributos') || '{}'
+                // Intentar obtener atributos del attr primero (actualizado por AJAX), luego del data
+                atributos: $(device).attr('data-atributos') || $(device).data('atributos') || '{}'
             };
 
-            // Mostrar modal de edición
-            showDeviceEditModal(deviceData);
+            // Build professional edit form HTML
+            var editFormHtml = `
+                <form id="device_edit_form" class="needs-validation" novalidate>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="device_name" class="form-label">Nombre</label>
+                                <input type="text" id="device_name" class="form-control"
+                                       value="${deviceData.nombre}" readonly>
+                                <div class="form-text">El nombre del dispositivo no puede ser modificado</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="device_description" class="form-label">Descripción</label>
+                                <input type="text" id="device_description" class="form-control"
+                                       value="${deviceData.descripcion || ''}" required>
+                                <div class="invalid-feedback">Por favor ingrese una descripción</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="device_ip" class="form-label">Dirección IP</label>
+                                <input type="text" id="device_ip" class="form-control"
+                                       value="${deviceData.ip}"
+                                       pattern="^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$"
+                                       placeholder="192.168.1.1" required>
+                                <div class="invalid-feedback">Por favor ingrese una IP válida</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="device_km" class="form-label">Kilómetro</label>
+                                <input type="number" id="device_km" class="form-control"
+                                       value="${deviceData.km}" step="0.001" min="0">
+                                <div class="form-text">Ubicación en kilómetros</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="device_orientation" class="form-label">Orientación</label>
+                                <select id="device_orientation" class="form-select">
+                                    <option value="OP" ${deviceData.orientacion === 'OP' ? 'selected' : ''}>OP (Origen-Playa)</option>
+                                    <option value="PO" ${deviceData.orientacion === 'PO' ? 'selected' : ''}>PO (Playa-Origen)</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="device_status" class="form-label">Estado</label>
+                                <select id="device_status" class="form-select">
+                                    <option value="1" ${deviceData.estado == 1 ? 'selected' : ''}>Activo</option>
+                                    <option value="0" ${deviceData.estado == 0 ? 'selected' : ''}>Inactivo</option>
+                                    <option value="2" ${deviceData.estado == 2 ? 'selected' : ''}>Indeterminado</option>
+                                    <option value="-1" ${deviceData.estado == -1 ? 'selected' : ''}>Oculto</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+
+                            <div class="mb-3">
+                                <label class="form-label">Atributos JSON</label>
+                                <div id="json_editor_container" class="border rounded p-2" style="min-height: 150px;">
+                                    <!-- JSON Editor will be initialized here -->
+                                </div>
+                                <div class="form-text">Configuración avanzada en formato JSON</div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            `;
+
+            // Use Bootbox for professional modal dialog
+            var dialog = bootbox.dialog({
+                title: `Editar Dispositivo - ${deviceData.nombre}`,
+                message: editFormHtml,
+                size: 'large',
+                className: 'device-edit-modal',
+                onShown: function() {
+                    // Initialize JSON Editor after modal is shown
+                    initializeJsonEditor(deviceData.atributos);
+                },
+                buttons: {
+                    cancel: {
+                        label: 'Cancelar',
+                        className: 'btn-secondary',
+                        callback: function() {
+                            // Clean up JSON editor on cancel
+                            if (window.jsonEditor) {
+                                window.jsonEditor.destroy();
+                                window.jsonEditor = null;
+                            }
+                        }
+                    },
+                    save: {
+                        label: 'Guardar Cambios',
+                        className: 'btn-primary',
+                        callback: function() {
+                            // Validate form
+                            var form = document.getElementById('device_edit_form');
+                            if (!form.checkValidity()) {
+                                form.classList.add('was-validated');
+                                return false; // Keep modal open
+                            }
+
+                            // Collect updated data
+                            var updatedData = {
+                                id: deviceData.id,
+                                descripcion: $('#device_description').val(),
+                                ip: $('#device_ip').val(),
+                                km: parseFloat($('#device_km').val()) || 0,
+                                orientacion: $('#device_orientation').val(),
+                                estado: parseInt($('#device_status').val()),
+                                atributos: window.jsonEditor ? JSON.stringify(window.jsonEditor.getValue()) : '{}'
+                            };
+
+                            // Save device (call existing save function)
+                            saveDeviceChanges(updatedData, device);
+
+                            // Clean up JSON editor
+                            if (window.jsonEditor) {
+                                window.jsonEditor.destroy();
+                                window.jsonEditor = null;
+                            }
+
+                            return true; // Close modal
+                        }
+                    }
+                }
+            });
         }
 
         // Variable global para el editor JSON
         var jsonEditor = null;
 
-        // Función para mostrar modal de edición
-        function showDeviceEditModal(deviceData) {
-            // Llenar campos del formulario
-            $('#device_name').val(deviceData.nombre);
-            $('#device_description').val(deviceData.descripcion);
-            $('#device_ip').val(deviceData.ip);
-            $('#device_km').val(deviceData.km);
-            $('#device_orientation').val(deviceData.orientacion);
-            $('#device_status').val(deviceData.estado);
-
-            // Inicializar JSON Editor
-            initializeJsonEditor(deviceData.atributos);
-
-            // Mostrar modal
-            $('#ajax_edit_popup').show(300);
-            $('#dialog-bg').show();
-            $('body').css({'overflow': 'hidden'});
-        }
-
         // Función para inicializar el JSON Editor
         function initializeJsonEditor(attributesJson) {
             // Limpiar editor anterior si existe
-            if (jsonEditor) {
-                jsonEditor.destroy();
+            if (window.jsonEditor) {
+                window.jsonEditor.destroy();
+                window.jsonEditor = null;
             }
 
             var startValue = {};
@@ -1417,7 +1698,7 @@
             // Configurar esquema para el editor JSON
             var schema = {
                 "type": "object",
-                "title": "Atributos del Dispositivo",
+                // "title": "Atributos del Dispositivo",
                 "properties": {
                     "opc_vars": {
                         "type": "array",
@@ -1449,83 +1730,111 @@
             };
 
             // Inicializar JSON Editor
-            jsonEditor = new JSONEditor(document.getElementById('json_editor_container'), {
+            window.jsonEditor = new JSONEditor(document.getElementById('json_editor_container'), {
                 schema: schema,
                 startval: startValue,
-                theme: 'bootstrap3',
-                iconlib: 'fontawesome4',
+                //theme: 'bootstrap3',
+                //iconlib: 'fontawesome4',
                 show_errors: 'always',
                 disable_edit_json: false,
                 disable_properties: false
             });
         }
 
-        // Función para guardar dispositivo
-        $(document).on('click', '#btn_save_device', function() {
-            if (jsonEditor) {
-                var jsonData = jsonEditor.getValue();
-                var formData = {
-                    nombre: $('#device_name').val(),
-                    descripcion: $('#device_description').val(),
-                    ip: $('#device_ip').val(),
-                    km: $('#device_km').val(),
-                    orientacion: $('#device_orientation').val(),
-                    estado: $('#device_status').val(),
-                    atributos: JSON.stringify(jsonData)
-                };
+        // Function to save device changes
+        function saveDeviceChanges(updatedData, deviceElement) {
+            // Show loading indicator
+            bootbox.dialog({
+                message: '<div class="text-center"><i class="fa fa-spin fa-spinner"></i> Guardando cambios...</div>',
+                closeButton: false,
+                className: 'loading-modal'
+            });
 
-                console.log('Datos para guardar:', formData);
-                alert('Guardando dispositivo...\n' + JSON.stringify(formData, null, 2));
+            // Get device ID from element
+            var deviceId = $(deviceElement).data('id') || $(deviceElement).attr('data-id');
 
-                // TODO: Implementar AJAX para guardar cambios
-
-                // Debug 1: Verificar jQuery
-                console.log('=== AJAX DEBUG START ===');
-                console.log('jQuery available:', typeof $ !== 'undefined');
-                console.log('jQuery version:', typeof $ !== 'undefined' ? $.fn.jquery : 'N/A');
-
-                // Debug 2: Test llamada AJAX al endpoint
-                if (typeof $ !== 'undefined') {
-                    var testUrl = '/admin/monitor/0';
-                    console.log('Testing AJAX endpoint:', testUrl);
-
-                    $.ajax({
-                        url: testUrl,
-                        type: 'GET',
-                        data: { ajax: true },
-                        dataType: 'json',
-                        success: function(response) {
-                            // Debug 3: Log de respuesta completa
-                            console.log('AJAX SUCCESS - Response keys:', Object.keys(response));
-                            console.log('Dispositivos count:', response.dispositivos ? response.dispositivos.length : 'N/A');
-                            console.log('Device status:', response.device_status);
-                            console.log('Real mode:', response.real_mode);
-                            console.log('Count status type:', response.count_status_type);
-                            console.log('Active devices:', response.active_devices_count);
-                            console.log('Inactive devices:', response.unactive_devices_count);
-                            console.log('Timestamps - Stentofon:', response.StentofonLastUpdateDateTime);
-                            console.log('Timestamps - SwIp:', response.SwIpDevicesMonitorLastUpdateDateTime);
-                        },
-                        error: function(xhr, status, error) {
-                            console.error('AJAX ERROR:', {
-                                status: xhr.status,
-                                statusText: xhr.statusText,
-                                error: error,
-                                responseText: xhr.responseText ? xhr.responseText.substring(0, 200) + '...' : 'N/A'
-                            });
-                        }
-                    });
-                } else {
-                    console.error('jQuery not available for AJAX test');
-                }
-                console.log('=== AJAX DEBUG END ===');
-
-                // Cerrar modal por ahora
-                $('#ajax_edit_popup').hide(300);
-                $('#dialog-bg').hide();
-                $('body').css({'overflow': 'auto'});
+            if (!deviceId) {
+                bootbox.hideAll();
+                bootbox.alert({
+                    message: '<div class="alert alert-danger">Error: No se pudo obtener el ID del dispositivo</div>',
+                    size: 'small'
+                });
+                return;
             }
-        });
+
+            // Make AJAX call to save device data
+            $.ajax({
+                url: '/admin/device/' + deviceId + '/update',
+                type: 'POST',
+                data: JSON.stringify(updatedData),
+                contentType: 'application/json',
+                dataType: 'json',
+                success: function(response) {
+                    // Close loading modal
+                    bootbox.hideAll();
+
+                    if (response.success) {
+                        // Update the device element's data attributes with saved data
+                        $(deviceElement).data('descripcion', updatedData.descripcion);
+                        $(deviceElement).data('ip', updatedData.ip);
+                        $(deviceElement).data('km', updatedData.km);
+                        $(deviceElement).data('orientacion', updatedData.orientacion);
+                        $(deviceElement).data('estado', updatedData.estado);
+                        $(deviceElement).data('atributos', updatedData.atributos);
+
+                        // Also update attr for consistency
+                        $(deviceElement).attr('data-descripcion', updatedData.descripcion);
+                        $(deviceElement).attr('data-ip', updatedData.ip);
+                        $(deviceElement).attr('data-km', updatedData.km);
+                        $(deviceElement).attr('data-orientacion', updatedData.orientacion);
+                        $(deviceElement).attr('data-estado', updatedData.estado);
+                        $(deviceElement).attr('data-atributos', updatedData.atributos);
+
+                        // Show success message
+                        bootbox.alert({
+                            message: '<div class="alert alert-success">' + (response.message || 'Dispositivo actualizado correctamente') + '</div>',
+                            size: 'small',
+                            callback: function() {
+                                // Refresh device status after save
+                                getDevicesStatus();
+                            }
+                        });
+                    } else {
+                        // Show error from server
+                        bootbox.alert({
+                            message: '<div class="alert alert-danger">' + (response.message || 'Error al actualizar el dispositivo') + '</div>',
+                            size: 'small'
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    // Close loading modal
+                    bootbox.hideAll();
+
+                    var errorMessage = 'Error al guardar los cambios';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    } else if (xhr.responseText) {
+                        try {
+                            var response = JSON.parse(xhr.responseText);
+                            if (response.message) {
+                                errorMessage = response.message;
+                            }
+                        } catch(e) {
+                            errorMessage += ': ' + error;
+                        }
+                    }
+
+                    // Show error message
+                    bootbox.alert({
+                        message: '<div class="alert alert-danger">' + errorMessage + '</div>',
+                        size: 'small'
+                    });
+                }
+            });
+
+            console.log('Device data updated:', updatedData);
+        }
 
         // Función para generar reporte de dispositivo
         function generateDeviceReport(device) {

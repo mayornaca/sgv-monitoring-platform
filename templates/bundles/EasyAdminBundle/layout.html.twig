@@ -1,0 +1,13 @@
+{# Override de EasyAdmin layout para agregar título en el navbar #}
+{# El símbolo '@!' es crítico - evita loop infinito al extender del template original #}
+{% extends '@!EasyAdmin/layout.html.twig' %}
+
+{% block header_custom_menu %}
+    {# Agregar título "Monitor de Dispositivos - COT" al navbar superior #}
+    <div class="navbar-text me-3">
+        <strong style="color: #495057;">Monitor de Dispositivos - COT</strong>
+    </div>
+
+    {# Mantener el menú del usuario original (avatar, dropdown, etc.) #}
+    {{ parent() }}
+{% endblock %}

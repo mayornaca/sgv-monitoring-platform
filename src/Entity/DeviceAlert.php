@@ -20,17 +20,20 @@ class DeviceAlert
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column]
-    private ?int $idAlarma = null;
+    #[ORM\ManyToOne(targetEntity: Alarms::class)]
+    #[ORM\JoinColumn(name: 'id_alarma', referencedColumnName: 'id_alarma')]
+    private ?Alarms $idAlarma = null;
 
-    #[ORM\Column]
-    private ?int $idDispositivo = null;
+    #[ORM\ManyToOne(targetEntity: Device::class)]
+    #[ORM\JoinColumn(name: 'id_dispositivo', referencedColumnName: 'id')]
+    private ?Device $idDispositivo = null;
 
     #[ORM\Column(type: 'boolean')]
     private ?bool $estado = null;
 
-    #[ORM\Column(type: 'smallint', options: ['default' => 22])]
-    private ?int $concesionaria = 22;
+    #[ORM\ManyToOne(targetEntity: Tbl06Concesionaria::class)]
+    #[ORM\JoinColumn(name: 'concesionaria', referencedColumnName: 'id_concesionaria')]
+    private ?Tbl06Concesionaria $concesionaria = null;
 
     #[ORM\Column(options: ['default' => 1])]
     private ?bool $regStatus = true;
@@ -62,13 +65,6 @@ class DeviceAlert
     #[ORM\Column(nullable: true)]
     private ?int $deletedRestoredBy = null;
 
-    // TODO(human): Add relationships with other entities
-    // - ManyToOne with Device (idDispositivo -> Device.id)
-    // - ManyToOne with AlertType if we create it (idAlarma -> AlertType.id)
-    // - ManyToOne with User entities for created/updated/closed/deleted tracking
-    // - OneToMany with NotificationLog for tracking sent notifications
-    // - Add workflow state tracking for escalation
-
     public function __construct()
     {
         $this->createdAt = new \DateTime();
@@ -86,23 +82,23 @@ class DeviceAlert
         return $this->id;
     }
 
-    public function getIdAlarma(): ?int
+    public function getIdAlarma(): ?Alarms
     {
         return $this->idAlarma;
     }
 
-    public function setIdAlarma(int $idAlarma): static
+    public function setIdAlarma(?Alarms $idAlarma): static
     {
         $this->idAlarma = $idAlarma;
         return $this;
     }
 
-    public function getIdDispositivo(): ?int
+    public function getIdDispositivo(): ?Device
     {
         return $this->idDispositivo;
     }
 
-    public function setIdDispositivo(int $idDispositivo): static
+    public function setIdDispositivo(?Device $idDispositivo): static
     {
         $this->idDispositivo = $idDispositivo;
         return $this;
@@ -119,12 +115,12 @@ class DeviceAlert
         return $this;
     }
 
-    public function getConcesionaria(): ?int
+    public function getConcesionaria(): ?Tbl06Concesionaria
     {
         return $this->concesionaria;
     }
 
-    public function setConcesionaria(int $concesionaria): static
+    public function setConcesionaria(?Tbl06Concesionaria $concesionaria): static
     {
         $this->concesionaria = $concesionaria;
         return $this;

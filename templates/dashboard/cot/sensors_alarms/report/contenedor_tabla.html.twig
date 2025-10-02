@@ -1,0 +1,120 @@
+<div>
+    <div id="pt_table_container" class="tables-responsive row col-lg-12">
+        <div id="subToolbar" class="well-sm" style="margin: -8px -8px -19px -8px;" onmouseover="stopTimerToggleTaskBar();">
+            <!-- Inicio form de filtros y opciones  -->
+            <div id="filter-panel" class="filter-panel collapse" aria-expanded="true">
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        <!-- Nuevo Formulario de Control -->
+                        <form id="report_params" class="form-inline" role="form" action="" method="get">
+                            <input type="hidden" value="1" id="ci" name="ci">
+                            <div class="row">
+                                <div class="col-sm-2">
+                                    <div class="form-group">
+                                        <label for="fechaInicio" class="">Fecha de inicio </label>
+                                        <div class="input-group date col-sm-12" id="dtpFechaInicio" style="color: #222;">
+                                            <input type="text" id="fechaInicio" name="fechaInicio" class="form-control filter_panel_control" placeholder="Fecha de inicio">
+                                            <span class="input-group-addon">
+                                                            <span class="glyphicon glyphicon-calendar"></span>
+                                                    </span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="fechaTermino" class="required">Fecha de término </label>
+                                        <div class="input-group date col-sm-12 filter_panel_control" id="dtpFechaTermino" style="color: #222;">
+                                            <input type="text" id="fechaTermino" name="fechaTermino" class="form-control filter_panel_control" placeholder="Fecha de término">
+                                            <span class="input-group-addon">
+                                                        <span class="glyphicon glyphicon-calendar"></span>
+                                                    </span>
+                                        </div>
+                                    </div>
+                                    <input id="fra_ids" type="text" name="fra_ids" class="hidden">
+                                </div>
+                                <div class="col-sm-2">
+                                    <div class="form-group col-sm-12">
+                                        <label for="regStatus">Estado</label>
+                                        <select class="selectpicker filter_panel_control" id="regStatus" name="regStatus">
+                                            <optgroup label="Estado">
+                                                <option value="0">Todas</option>
+                                                <option value="1">Creadas</option>
+                                                <option value="2">Aceptadas</option>
+                                                <option value="3">Aceptadas y Finalizadas</option>
+                                                <option value="4">Finalizadas</option>
+                                            </optgroup>
+                                        </select>
+                                    </div>
+                                    <div class="form-group col-sm-12">
+                                        <label for="regStatus">Tipo Alarma</label>
+                                        <select class="selectpicker filter_panel_control" id="alarmType" name="alarmType[]"  multiple data-selected-text-format="count > 3" data-actions-box="true">
+                                            <optgroup label="Sensor de">
+                                                <option selected value="1">Extintor 1</option>
+                                                <option selected value="2">Extintor 2</option>
+                                                <option selected value="3">Red Húmeda</option>
+                                            </optgroup>
+                                        </select>
+                                    </div>
+
+                                </div>
+                                <div class="col-sm-2">
+                                    <div class="form-group col-sm-12">
+                                        <label for="searchTxt">Buscar equipos</label>
+                                        <input type="text" name="searchTxt" class="form-control filter_panel_control" id="searchTxt" style="width: 100%;">
+                                    </div>
+                                </div>
+                                <div class="col-sm-2">
+                                    <div class="form-group col-sm-12">
+                                        <br>
+                                        <button type="button" id="btn-refresh" class="btn icon-btn btn-info waves-effect waves-light btn-restore-selected-registers col-sm-12" onclick="getReportSensorData();">
+                                            <span class="glyphicon btn-glyphicon glyphicon-search img-circle text-info rotate_ajax_icon spin_rotate_icon">
+                                            </span> Buscar
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-sm-2">
+                                </div>
+                                <div class="col-sm-2">
+                                    <div class="form-group col-sm-12 hidden">
+                                        <label>Automática</label>
+                                        <div class="onoffswitch1">
+                                            <input type="checkbox" name="actualizacionAutomatica" class="onoffswitch1-checkbox" id="actualizacionAutomatica">
+                                            <label class="onoffswitch1-label" for="actualizacionAutomatica">
+                                                <span class="onoffswitch1-inner"></span>
+                                                <span class="onoffswitch1-switch"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <hr class="hidden">
+                                    <div class="row hidden">
+                                        <label><span class="glyphicon glyphicon-time"></span> Intervalo de actualización </label>
+                                        </br>
+                                        <input class=" filter_panel_control" id="timer-range-ajax-update"  type="text" min="5" max="180" value="{% if autoUpdateInterval %}{{ autoUpdateInterval }}{% endif %}" name="points" step="5">
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <!-- Fin form de filtros -->
+        </div>
+
+        <div id="toolbar">
+            <div class="btn-group no_pdf_render">
+                <button id="total-records" class="btn btn-info waves-effect waves-light" type="button">
+                    {% trans %}Total records: {% endtrans %} <span id="total" class="badge"> {{ total_count_rows_data_table }} </span>
+                </button>
+                <a href="{{ path('admin_cot_sosindex', { id: '1', videowall: 'false', device_status: 'all', contract_ui: 'true', masonry: 'true', grid_items_width: '12', input_device_finder: '' }) }}" type="button" class="btn btn-default waves-effect">
+                    <span class="glyphicon glyphicon-dashboard"></span> Ir al monitor
+                </a>
+                <button id="toggle_task_bar" type="button" class="btn btn-default waves-effect" data-toggle="collapse" data-target="#filter-panel"> <!--		style="float: right;"		-->
+                    <span class="glyphicon glyphicon-filter"></span> Filtros & Opciones
+                </button>
+                <button id="get_pdf_report" type="button" class="btn btn-default waves-effect" onclick="downloadPtList();">
+                    <span class="glyphicon glyphicon-save-file"></span> Excel
+                </button>
+            </div>
+
+        </div>
+        {{ include('dashboard/cot/sensors_alarms/report/tabla.html.twig') }}
+    </div>
+</div>

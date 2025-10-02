@@ -1,331 +1,452 @@
-{% extends 'base_dashboard.html.twig' %}
+{% extends '@EasyAdmin/page/content.html.twig' %}
 
 {% block title %}Resumen del monitor de dispositivos{% endblock %}
 
-{% block custom_stylesheets %}
-<link rel="stylesheet" href="{{ asset('css/asRange.css') }}">
-<style>
-    .card {
-        background-color: #fff;
-        box-shadow: 0 0 6px rgba(0, 0, 0, 0.1);
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        max-width: 300px;
-        height: 375px;
-        border-radius: 10px;
-        overflow: hidden;
-    }
-
-    .card .about {
-        height: 150px;
-        padding: 20px;
-        box-sizing: border-box;
-    }
-
-    .card .about h3,
-    .card .about .lead {
-        font-weight: 300;
-        margin: 0;
-    }
-
-    .card .about h3 {
-        font-size: 24px;
-    }
-
-    .card .about .lead {
-        color: #aaa;
-    }
-
-    #tooltip-canvas {
-        position: absolute;
-        top: 115px;
-        left: 75px;
-    }
-
-    .btn-reload {
-        position: absolute;
-        top: 280px;
-        left: 50%;
-        width: 30px;
-        margin-left: -15px;
-        -webkit-appearance: none;
-        appearance: none;
-        border: 0;
-        background: transparent;
-        outline: none;
-        cursor: pointer;
-        opacity: 0.6;
-        transition: opacity 0.3s;
-    }
-
-    .btn-reload:hover {
-        opacity: 1;
-    }
-
-    /* ICONO TARJETA */
-    .card_circle_icon_right {
-        float: right;
-        margin: -15px 0 0 0 !important;
-        padding: 7px 0 0 0;
-        background: #f5f5f5;
-        width: 50px;
-        height: 50px;
-        font-size: 35px;
-    }
-
-    .bs-callout h4 {
-        /*font-size: 30px;*/
-    }
-
-    .chart_label{
-        font-size: 18px;
-        margin-top: -145px;
-        margin-left: 80px;
-        background: rgba(0,0,0,.075);
-        margin-top: -181px;
-        margin-left: 66px;
-        background: rgba(0,0,0,.075);
-        border-radius: 100%;
-        width: 130px;
-        height: 130px;
-        padding: 30px 0 0 10px;
-    }
-
-    .chart_label .badge {
-        font-size: 17px;
-    }
-
-    .bs-callout {
-        padding: 20px;
-        margin: 20px 0;
-        border: 1px solid #eee;
-        border-left-width: 5px;
-        border-radius: 3px;
-    }
-
-    .bs-callout-info {
-        border-left-color: #1b809e;
-    }
-</style>
+{% block page_title %}
+    <i class="fas fa-chart-pie"></i> Resumen del monitor de dispositivos
 {% endblock %}
 
-{% block content %}
-<div id="main-wrapper" class="container fluid col-lg-12">
-    <div class="row-fluid">
-        <div class="page-header margin-none hidden" style="padding-bottom: 0px;margin: 20px 0 -12px;border-bottom: 0;">
-            <h1 class="padding-none" style="padding: 25px;border-radius:40px 0 0 40px;">Monitor de dispositivos</h1>
-        </div>
-        <div class="row">
-            <div class="col-lg-4">
-                <label class="form-label">
-                    <i class="bi bi-clock"></i> Intervalo de actualización:
-                    <span id="timer-value" class="badge bg-primary">300 seg</span>
-                </label>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="text-muted small">10s</span>
-                    <input id="timer-range-ajax-update"
-                           type="range"
-                           class="form-range flex-grow-1"
-                           min="10"
-                           max="600"
-                           value="300"
-                           step="10">
-                    <span class="text-muted small">600s</span>
+{% block head_stylesheets %}
+    {{ parent() }}
+    <style>
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+
+        .stat-card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .stat-card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 20px;
+        }
+
+        .stat-card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 200px;
+            margin: 15px 0;
+        }
+
+        .stat-details {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+            margin-top: 5px;
+        }
+
+        .alarms-section {
+            margin-top: 30px;
+            display: none !important; /* Ocultar tabla de alarmas para dashboard simplificado */
+        }
+
+        .alarm-table {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .alarm-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            font-weight: 600;
+        }
+
+        .update-timer {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            border-radius: 30px;
+            padding: 10px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        .timer-badge {
+            background: #28a745;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+        }
+
+        /* Color schemes for different device types */
+        .icon-bg-primary { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .icon-bg-success { background: linear-gradient(135deg, #56ab2f, #a8e063); }
+        .icon-bg-warning { background: linear-gradient(135deg, #f2994a, #f2c94c); }
+        .icon-bg-danger { background: linear-gradient(135deg, #eb3349, #f45c43); }
+        .icon-bg-info { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+
+        /* Dashboard simplification - Hide EasyAdmin sidebar and elements */
+        .ea-sidebar, .main-sidebar, #sidebar {
+            display: none !important;
+        }
+
+        .ea-content-wrapper, .content-wrapper {
+            margin-left: 0 !important;
+            width: 100% !important;
+        }
+
+        .ea-content-header, .content-header {
+            display: none !important;
+        }
+
+        /* Ensure full width for container */
+        .container-fluid {
+            max-width: none !important;
+            padding-left: 15px !important;
+            padding-right: 15px !important;
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .update-timer {
+                bottom: 10px;
+                right: 10px;
+                padding: 8px 15px;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block main %}
+    {# Include context-aware control panel #}
+    {% include 'dashboard/cot/index/modern_control_panel.html.twig' %}
+
+    <div class="container-fluid mt-3">
+        {# Update Timer Control #}
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-tachometer-alt"></i> Resumen del Estado de Dispositivos
+                    </h5>
+                    <div class="d-flex align-items-center gap-3">
+                        <label class="mb-0 me-2">
+                            <i class="fas fa-sync-alt"></i> Actualización:
+                        </label>
+                        <input type="range"
+                               id="timer-range-ajax-update"
+                               class="form-range"
+                               style="width: 150px;"
+                               min="10" max="600" value="60" step="10">
+                        <span id="timer-display" class="badge bg-secondary">60s</span>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="row">
-            <div id="resumen">
-                {% for device_status in data_table %}
-                    <div class="col-sm-2">
-                        <div class="bs-callout bs-callout-info">
-                            <h4 id="callout-progress-csp">
-                                <i class="fa {{ device_status.icono }} btn-glyphicon img-circle card_circle_icon_right"></i>
-                                {{ device_status.tipo }}
-                            </h4>
-                            <div id="status_chart_{{ device_status.id }}" style="height: 250px; max-width: 600px; margin: 0 auto"></div>
-                            <div class="col-sm-5 chart_label">
-                                Activos: <span id="active_devices_count_{{ device_status.id }}" class="badge btn-success waves-effect waves-light">{{ device_status.activos }}</span><br>
-                                Inactivos: <span id="unactive_devices_count_{{ device_status.id }}" class="badge btn-danger waves-effect waves-light">{{ device_status.inactivos }}</span><br>
-                                Total: {{ device_status.total }}
-                            </div>
-                            <script>
-                                // Build the chart
-                                Highcharts.chart('status_chart_{{ device_status.id }}', {
-                                    chart: {
-                                        plotBackgroundColor: null,
-                                        plotBorderWidth: null,
-                                        plotShadow: false,
-                                        type: 'pie',
-                                    },
-                                    title: {
-                                        text: '',
-                                        align: 'center',
-                                        verticalAlign: 'middle',
-                                        y: 90,
-                                        x: 0
-                                    },
-                                    tooltip: {
-                                        pointFormat: '<b>{point.percentage:.1f}%</b>'
-                                    },
-                                    plotOptions: {
-                                        pie: {
-                                            innerSize: '80%',
-                                            cursor: 'pointer',
-                                            dataLabels: {
-                                                enabled: false
-                                            },
-                                            showInLegend: true
-                                        }
-                                    },
-                                    legend: {
-                                        enabled: true,
-                                        layout: 'horizontal',
-                                        align: 'left',
-                                        verticalAlign: 'bottom',
-                                        floating: true,
-                                        y: 25,
-                                        x: -10
-                                    },
-                                    series: [{
-                                        name: 'Estado',
-                                        colorByPoint: true,
-                                        data: [{
-                                            name: 'Inactivos {{ device_status.por_inactivos|number_format(1, ',', '.') }}%',
-                                            y: {{ device_status.por_inactivos }},
-                                        }, {
-                                            name: 'Activos {{ device_status.por_Activos|number_format(1, ',', '.') }}%',
-                                            y: {{ device_status.por_Activos }}
-                                        }]
-                                    }],
-                                    colors: [
-                                        '#f50057',
-                                        '#4ca44c',
-                                        '#2979ff',
-                                        '#90ed7d',
-                                        '#f7a35c',
-                                        '#8085e9',
-                                        '#f15c80',
-                                        '#e4d354',
-                                        '#2b908f',
-                                        '#f45b5b',
-                                        '#91e8e1'
-                                    ],
-                                    credits: {
-                                        enabled: false
-                                    }
-                                });
-                            </script>
+
+        {# Statistics Cards Grid #}
+        <div class="dashboard-grid" id="resumen">
+            {% for item in data_table %}
+                {% set icon_colors = ['icon-bg-primary', 'icon-bg-success', 'icon-bg-warning', 'icon-bg-danger', 'icon-bg-info'] %}
+                {% set color_index = loop.index0 % (icon_colors|length) %}
+
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <div class="stat-card-icon {{ icon_colors[color_index] }} text-white">
+                            <i class="{{ item.icono|default('fas fa-microchip') }}"></i>
+                        </div>
+                        <h5 class="stat-card-title">{{ item.tipo }}</h5>
+                    </div>
+
+                    <div class="chart-container">
+                        <canvas id="chart_{{ item.id }}"></canvas>
+                    </div>
+
+                    <div class="stat-details">
+                        <div class="stat-item">
+                            <span class="stat-value text-success">{{ item.activos }}</span>
+                            <span class="stat-label">Activos</span>
+                            <span class="badge bg-success">{{ item.por_Activos|number_format(1) }}%</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value text-danger">{{ item.inactivos }}</span>
+                            <span class="stat-label">Inactivos</span>
+                            <span class="badge bg-danger">{{ item.por_inactivos|number_format(1) }}%</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value text-primary">{{ item.total }}</span>
+                            <span class="stat-label">Total</span>
                         </div>
                     </div>
-                {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+
+        {# Active Alarms Section #}
+        {% if alarmas_dispositivos|length > 0 %}
+        <div class="alarms-section">
+            <div class="alarm-table">
+                <div class="alarm-header">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Alarmas Activas ({{ alarmas_dispositivos|length }})
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Dispositivo</th>
+                                <th>Tipo Alarma</th>
+                                <th>Concesionaria</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for alarma in alarmas_dispositivos %}
+                            <tr>
+                                <td>
+                                    <i class="fas fa-server text-muted me-2"></i>
+                                    {{ alarma.idDispositivo.nombre|default('N/A') }}
+                                </td>
+                                <td>
+                                    <span class="badge bg-warning">
+                                        {{ alarma.idAlarma.nombre|default('Sin especificar') }}
+                                    </span>
+                                </td>
+                                <td>{{ alarma.concesionaria.nombre|default('N/A') }}</td>
+                                <td>
+                                    <span class="badge bg-danger">Activa</span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary"
+                                            onclick="viewAlarmDetail({{ alarma.id }})">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
-        <br>
-        <div class="col-md-12"></div>
+        {% else %}
+        <div class="alarms-section">
+            <div class="alert alert-success" role="alert">
+                <i class="fas fa-check-circle"></i>
+                No hay alarmas activas en este momento
+            </div>
+        </div>
+        {% endif %}
     </div>
-</div>
+
+    {# Update Timer Badge #}
+    <div class="update-timer">
+        <span class="timer-badge">
+            <i class="fas fa-circle"></i> Actualización automática
+        </span>
+        <span id="next-update">60s</span>
+    </div>
 {% endblock %}
 
-{% block custom_javascript %}
-<script src="{{ asset('js/jquery-asRange.js') }}"></script>
-<script>
-jQuery(document).ready(function() {
-    SetDashboardTimer()
-});
+{% block body_javascript %}
+    {{ parent() }}
+    <!-- Chart.js from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
-/********************
- * Timer de ejecución periodica
- * ******************/
-var cot_devices_timer_interval;
+    <script>
+        // Chart.js configuration for device status
+        const chartColors = {
+            active: 'rgba(40, 167, 69, 0.8)',     // Green
+            inactive: 'rgba(220, 53, 69, 0.8)',   // Red
+            borderActive: 'rgba(40, 167, 69, 1)',
+            borderInactive: 'rgba(220, 53, 69, 1)'
+        };
 
-function SetDashboardTimer(){
-    var interval = $('#timer-range-ajax-update').val() * 1000;
-    cot_devices_timer_interval = setInterval(function () {
-        if(typeof _isWindowsVisible === 'undefined' || _isWindowsVisible) {
-            getDashboardData();
-        }
-    }, interval);
-}
-
-/**********************
- * Se Añade Control de Timer
- ***********************/
-$("#timer-range-ajax-update").asRange({
-    step: 10,
-    range: false,
-    min: 10,
-    max: 600,
-    tip: {
-        active: 'onMove'
-    }
-});
-/**********************
- * Se Añade Evento al Control de Timer
- ***********************/
-$("#timer-range-ajax-update").on('asRange::change', function (e) {
-    clearInterval(cot_devices_timer_interval);
-    SetDashboardTimer();
-});
-
-function getDashboardData() {
-    $.ajax({
-        url: "{{ path('cot_dashboard') }}",
-        type: "GET",
-        async: true,
-        success: function (html) {
-            if (html) {
-                // Si es JSON, actualizar directamente
-                if (typeof html === 'object' && html.data_table) {
-                    updateCharts(html.data_table);
-                }
-                // Si es HTML, reemplazar el DOM
-                else if ($(html).find('#resumen').length > 0) {
-                    $('#resumen').replaceWith($(html).find('#resumen'));
-                }
-                else {
-                    $.notify(
-                        "Error al procesar los datos",
-                        {style: 'bootstrap', className: 'error', position: "top right"}
-                    );
-                }
+        // Initialize all charts
+        {% for item in data_table %}
+        (function() {
+            const ctx = document.getElementById('chart_{{ item.id }}');
+            if (ctx) {
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Activos', 'Inactivos'],
+                        datasets: [{
+                            data: [{{ item.activos }}, {{ item.inactivos }}],
+                            backgroundColor: [
+                                chartColors.active,
+                                chartColors.inactive
+                            ],
+                            borderColor: [
+                                chartColors.borderActive,
+                                chartColors.borderInactive
+                            ],
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const total = {{ item.total }};
+                                        const value = context.parsed;
+                                        const percentage = ((value / total) * 100).toFixed(1);
+                                        return context.label + ': ' + value + ' (' + percentage + '%)';
+                                    }
+                                }
+                            }
+                        },
+                        cutout: '70%'
+                    }
+                });
             }
-        },
-        error: function () {
-            $.notify(
-                "Error al intentar procesar los datos",
-                {style: 'bootstrap', className: 'error', position: "top right"}
-            );
+        })();
+        {% endfor %}
+
+        // Auto-update timer
+        let updateInterval = 60; // seconds
+        let countdown = updateInterval;
+        let dashboardTimer;
+
+        function updateTimerDisplay() {
+            const display = document.getElementById('timer-display');
+            const nextUpdate = document.getElementById('next-update');
+
+            if (display) {
+                display.textContent = updateInterval + 's';
+            }
+
+            if (nextUpdate) {
+                nextUpdate.textContent = countdown + 's';
+            }
         }
-    });
-}
 
-function updateCharts(data_table) {
-    // Actualizar contadores y gráficos sin recargar todo el DOM
-    $.each(data_table, function(index, device_status) {
-        $('#active_devices_count_' + device_status.id).text(device_status.activos);
-        $('#unactive_devices_count_' + device_status.id).text(device_status.inactivos);
+        function startDashboardTimer() {
+            clearInterval(dashboardTimer);
+            countdown = updateInterval;
 
-        // Actualizar el gráfico si existe
-        var chart = Highcharts.charts.find(function(chart) {
-            return chart && chart.renderTo.id === 'status_chart_' + device_status.id;
+            dashboardTimer = setInterval(function() {
+                countdown--;
+                updateTimerDisplay();
+
+                if (countdown <= 0) {
+                    getDashboardData();
+                    countdown = updateInterval;
+                }
+            }, 1000);
+        }
+
+        function getDashboardData() {
+            fetch('{{ path('cot_dashboard') }}', {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Update charts and data
+                console.log('Dashboard data updated');
+                // Here you would update the charts with new data
+                // For now, we'll just reload the section
+                const resumen = document.getElementById('resumen');
+                if (resumen && data.data_table) {
+                    // In production, update charts without full reload
+                    location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Error updating dashboard:', error);
+            });
+        }
+
+        // Timer range control
+        const timerRange = document.getElementById('timer-range-ajax-update');
+        if (timerRange) {
+            timerRange.addEventListener('input', function() {
+                updateInterval = parseInt(this.value);
+                updateTimerDisplay();
+                startDashboardTimer();
+            });
+        }
+
+        // View alarm detail function
+        function viewAlarmDetail(alarmId) {
+            // Implementation for viewing alarm details
+            console.log('View alarm:', alarmId);
+        }
+
+        // Start timer on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            startDashboardTimer();
         });
 
-        if (chart) {
-            chart.series[0].setData([
-                {
-                    name: 'Inactivos ' + device_status.por_inactivos.toFixed(1) + '%',
-                    y: device_status.por_inactivos
-                },
-                {
-                    name: 'Activos ' + device_status.por_Activos.toFixed(1) + '%',
-                    y: device_status.por_Activos
-                }
-            ]);
-        }
-    });
-}
-</script>
+        // Visibility API to pause updates when tab is not visible
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                clearInterval(dashboardTimer);
+            } else {
+                startDashboardTimer();
+            }
+        });
+    </script>
 {% endblock %}
