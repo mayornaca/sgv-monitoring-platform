@@ -1,13 +1,102 @@
-{# Override de EasyAdmin layout para agregar título en el navbar #}
-{# El símbolo '@!' es crítico - evita loop infinito al extender del template original #}
 {% extends '@!EasyAdmin/layout.html.twig' %}
 
-{% block header_custom_menu %}
-    {# Agregar título "Monitor de Dispositivos - COT" al navbar superior #}
-    <div class="navbar-text me-3">
-        <strong style="color: #495057;">Monitor de Dispositivos - COT</strong>
-    </div>
+{# Override header_navbar to add sidebar toggle button before content #}
+{% block header_navbar %}
+    <nav class="navbar" role="navigation">
+        {# Sidebar toggle button - Always visible #}
+        <button class="navbar-toggler sidebar-toggle-btn" type="button" id="navigation-toggler" aria-label="Toggle sidebar">
+            <i class="fas fa-bars"></i>
+        </button>
 
-    {# Mantener el menú del usuario original (avatar, dropdown, etc.) #}
+        {# Original navbar content #}
+        {{ parent() }}
+    </nav>
+{% endblock header_navbar %}
+
+{# Add custom CSS for the toggle button #}
+{% block head_stylesheets %}
     {{ parent() }}
-{% endblock %}
+    <style>
+        /* Sidebar toggle button styling */
+        .sidebar-toggle-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-color, #2c3e50);
+            font-size: 1.25rem;
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+            margin-right: 1rem;
+            border-radius: 4px;
+            min-width: 40px;
+            height: 40px;
+        }
+
+        .sidebar-toggle-btn:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .sidebar-toggle-btn:active {
+            background: rgba(0, 0, 0, 0.1);
+            transform: scale(0.95);
+        }
+
+        .sidebar-toggle-btn:focus {
+            outline: 2px solid var(--color-primary, #5368d5);
+            outline-offset: 2px;
+        }
+
+        /* Dark mode support */
+        body.ea-dark-scheme .sidebar-toggle-btn {
+            color: var(--text-color, #fff);
+        }
+
+        body.ea-dark-scheme .sidebar-toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Ensure navbar displays flex */
+        .navbar {
+            display: flex;
+            align-items: center;
+        }
+    </style>
+{% endblock head_stylesheets %}
+
+{# Add toggle functionality #}
+{% block body_javascript %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleButton = document.getElementById('navigation-toggler');
+            const sidebar = document.querySelector('aside.sidebar');
+            const body = document.body;
+
+            if (toggleButton && sidebar) {
+                // Get stored state or default to visible
+                const sidebarState = localStorage.getItem('ea-sidebar-state') || 'visible';
+
+                // Apply initial state
+                if (sidebarState === 'hidden') {
+                    body.classList.add('ea-sidebar-width-compact');
+                } else {
+                    body.classList.remove('ea-sidebar-width-compact');
+                }
+
+                // Toggle on button click
+                toggleButton.addEventListener('click', function() {
+                    const isCompact = body.classList.toggle('ea-sidebar-width-compact');
+
+                    // Save state
+                    localStorage.setItem('ea-sidebar-state', isCompact ? 'hidden' : 'visible');
+
+                    // Dispatch resize event for charts/tables
+                    window.dispatchEvent(new Event('resize'));
+                });
+            }
+        });
+    </script>
+{% endblock body_javascript %}

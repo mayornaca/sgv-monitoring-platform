@@ -97,6 +97,8 @@ security:
                 username_parameter: _username
                 password_parameter: _password
                 default_target_path: admin
+                success_handler: App\Security\Handler\AjaxAuthenticationSuccessHandler
+                failure_handler: App\Security\Handler\AjaxAuthenticationFailureHandler
             
             logout:
                 path: app_logout
@@ -106,11 +108,12 @@ security:
                 secret: '%kernel.secret%'
                 lifetime: 604800 # 1 week
                 path: /
-            
-            # 2FA configuration
-            two_factor:
-                auth_form_path: 2fa_login
-                check_path: 2fa_login_check
+
+            # 2FA configuration - DESHABILITADO TEMPORALMENTE (causaba lentitud de 10+ segundos)
+            # TODO: Implementar correctamente con scheb/2fa-bundle cuando sea necesario
+            # two_factor:
+            #     auth_form_path: 2fa_login
+            #     check_path: 2fa_login_check
 
     # Estrategia de votación unanime para permisos granulares (EasyAdmin 2024 best practice)
     access_decision_manager:

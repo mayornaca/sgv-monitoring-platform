@@ -229,16 +229,9 @@
         <!-- Filtros aplicados -->
         {% if filters.filterSos or filters.fechaInicio or filters.fechaTermino %}
         <div class="filters-applied">
-            <div class="filters-title">Filtros aplicados:</div>
-            {% if filters.filterSos %}
-                <div class="filter-item">• Poste SOS: {{ filters.filterSos }}</div>
-            {% endif %}
-            {% if filters.fechaInicio %}
-                <div class="filter-item">• Fecha inicio: {{ filters.fechaInicio }}</div>
-            {% endif %}
-            {% if filters.fechaTermino %}
-                <div class="filter-item">• Fecha término: {{ filters.fechaTermino }}</div>
-            {% endif %}
+            <div class="filters-title">
+                Periodo: {% if filters.fechaInicio %}• Fecha inicio: {{ filters.fechaInicio }}{% endif %}{% if filters.fechaTermino %} • Fecha término: {{ filters.fechaTermino }}{% endif %}{% if filters.filterSos %} • Poste SOS: {{ filters.filterSos }}{% endif %}
+            </div>
         </div>
         {% endif %}
 
@@ -280,7 +273,7 @@
 
         <!-- Footer -->
         <div class="footer">
-            <p>Documento generado automáticamente el {{ "now"|date("d/m/Y") }} a las {{ "now"|date("H:i:s") }}</p>
+            <p>Documento generado el {{ "now"|date("d/m/Y") }} a las {{ "now"|date("H:i:s") }}</p>
             <p>Sociedad Concesionaria Costanera Norte - Sistema de Información Vial (SIV)</p>
         </div>
     </div>

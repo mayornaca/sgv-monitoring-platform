@@ -151,7 +151,7 @@
         };
 
         $.ajax({
-            url: "{{ path('cot_sos_report_status') }}",
+            url: "{{ path('cot_dashboard_cot_sos_report_status') }}",
             type: "POST",
             data: data,
             async: true,
@@ -217,7 +217,7 @@
         return parameters.join('&');
     }
     function downloadPtList() {
-        var path_url = "{{ path('cot_sos_report_status')}}",
+        var path_url = "{{ path('cot_dashboard_cot_sos_report_status')}}",
             fechaInicio= $('#fechaInicio').val(),
             fechaTermino = $('#fechaTermino').val(),
             regStatus = $('#regStatus').val();

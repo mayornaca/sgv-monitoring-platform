@@ -1,9 +1,30 @@
 {% extends '@EasyAdmin/page/content.html.twig' %}
+{% block title %}Bit谩cora SCADA{% endblock %}
 
-{% block page_title %}Bit醕ora SCADA{% endblock %}
+{# Sobrescribir content_title para eliminar el H1 que ocupa espacio #}
+{% block content_title %}{% endblock %}
+
+{# Agregar t铆tulo en el toolbar superior (content_top_header) #}
+{% block content_top_header %}
+    <div class="d-flex align-items-center gap-2">
+        <h2 class="m-0" style="font-size: 1.25rem; font-weight: 500;">
+            <i class="fas fa-book" style="color: var(--color-primary, #5368d5);"></i>
+            Bit谩cora SCADA
+        </h2>
+    </div>
+
+    {# Keep the original search, user menu, and settings #}
+    {{ parent() }}
+{% endblock %}
 
 {% block head_stylesheets %}
     {{ parent() }}
+    <!-- Bootstrap Table CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-table@1.22.1/dist/bootstrap-table.min.css">
+    <!-- Tempus Dominus 6 CSS (Bootstrap 5 compatible) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@eonasdan/tempus-dominus@6/dist/css/tempus-dominus.min.css">
+    <!-- Bootstrap Select CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">
     <style>
         .btn-group.stick-top.go-to-graphic.affix {
             top: 73px;
@@ -13,355 +34,376 @@
         .bootstrap-table.fullscreen .fixed-table-toolbar {
             background: #333;
         }
-        .bg-white {
+        .bg-white{
             background-color: rgba(255, 255, 255, 0.02) !important;
         }
         .table>thead>tr>th {
             vertical-align: middle;
         }
-        .severity-high {
-            background-color: #dc3545;
-            color: white;
-        }
-        .severity-medium {
-            background-color: #ffc107;
-            color: black;
-        }
-        .severity-low {
-            background-color: #28a745;
-            color: white;
+        .col9{
+            background-color: cornsilk;
         }
     </style>
 {% endblock %}
 
+{# TODO: Implementar help_menu si es necesario en EasyAdmin 4 #}
+{# {% block help_menu %}
+    {{ parent() }}
+    <li><a href="#" onclick="ayudaPermisosTrabajos();">Ayuda General</a></li>
+    <li><a href="#" onclick="">Creaci贸n</a></li>
+    <li><a href="#" onclick="">Edici贸n</a></li>
+    <li><a href="#" onclick="">Descargar Comprobante</a></li>
+{% endblock %} #}
+
+{% block configured_head_contents %}
+    {{ parent() }}
+    <!-- jQuery (necesario ANTES de Bootstrap y plugins) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <!-- Popper.js (requerido por Tempus Dominus) -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <!-- Tempus Dominus 6 JS (Bootstrap 5 compatible) -->
+    <script src="https://cdn.jsdelivr.net/npm/@eonasdan/tempus-dominus@6/dist/js/tempus-dominus.min.js"></script>
+    <!-- Bootstrap Table JS (debe cargar ANTES de que se renderice la tabla) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.22.1/dist/bootstrap-table.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.22.1/dist/locale/bootstrap-table-es-ES.min.js"></script>
+    <!-- Bootstrap Select (debe cargar ANTES de que se renderice la tabla) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/i18n/defaults-es_ES.min.js"></script>
+    <!-- jQuery Validation -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/localization/messages_es.min.js"></script>
+    <!-- Bootstrap Notify -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-notify@3.1.3/bootstrap-notify.min.js"></script>
+    <!-- Bootbox -->
+    <script src="https://cdn.jsdelivr.net/npm/bootbox@6.0.0/dist/bootbox.min.js"></script>
+{% endblock %}
+
 {% block page_content %}
-    <div class="container-fluid">
-        <h1 class="h2 mb-3">
-            <i class="fas fa-book"></i> Bit醕ora SCADA
-        </h1>
-
-        <!-- Panel de Filtros -->
-        <div class="card mb-3">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    Filtros & Opciones
-                    <button type="button" class="btn btn-sm btn-secondary float-end" data-bs-toggle="collapse" data-bs-target="#filter-panel">
-                        <i class="fas fa-chevron-down"></i>
-                    </button>
-                </h5>
-            </div>
-            <div id="filter-panel" class="collapse show">
-                <div class="card-body">
-                    <form id="report_params" method="get" action="">
-                        <input type="hidden" value="1" id="ci" name="ci">
-
-                        <div class="row">
-                            <div class="col-md-3">
-                                <div class="mb-3">
-                                    <label for="fechaInicio" class="form-label">Fecha de inicio</label>
-                                    <div class="input-group">
-                                        <input type="text" id="fechaInicio" name="fechaInicio"
-                                               class="form-control" placeholder="DD-MM-YYYY HH:mm:ss"
-                                               value="{{ fechaInicio }}">
-                                        <span class="input-group-text">
-                                            <i class="fas fa-calendar"></i>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="mb-3">
-                                    <label for="fechaTermino" class="form-label">Fecha de t閞mino</label>
-                                    <div class="input-group">
-                                        <input type="text" id="fechaTermino" name="fechaTermino"
-                                               class="form-control" placeholder="DD-MM-YYYY HH:mm:ss"
-                                               value="{{ fechaTermino }}">
-                                        <span class="input-group-text">
-                                            <i class="fas fa-calendar"></i>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="mb-3">
-                                    <label for="tipoEvento" class="form-label">Tipo de Evento</label>
-                                    <select class="form-select" id="tipoEvento" name="tipoEvento[]" multiple>
-                                        <option value="all">Todos</option>
-                                        <option value="alarm">Alarma</option>
-                                        <option value="warning">Advertencia</option>
-                                        <option value="info">Informaci髇</option>
-                                        <option value="error">Error</option>
-                                        <option value="critical">Cr韙ico</option>
-                                    </select>
-                                    <small class="text-muted">Ctrl+Click para selecci髇 m鷏tiple</small>
-                                </div>
-                            </div>
-
-                            <div class="col-md-3 d-flex align-items-end">
-                                <div class="w-100 mb-3">
-                                    <button type="submit" class="btn btn-primary w-100">
-                                        <i class="fas fa-search"></i> Buscar
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-3">
-                                <label for="dispositivo" class="form-label">Dispositivo</label>
-                                <select class="form-select" id="dispositivo" name="dispositivo">
-                                    <option value="">Todos los dispositivos</option>
-                                    <option value="PLC-01">PLC-01</option>
-                                    <option value="PLC-02">PLC-02</option>
-                                    <option value="RTU-01">RTU-01</option>
-                                    <option value="RTU-02">RTU-02</option>
-                                    <option value="SCADA-MASTER">SCADA Master</option>
-                                </select>
-                            </div>
-
-                            <div class="col-md-3">
-                                <label for="severidad" class="form-label">Severidad</label>
-                                <select class="form-select" id="severidad" name="severidad">
-                                    <option value="">Todas</option>
-                                    <option value="high">Alta</option>
-                                    <option value="medium">Media</option>
-                                    <option value="low">Baja</option>
-                                </select>
-                            </div>
-
-                            <div class="col-md-3">
-                                <label for="rowsPerPage" class="form-label">Filas por p醙ina</label>
-                                <select class="form-select" id="rowsPerPage" name="rowsPerPage">
-                                    <option value="10">10</option>
-                                    <option value="25">25</option>
-                                    <option value="50">50</option>
-                                    <option value="100">100</option>
-                                    <option value="500" selected>500</option>
-                                    <option value="1000">1000</option>
-                                </select>
-                            </div>
-
-                            <div class="col-md-3">
-                                <label class="form-label">Actualizaci髇 Autom醫ica</label>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="actualizacionAutomatica" checked>
-                                    <label class="form-check-label" for="actualizacionAutomatica">
-                                        Activada
-                                    </label>
-                                </div>
-
-                                <div class="mt-2">
-                                    <label for="timer-range-ajax-update" class="form-label">
-                                        <i class="fas fa-clock"></i> Intervalo (seg)
-                                    </label>
-                                    <input type="number" class="form-control" id="timer-range-ajax-update"
-                                           min="5" max="180" value="30" step="5">
-                                </div>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <!-- Toolbar de acciones -->
-        <div class="btn-toolbar mb-3" role="toolbar">
-            <div class="btn-group me-2" role="group">
-                <button class="btn btn-info" type="button">
-                    Total registros: <span class="badge bg-light text-dark">{{ data_table|length|default(0) }}</span>
-                </button>
-                <button type="button" class="btn btn-success" onclick="getBitacoraData()">
-                    <i class="fas fa-sync"></i> Actualizar
-                </button>
-                <button type="button" class="btn btn-warning" onclick="exportExcel()">
-                    <i class="fas fa-file-excel"></i> Excel
-                </button>
-                <button type="button" class="btn btn-danger" onclick="downloadBitacora()">
-                    <i class="fas fa-file-pdf"></i> PDF
-                </button>
-                <button type="button" class="btn btn-primary" onclick="addEntry()">
-                    <i class="fas fa-plus-circle"></i> Nueva Entrada
-                </button>
-            </div>
-        </div>
-
-        <!-- Tabla de datos -->
-        <div id="bitacora_table_container">
-            {% if data_table is defined and data_table|length > 0 %}
-                <div class="table-responsive">
-                    <table id="tbl_bitacora" class="table table-striped table-hover">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Fecha/Hora</th>
-                                <th>Dispositivo</th>
-                                <th>Tipo Evento</th>
-                                <th>Descripci髇</th>
-                                <th>Valor</th>
-                                <th>Severidad</th>
-                                <th>Usuario</th>
-                                <th>Estado</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for row in data_table %}
-                                <tr>
-                                    <td>{{ row.id|default('-') }}</td>
-                                    <td>{{ row.fecha_hora|default('-') }}</td>
-                                    <td>{{ row.dispositivo|default('-') }}</td>
-                                    <td>
-                                        {% set event_icon = 'info-circle' %}
-                                        {% set event_color = 'info' %}
-                                        {% if row.tipo_evento == 'alarm' %}
-                                            {% set event_icon = 'bell' %}
-                                            {% set event_color = 'warning' %}
-                                        {% elseif row.tipo_evento == 'error' %}
-                                            {% set event_icon = 'exclamation-triangle' %}
-                                            {% set event_color = 'danger' %}
-                                        {% elseif row.tipo_evento == 'critical' %}
-                                            {% set event_icon = 'exclamation-circle' %}
-                                            {% set event_color = 'danger' %}
-                                        {% endif %}
-                                        <i class="fas fa-{{ event_icon }} text-{{ event_color }}"></i>
-                                        {{ row.tipo_evento|default('-') }}
-                                    </td>
-                                    <td>{{ row.descripcion|default('-') }}</td>
-                                    <td>{{ row.valor|default('-') }}</td>
-                                    <td>
-                                        {% set severity_class = '' %}
-                                        {% if row.severidad == 'high' %}
-                                            {% set severity_class = 'severity-high' %}
-                                        {% elseif row.severidad == 'medium' %}
-                                            {% set severity_class = 'severity-medium' %}
-                                        {% elseif row.severidad == 'low' %}
-                                            {% set severity_class = 'severity-low' %}
-                                        {% endif %}
-                                        <span class="badge {{ severity_class }}">
-                                            {{ row.severidad|default('normal')|upper }}
-                                        </span>
-                                    </td>
-                                    <td>{{ row.usuario|default('Sistema') }}</td>
-                                    <td>
-                                        {% if row.estado == 'resuelto' %}
-                                            <span class="badge bg-success">Resuelto</span>
-                                        {% elseif row.estado == 'pendiente' %}
-                                            <span class="badge bg-warning">Pendiente</span>
-                                        {% else %}
-                                            <span class="badge bg-secondary">{{ row.estado|default('Activo') }}</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            <button type="button" class="btn btn-outline-info" onclick="viewEntry({{ row.id }})" title="Ver detalle">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-outline-primary" onclick="acknowledgeEntry({{ row.id }})" title="Reconocer">
-                                                <i class="fas fa-check"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-outline-secondary" onclick="addComment({{ row.id }})" title="Agregar comentario">
-                                                <i class="fas fa-comment"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="alert alert-info text-center">
-                    <i class="fas fa-info-circle fa-2x mb-3"></i>
-                    <h5>No se encontraron entradas en la bit醕ora</h5>
-                    <p>Ajuste los filtros de b鷖queda para ver los registros</p>
-                </div>
-            {% endif %}
-        </div>
+    <div id="main-wrapper" class="container col-lg-12">
+        {# dump(data_table|json_decode) #}
+        {{ include('dashboard/siv/bitacora/contenedor_tabla.html.twig') }}
+        {{ include('dashboard/siv/bitacora/ajax_edit_popup.html.twig') }}
     </div>
+
 {% endblock %}
 
 {% block javascripts %}
     {{ parent() }}
-    <script>
-        var timer_interval;
+    <!-- Plugins ya cargados en configured_head_contents para que est茅n disponibles cuando se renderiza la tabla -->
+{% endblock %}
 
-        function getBitacoraData() {
+{% block body_javascript %}
+    {{ parent() }}
+    <script>
+        jQuery(document).ready(function() {
+            /*
+             ANTES DE ENVIAR EL FORMULARIO VERIFICO QUE LA INFORMACI脫N SEA INTEGRA Y COHERENTE
+             */
+            $("#report_params").submit(function() {
+                if(validaRequeridos()){
+                    $.notify(
+                        "Espere un momento mientras se genera el reporte...",
+                        {  style: 'custom', className: 'success', position:"bottom right" }
+                    );
+                    return true;
+                }
+                else
+                {
+                    $.notify(
+                        "Por favor ingrese los datos requeridos, verifique la informaci贸n e intente nuevamente.",
+                        {  style: 'bootstrap', className: 'warn', position:"bottom right" }
+                    );
+                    return false;
+                }
+            });
+            SetPTTimer()
+        });
+        /********************
+         * Timer de ejecuci贸n periodica para actualizaci贸n autom谩tica
+         * ******************/
+        var omit_refresh_on_focus = 0;
+        var cot_devices_timer_interval;
+        function SetPTTimer(){
+            var interval = $('#timer-range-ajax-update').val() * 1000;
+            //console.log('nuevo intervalo ' + interval + ' ' +  new Date() );
+
+            cot_devices_timer_interval = setInterval(function () {
+                // Defensive check for jsDump
+                if(typeof jsDump === 'function') {
+                    jsDump('ejecutando intervalo tour is ended? ' + (typeof tourPermisosTrabajos !== 'undefined' ? tourPermisosTrabajos.ended() : 'true') + ' ' +  new Date() );
+                }
+
+                // Defensive check for tourPermisosTrabajos
+                var tourEnded = (typeof tourPermisosTrabajos !== 'undefined') ? tourPermisosTrabajos.ended() : true;
+
+                if($('#actualizacionAutomatica').is(":checked") && tourEnded) {
+                    /***
+                     * Funciones a ejecutar en intervalos de tiempo
+                     */
+
+                    if(omit_refresh_on_focus >= 3){
+                        omit_refresh_on_focus = 0;
+                       $("#toggle_task_bar").trigger('click');
+                        $.notify(
+                            "Se omiti贸 la actualizaci贸n de datos durante tres ciclos, mientras seleccionaba filtros",
+                            {style: 'bootstrap', className: 'warn', position: "top right"}
+                        );
+                        $.notify(
+                            "Actualizando ahora...",
+                            {style: 'bootstrap', className: 'success', position: "top right"}
+                        );
+                    }
+
+                    if(isFilterPanelIsFocused() === false){
+                        getBinacleScadaData();
+                    }
+                    else {
+                        omit_refresh_on_focus++;
+                        if(typeof jsDump === 'function') {
+                            jsDump('hay un control enfocado');
+                        }
+                    }
+
+                }
+                /***
+                 * Funciones a ejecutar siempre
+                 */
+
+            },interval);
+        }
+
+        function isFilterPanelIsFocused() {
+            var result = false;
+            $(".filter_panel_control").each(function () {
+                if($(this).hasClass("selectpicker")){
+                    if($(this).closest('.bootstrap-select').hasClass("open")){
+                        result = true;
+                    }
+                }
+                if($(this).is(":focus")){
+                    result = true;
+                }
+            });
+            return result;
+        }
+
+        var toolbarIsToggle = $('#filter-panel').hasClass('in');
+        var tableIsFullscreen = $('#tbl_pt').closest('div.bootstrap-table').hasClass('fullscreen');
+
+
+        function getBinacleScadaData() {
+            //clearInterval(cot_devices_timer_interval);
+            toolbarIsToggle = $('#filter-panel').hasClass('in');
+            tableIsFullscreen = $('#tbl_bitacora_scada').closest('div.bootstrap-table').hasClass('fullscreen');
             var data = {
+                action:'ajax',
+                toolbarIsToggle: toolbarIsToggle,
+                tableIsFullscreen: tableIsFullscreen,
                 fechaInicio: $('#fechaInicio').val(),
                 fechaTermino: $('#fechaTermino').val(),
-                tipoEvento: $('#tipoEvento').val(),
-                dispositivo: $('#dispositivo').val(),
-                severidad: $('#severidad').val(),
-                rowsPerPage: $('#rowsPerPage').val()
+                filasPorPagina: $('#ccbRowsPerPage').val(),
+                regStatus: $('#regStatus').val(),
+                searchTxt: $('#searchTxt').val(),
+                token: "{{ csrf_token('ajax-bs') }}",
+                search: $('.search input').val(),
+                autoUpdate: $('#actualizacionAutomatica').is(":checked"),
+                autoUpdateInterval: $('#timer-range-ajax-update').val(),
             };
 
-            $('#bitacora_table_container').html('<div class="alert alert-info"><i class="fas fa-spinner fa-spin"></i> Cargando datos...</div>');
+            $.ajax({
+                url: "{{ path('admin_siv_dashboard_lista_bitacora_scada') }}",
+                type: "POST",
+                data: data,
+                async: true,
+                success: function (html) {
+                    if (html) {
+                        if ($(html).find('#pt_table_container').length > 0) {
+                            $('#pt_table_container').replaceWith($(html).find('#pt_table_container'));
+                            if(tableIsFullscreen){
+                                $('#pt_table_container').find('button[name="fullscreen"]').trigger('click');
+                                setHeight(); //.bootstrapTable('toggleFullscreen');
+                            }
+                            else{
+                                $('.fixed-table-container').css("height", '100%');
+                            }
+                            //$('#pt_table_container').find('button[name="fullscreen"]').trigger('click');
+
+                            // Aplicar pageSize del select a la nueva tabla despu茅s de AJAX
+                            var currentPageSize = $('#ccbRowsPerPage').val();
+                            var $newTable = $('#tbl_bitacora_scada');
+                            if (currentPageSize === 'All') {
+                                $newTable.bootstrapTable('refreshOptions', { pagination: false });
+                            } else {
+                                $newTable.bootstrapTable('refreshOptions', {
+                                    pagination: true,
+                                    pageSize: parseInt(currentPageSize)
+                                });
+                            }
+
+                            // Reposicionar #subToolbar despu茅s del AJAX
+                            setTimeout(function() {
+                                var $subToolbar = $('#subToolbar');
+                                var $fixedTableToolbar = $('.fixed-table-toolbar');
+                                if ($subToolbar.length && $fixedTableToolbar.length) {
+                                    $subToolbar.detach();
+                                    $fixedTableToolbar.after($subToolbar);
+                                }
+                            }, 100);
+                        }
+                        else {
+                            $.notify(
+                                "pt_table_container Ha ocurrido un error al intentar procesar los datos. Intente recargar la p谩gina.",
+                                {style: 'bootstrap', className: 'error', position: "top right"}
+                            );
+                        }
+                        $('.selectpicker').selectpicker('render');
+                    }
+                    else {
+                        $.notify(
+                            "HTML Ha ocurrido un error al intentar procesar los datos. Intente recargar la p谩gina.",
+                            {style: 'bootstrap', className: 'error', position: "top right"}
+                        );
+                    }
+
+                },
+                error: function () {
+                    $.notify(
+                        "Error Ha ocurrido un error al intentar procesar los datos. Intente recargar la p谩gina.",
+                        {style: 'bootstrap', className: 'error', position: "top right"}
+                    );
+                }
+            });
+        }
+        /**********************
+         * Se A帽ade Handler Responsive de redimenci贸n de la ventana y sus elementos
+         ***********************/
+        $( window ).resize(function() {
+            setHeight();
+        });
+        function setHeight() {
+            // Returns height of browser viewport
+            var height = $(window).height();
+            if(typeof jsDump === 'function') {
+                jsDump(height);
+            }
+            $('.fixed-table-container').css("height", (height - 56) + 'px');
+        }
+//
+        function param(object)
+        {
+            var parameters = [];
+            for (var property in object) {
+                if (object.hasOwnProperty(property)) {
+                    parameters.push(encodeURI(property + '=' + object[property]));
+                }
+            }
+
+            return parameters.join('&');
+        }
+        function downloadPtList() {
+            var path_url = "{{ path('admin_siv_dashboard_lista_bitacora_scada')}}",
+                fechaInicio= $('#fechaInicio').val(),
+                fechaTermino = $('#fechaTermino').val(),
+                regStatus = $('#regStatus').val();
+
+            var params = {
+                action:'pdf',
+                fechaInicio: $('#fechaInicio').val(),
+                fechaTermino: $('#fechaTermino').val(),
+                searchTxt: $('#searchTxt').val(),
+                regStatus: $('#regStatus').val(),
+                token: '{{ csrf_token('pdf-list') }}'
+            };
+
+            path_url = path_url + '?'+ $.param(params);
+            //console.log(path_url);
+            // Data to get
+            {#  //https://stackoverflow.com/questions/16086162/handle-file-download-from-ajax-post  #}
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function () {
+                var a;
+                if (xhttp.readyState === 4 && xhttp.status === 200) {
+                    a = document.createElement('a');
+                    a.href = window.URL.createObjectURL(xhttp.response);
+                    a.download = "Lista de registros de bitacora.pdf";
+                    a.style.display = 'none';
+                    document.body.appendChild(a);
+                    a.click();
+                }
+            };
+            xhttp.onerror = function () {
+                $.notify(
+                    "Ha ocurrido un error al intentar descargar el archivo.",
+                    {  style: 'bootstrap', className: 'error', position:"top right" }
+                );
+            };
+            xhttp.open("GET", path_url);
+            xhttp.setRequestHeader("Content-Type", "application/json");
+            xhttp.responseType = 'blob';
+            xhttp.send();
+        }
+
+        /**
+         * Funci贸n para abrir el modal de creaci贸n de registro (Bootstrap 5)
+         */
+        function addRegBinnacleScada() {
+            var path_url = "{{ path('admin_siv_dashboard_bitacora_scada') }}";
+            var data = {
+                action: 'add'
+            };
 
             $.ajax({
-                url: "{{ path('siv_dashboard_bitacora') }}",
-                type: "GET",
+                url: path_url,
+                type: 'GET',
                 data: data,
-                success: function (response) {
-                    location.reload();
+                success: function(html) {
+                    if (html) {
+                        // Cargar el HTML en el contenedor del modal
+                        $('#ajax_edit_popup_container_render').html(html);
+
+                        // Mostrar modal usando Bootstrap 5 API
+                        var modalElement = document.getElementById('ajax_edit_popup');
+                        var bsModal = new bootstrap.Modal(modalElement);
+                        bsModal.show();
+
+                        // Inicializar controles si es necesario
+                        if (typeof $.fn.selectpicker !== 'undefined') {
+                            $('.selectpicker').selectpicker('render');
+                        }
+                    } else {
+                        $.notify(
+                            "Ha ocurrido un error al cargar el formulario.",
+                            {style: 'bootstrap', className: 'error', position: "top right"}
+                        );
+                    }
                 },
-                error: function() {
-                    $('#bitacora_table_container').html('<div class="alert alert-danger">Error al cargar los datos</div>');
+                error: function(xhr, status, error) {
+                    $.notify(
+                        "Ha ocurrido un error al cargar el formulario: " + error,
+                        {style: 'bootstrap', className: 'error', position: "top right"}
+                    );
                 }
             });
         }
 
-        function SetBitacoraTimer() {
-            var interval = $('#timer-range-ajax-update').val() * 1000;
-
-            timer_interval = setInterval(function () {
-                if($('#actualizacionAutomatica').is(":checked")) {
-                    getBitacoraData();
+        /**
+         * Funci贸n para validar campos requeridos iniciales (clase .requerido_inicial)
+         */
+        function validaRequeridosIniciales() {
+            var valido = true;
+            $('.requerido_inicial').each(function() {
+                if ($(this).val() == '') {
+                    valido = false;
+                    $(this).addClass('is-invalid');
+                    $(this).closest('.form-group').find('.text-danger').text('Este campo es requerido');
+                } else {
+                    $(this).removeClass('is-invalid');
+                    $(this).closest('.form-group').find('.text-danger').text('');
                 }
-            }, interval);
-        }
-
-        function addEntry() {
-            alert('Funci髇 para agregar entrada a la bit醕ora');
-        }
-
-        function viewEntry(id) {
-            alert('Ver detalle de entrada ID: ' + id);
-        }
-
-        function acknowledgeEntry(id) {
-            if(confirm('縍econocer esta entrada?')) {
-                alert('Reconocer entrada ID: ' + id);
-            }
-        }
-
-        function addComment(id) {
-            var comment = prompt('Ingrese su comentario:');
-            if(comment) {
-                alert('Agregar comentario a entrada ID: ' + id + '\nComentario: ' + comment);
-            }
-        }
-
-        function exportExcel() {
-            alert('Exportar a Excel');
-        }
-
-        function downloadBitacora() {
-            window.print();
-        }
-
-        $(document).ready(function() {
-            SetBitacoraTimer();
-
-            $('#timer-range-ajax-update').on('change', function() {
-                clearInterval(timer_interval);
-                SetBitacoraTimer();
             });
-
-            // Resaltar filas con severidad alta
-            $('tr:has(.severity-high)').addClass('table-danger');
-            $('tr:has(.severity-medium)').addClass('table-warning');
-        });
+            return valido;
+        }
     </script>
+    {# TODO: Implementar tutorial de ayuda si es necesario #}
+    {# <script src="{{ asset('public/tutorials/ayuda_permisos_trabajos.js') }}"></script> #}
 {% endblock %}

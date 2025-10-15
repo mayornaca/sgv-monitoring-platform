@@ -1,0 +1,50 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block page_title %}Panel de Administración{% endblock %}
+
+{% block content_title %}
+    <h1 class="m-0">
+        <i class="fas fa-tachometer-alt"></i>
+        Bienvenido al Panel de Administración
+    </h1>
+{% endblock %}
+
+{% block main %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    Selecciona una opción del menú lateral para comenzar.
+                </div>
+            </div>
+        </div>
+
+        {# Sección para agregar widgets o estadísticas en el futuro #}
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-chart-line"></i>
+                            Dashboard
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">
+                            Esta es la página principal del panel administrativo.
+                            Aquí se pueden agregar estadísticas, gráficos o accesos rápidos cuando sea necesario.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block body_javascript %}
+    {{ parent() }}
+    <script>
+        // Espacio para JavaScript personalizado del dashboard si es necesario
+    </script>
+{% endblock %}

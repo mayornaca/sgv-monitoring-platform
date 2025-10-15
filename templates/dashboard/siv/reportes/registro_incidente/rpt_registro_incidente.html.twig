@@ -1,47 +1,91 @@
-{% extends 'base_report.html.twig' %}
-{% block title %}Registro Incidente{% endblock %}
-{% block head_stylesheets_report %}
-    {{ parent() }}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Registro Incidente</title>
     <style>
-        table>tbody>tr>td, .table>tbody>tr>th, .table>tfoot>tr>td, .table>tfoot>tr>th, .table>thead>tr>td, .table>thead>tr>th {
-            padding: 3px;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        .table>thead>tr>th {
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .container {
+            width: 100%;
+            padding: 5px;
+        }
+
+        h4 {
+            font-size: 26px;
+            margin-bottom: 10px;
+        }
+
+        table>tbody>tr>td,
+        table>tbody>tr>th,
+        table>tfoot>tr>td,
+        table>tfoot>tr>th,
+        table>thead>tr>td,
+        table>thead>tr>th {
+            padding: 3px;
             vertical-align: middle;
         }
-        .col9{
+
+        .col9 {
             background-color: cornsilk;
         }
-        body {
-            font-size: 16px;
-        }
-        h4{
-            font-size: 26px;
-        }
+
+        /* Highcharts styling for PDF */
         tspan {
-            font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
             font-size: 15px;
         }
-        .highcharts-title tspan{
+
+        .highcharts-title tspan {
             font-size: 26px !important;
         }
-        .highcharts-subtitle tspan{
+
+        .highcharts-subtitle tspan {
             font-size: 15px !important;
         }
-        .highcharts-axis-labels{
+
+        .highcharts-axis-labels {
             font-size: 15px !important;
         }
-        .highcharts-axis{
+
+        .highcharts-axis {
             font-size: 15px !important;
+        }
+
+        @page {
+            margin: 5mm 1mm 5mm 1mm;
         }
     </style>
-{% endblock %}
-{% block head_javascripts_report %}
-    {{ parent() }}
-    <script src="{{ asset('public/js/highcharts/highcharts-3d.js') }}"></script>
-{% endblock %}
-{% block body_report %}
-    <div id="report-container-render" class="col-lg-12">
-        {{ include('sivDashboardBundle:RegistroIncidente:graphics.html.twig') }}
+
+    <!-- Highcharts 9.1.0 legacy compatible con wkhtmltopdf -->
+    <script src="https://vs.gvops.cl/js/highcharts-legacy/highcharts.js"></script>
+    <script src="https://vs.gvops.cl/js/highcharts-legacy/highcharts-more.js"></script>
+    <script src="https://vs.gvops.cl/js/highcharts-legacy/highcharts-3d.js"></script>
+
+    <script>
+        // Deshabilitar animaciones para rendering PDF
+        Highcharts.setOptions({
+            plotOptions: {
+                series: {
+                    animation: false
+                }
+            }
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        {{ include('dashboard/siv/reportes/registro_incidente/graphics.html.twig') }}
     </div>
-{% endblock %}
+</body>
+</html>

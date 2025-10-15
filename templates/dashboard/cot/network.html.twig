@@ -15,8 +15,8 @@
         }
         /* Ajuste para el ZoomSlider */
         .zoomSlider {
-            margin-top: 10px !important;
-            margin-right: 10px !important;
+            /*margin-top: 10px !important;*/
+            /*margin-right: 10px !important;*/
         }
         .controls-panel {
             margin-bottom: 10px;
@@ -39,7 +39,7 @@
 {% block main %}
     <div class="content-panel">
         <div class="content-panel-body">
-            <h2>DIAGRAMA DE RED COSTANERA NORTE</h2>
+            <h2>Monitor de red</h2>
 
             <!-- Panel de controles -->
             <div class="controls-panel">
@@ -80,6 +80,7 @@
 
         function init() {
             var $ = go.GraphObject.make;
+            go.licenseKey = '73ff42e1b51c28c702d95d76423d38f919a1756499841ca30c0311f6ec0d3a06329dbb7103d08cc8d1aa1bfd197f9489d9c26b7a9f4a5139b232d4d944e2d2f1b23024e71209468bf05626949efd2ba8ae6a61f497e571a288288de0fbabc29c55f7f1cb4bc9';
 
             myDiagram = $(go.Diagram, "myDiagramDiv", {
                 "undoManager.isEnabled": true,
@@ -395,12 +396,8 @@
 
             // Zoom slider
             zoomSlider = new ZoomSlider(myDiagram, {
-                alignment: go.Spot.TopRight,
-                alignmentFocus: go.Spot.TopRight,
-                size: 150,
-                buttonSize: 30,
-                orientation: 'vertical',
-                margin: 20  // Agregar margen para que no se superponga
+                alignment: go.Spot.TopRight, alignmentFocus: go.Spot.TopRight,
+                size: 150, buttonSize: 30, orientation: 'vertical'
             });
 
             // Cargar el diagrama

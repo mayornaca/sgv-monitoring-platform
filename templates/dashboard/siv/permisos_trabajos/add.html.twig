@@ -1,0 +1,724 @@
+<div>
+	<div id="ajax_edit_popup_container_render" class="card" style="margin-bottom: 5px;">
+		<div class="card-header">
+			<h1>Crear Permiso de Trabajo</h1>
+		</div>
+		<div class="card-body" style="padding: 2px;">
+			<div>
+				<div class="row vertical_form_overflow">
+					<div class="collapse show">
+						<div class="card">
+							<div class="card-body">
+								<div id="toolbar1" class="enterleave">
+									<button id="frm_edit_reg_save" class="btn btn-success">
+										<i class="fas fa-save" aria-hidden="true"></i> Guardar
+									</button>
+									<button class="btn btn-danger float-end" id="btn_close_edit_popup">
+										<i class="fas fa-times" aria-hidden="true"></i> Cerrar
+									</button>
+								</div>
+							</div>
+						</div>
+					</div>
+					<h4 class="text-danger"></h4>
+
+					<input type="hidden" id="frm_edit_reg-id" name="frm_edit_reg[id]" disabled="disabled" value="-1">
+					<div class="mb-3 col-sm-8">
+						<label for="frm_edit_reg-titulo" class="form-label">Título</label>
+						<input type="text" id="frm_edit_reg-titulo" class="form-control requerido_inicial" placeholder="Título" maxlength="50" value="">
+						<span class="text-danger"></span>
+					</div>
+
+					<div class="mb-3 col-sm-4">
+						<label class="form-label" for="frm_edit_reg-estado">Estado</label>
+						<select class="selectpicker"  id="frm_edit_reg-estado" data-live-search="true" disabled title="Nuevo">
+						</select>
+					</div>
+
+					<div class="mb-3 col-sm-12">
+						<label for="frm_edit_reg-descripcion_trabajo">Descripción</label>
+						<input type="text" id="frm_edit_reg-descripcion_trabajo" class="form-control requerido_inicial" placeholder="Descripción" maxlength="250" value="">
+						<span class="text-danger"></span>
+					</div>
+
+					<div class="row col-sm-12">
+						<div class="mb-3 col-sm-6">
+							<label for="frm_edit_reg-fechaInicio">Fecha de inicio </label>
+							<div class="input-group col-sm-12" id="dtp_fer_FechaInicio" data-td-target-input="nearest" data-td-target-toggle="nearest">
+								<input autocomplete="false" type="text" id="frm_edit_reg-fechaInicio" class="form-control" data-td-target="#dtp_fer_FechaInicio" placeholder="Fecha de inicio" value="">
+								<span class="input-group-text" data-td-target="#dtp_fer_FechaInicio" data-td-toggle="datetimepicker">
+									<i class="fas fa-calendar"></i>
+								</span>
+							</div>
+						</div>
+						<div class="mb-3 col-sm-6">
+							<label for="frm_edit_reg-fechaTermino">Fecha de término </label>
+							<div class="input-group col-sm-12" id="dtp_fer_FechaTermino" data-td-target-input="nearest" data-td-target-toggle="nearest">
+								<input type="text" id="frm_edit_reg-fechaTermino" class="form-control" data-td-target="#dtp_fer_FechaTermino" placeholder="Fecha de término" value="">
+								<span class="input-group-text" data-td-target="#dtp_fer_FechaTermino" data-td-toggle="datetimepicker">
+									<i class="fas fa-calendar"></i>
+								</span>
+							</div>
+						</div>
+					</div>
+					<div class="mb-3 col-sm-6">
+						<label class="form-label" for="frm_edit_reg-id_empresa_solicitante">Empresa Solicitante</label>
+						<div class="input-group">
+							<select class="selectpicker requerido_inicial"  id="frm_edit_reg-id_empresa_solicitante" data-live-search="true" title="Seleccione">
+                                {% for es in arr_empresas %}<!-- selected="selected" -->
+								<option value="{{ es.id }}">{{ es.nombre }}</option>
+                                {% endfor %}
+							</select>
+							<span class="input-group-text" style="cursor: pointer;">
+								<i id="addCompany" class="fas fa-plus-circle" aria-hidden="true" onclick="addCompany();"></i>
+							</span>
+						</div>
+					</div>
+
+					<div class="mb-3 col-sm-6">
+						<label class="form-label" for="frm_edit_reg-id_lider_trabajo_solicitante">Responsable Empresa Solicitante</label>
+						<div class="input-group">
+							<select class="selectpicker requerido_inicial"  id="frm_edit_reg-id_lider_trabajo_solicitante" data-live-search="true" title="Seleccione">
+                                {% for res in arr_personas %}<!-- selected="selected" -->
+								<option value="{{ res.id }}">RUT: {{ res.rut }} | {{ res.nombres }} {{ res.apellidos }}</option>
+                                {% endfor %}
+							</select>
+							<span class="input-group-text" style="cursor: pointer;">
+								<i id="addInternalExternalStaff" class="fas fa-user-plus" aria-hidden="true" onclick="internalExternalStaff();"></i>
+							</span>
+						</div>
+					</div>
+					<div class="mb-3 col-sm-12">
+						<label class="form-label" for="frm_edit_reg-id_autorizador">Responsable de Trabajos (CN / Gesvial)</label>
+						<div class="input-group">
+							<select class="selectpicker requerido_inicial"  id="frm_edit_reg-id_autorizador" data-live-search="true" title="Seleccione">
+                                {% for res in arr_personas %}
+                                    {% if res.id|first|lower == 'i' and res.autoriza_ot %}
+										<option value="{{ res.id }}">RUT: {{ res.rut }} | {{ res.nombres }} {{ res.apellidos }} </option>
+                                    {% endif %}
+                                {% endfor %}
+							</select>
+							<span class="input-group-text" style="cursor: pointer;">
+								<i class="fas fa-user-plus" aria-hidden="true" onclick="window.open('{{ path('staff_create') }}');"></i>
+							</span>
+						</div>
+					</div>
+					<div class="mb-3 col-sm-7">
+						<label class="form-label" for="frm_edit_reg-id_ubicacion">Ubicación</label>
+						<div class="input-group">
+							<select class="selectpicker requerido_inicial"  id="frm_edit_reg-id_ubicacion" data-live-search="true" title="Seleccione">
+                                {% for res in arr_ub %}<!-- selected="selected" -->
+								<option value="{{ res.id }}">{{ res.nombre }}</option>
+                                {% endfor %}
+							</select>
+							<span class="input-group-text" style="cursor: pointer;">
+								<i id="addLocation" class="fas fa-plus-circle" aria-hidden="true" onclick="addLocation();"></i>
+							</span>
+						</div>
+					</div>
+
+					<div class="mb-3 col-sm-5">
+						<label class="form-label" for="frm_edit_up_files">Archivos</label>
+						<div class="btn-group col-sm-12">
+							<button id="frm_edit_up_files" class="btn btn-info col-sm-6">
+								<i class="fas fa-cloud-upload" aria-hidden="true"></i> Adjuntar
+							</button>
+							<button id="frm_edit_download_files" class="btn btn-success col-sm-6">
+								<i class="fas fa-cloud-download" aria-hidden="true"></i> Descargar
+							</button>
+						</div>
+					</div>
+					<div class="tabbable-panel">
+						<div class="tabbable-line">
+							<ul class="nav nav-tabs" role="tablist">
+								<li class="nav-item" role="presentation">
+									<button class="nav-link active" id="tab-observaciones" data-bs-toggle="tab" data-bs-target="#tab_default_1" type="button" role="tab">
+										Observaciones
+									</button>
+								</li>
+								<li class="nav-item" role="presentation">
+									<button class="nav-link" id="tab-archivos" data-bs-toggle="tab" data-bs-target="#tab_default_2" type="button" role="tab">
+										Archivos
+									</button>
+								</li>
+							</ul>
+							<div class="tab-content mt-3">
+								<div class="tab-pane fade show active" id="tab_default_1" role="tabpanel">
+									<div class="mb-3 col-sm-12">
+										<label for="frm_edit_reg-observaciones">Requerimientos y Observaciones Adicionales</label>
+										<textarea id="frm_edit_reg-observaciones" class="form-control" placeholder="Observaciones" style="min-height: 100px;"></textarea>
+										<span class="text-danger"></span>
+									</div>
+								</div>
+								<div class="tab-pane fade" id="tab_default_2" role="tabpanel">
+									<div id="toolbar_tbl_attached_files" class="mb-3">
+										<button id="btn_delete_selected_files" class="btn btn-secondary btn-sm" onclick="deleteAttachmentFile();">
+											<i class="fas fa-trash"></i> Eliminar
+										</button>
+										<button id="btn_load_files" class="btn btn-secondary btn-sm">
+											<i class="fas fa-sync-alt"></i> Recargar
+										</button>
+									</div>
+									<table class="table table-striped table-hover bootstrapTable"
+										   id="tbl_attached_files"
+										   data-toolbar="#toolbar_tbl_attached_files"
+										   data-search="true"
+										   data-show-columns="true"
+										   data-id-field="file_id"
+										   data-click-to-select="false"
+									>
+										<thead>
+										<tr>
+											<th data-checkbox="true" data-sortable="false"></th>
+											<th data-field="file_id">Id</th>
+											<th data-field="file_index">#</th>
+											<th data-field="path" data-visible="false">Ruta</th>
+											<th data-field="file_name_original">Nombre Archivo</th>
+											<th data-field="create_at">Fecha de carga</th>
+										</tr>
+										</thead>
+										<tbody>
+										</tbody>
+									</table>
+									<div class="mb-3 col-sm-12 d-none">
+										<label for="frm_edit_reg_attached_files">Attachment files</label>
+										<textarea id="frm_edit_reg_attached_files" class="form-control" placeholder="attached_files" style="min-height: 100px;"></textarea>
+										<span class="text-danger"></span>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<script>
+            /*** table attachment files ***/
+            var $tbl_attached_files = $('#tbl_attached_files');
+            var $btn_load_files = $('#btn_load_files');
+            var btn_download_files = $("#frm_edit_download_files");
+            var $frm_edit_reg_attached_files = $("#frm_edit_reg_attached_files");
+            var attachedFileObjArr = [];
+
+            /***
+             * Carga datos de archivos en la tabla
+             * */
+            function loadAttachedFileObjArr() {
+                if(!!$frm_edit_reg_attached_files.val()){
+                    attachedFileObjArr = JSON.parse($frm_edit_reg_attached_files.val());
+                    $tbl_attached_files.bootstrapTable({data: attachedFileObjArr});
+                }
+            }
+            $(function() {
+                /***
+                 * Btn Carga datos de archivos en la tabla
+                 * */
+                $btn_load_files.click(function () {
+                    loadAttachedFileObjArr()
+                });
+                btn_download_files.click(function () {
+                    var attached_files = getAttachedFilesSelections();
+                    var id_pt = $("#frm_edit_reg-id").val();
+
+                    var data = $.param({
+                        action: 'download-files',
+                        id: id_pt,
+                        attached_files: attached_files,
+                        token: "{{ csrf_token('download-files') }}"
+                    });
+
+                    var xhttp = new XMLHttpRequest();
+                    xhttp.onreadystatechange = function() {
+                        var a;
+                        if (xhttp.readyState === 4 && xhttp.status === 200) {
+                            // Trick for making downloadable link
+                            a = document.createElement('a');
+                            a.href = window.URL.createObjectURL(xhttp.response);
+                            // Give filename you wish to download
+                            a.download = "descarga.zip";
+                            a.style.display = 'none';
+                            document.body.appendChild(a);
+                            a.click();
+                        }
+                    };
+                    // Post data to URL which handles post request
+                    xhttp.open("POST", '{{ path('admin_siv_dashboard_get_pt') }}');
+                    // You should set responseType as blob for binary responses
+                    xhttp.responseType = 'blob';
+                    xhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+                    xhttp.send(data);
+                });
+            });
+
+            var attachedFilesSelections = [];
+            /***
+             * Obtiene ids de archivos seleccionados en la tabla
+             * */
+            function getAttachedFilesSelections() {
+                return $tbl_attached_files.bootstrapTable('getSelections')
+            }
+            $("#frm_edit_up_files").click(function() {
+                if($("#frm_edit_reg-id").val() < 1){
+                    saveRegPt();
+                    return false;
+				}
+
+                var fileIndexEvent = 0;
+                $.FileDialog({}).on('onload.bs.filedialog', function(ev) {
+                    var filesList = ev.files;
+                    var progressBars = $(".progress").children();
+                    var i = 0;
+                    for (i; i < filesList.length; i++) {
+                        if(!$(progressBars.eq(i)).hasClass('uploading') && !$(progressBars.eq(i)).hasClass('done')){
+                            $(progressBars.eq(i)).addClass('uploading');
+                            var formData = new FormData();
+                            var file = filesList[i];
+                            formData.append("file", file, file.name);
+                            formData.append("fileName", file.name);
+                            formData.append("fileIndex" ,i);
+                            formData.append("action",'upload-file');
+                            formData.append("id",$("#frm_edit_reg-id").val());
+                            formData.append("token","{{ csrf_token('upload-files') }}");
+                            formData.append("json",true);
+                            formData.append("attached_files",$frm_edit_reg_attached_files.val());
+                            $.ajax({
+                                type:'POST',
+                                url: '{{ path('admin_siv_dashboard_set_pt') }}',
+                                data:formData,
+                                xhr: function() {
+                                    var fileIndex = i;
+                                    var xhr = new window.XMLHttpRequest();
+                                    var elProgressBar = $(progressBars.eq(fileIndex));
+                                    xhr.upload.addEventListener("progress", function(evt){
+                                        if (evt.lengthComputable) {
+                                            var percentComplete = (evt.loaded / evt.total) *100;
+                                            elProgressBar.css({'width': percentComplete+'%'});
+                                            if(percentComplete >= 100){
+                                                if(!elProgressBar.hasClass('done')){
+                                                    elProgressBar.addClass('done');
+                                                }
+                                            }
+                                        }
+                                    }, false);
+                                    return xhr;
+                                },
+                                cache:false,
+                                contentType: false,
+                                processData: false,
+                                success:function(data){
+                                    var resFileIndex = data.params.fileIndex;
+                                    var fileName = data.params.fileName;
+                                    var elProgressBar = $(progressBars.eq(resFileIndex));
+                                    if(data.isUploaded === 1){
+                                        var elFileRow =elProgressBar.closest(".row");
+                                        elFileRow.data('file_id',data.attached_file.file_id);
+                                        elFileRow.data('id_pt',data.attached_file.id_pt);
+                                        elFileRow.data('file_name_original',data.attached_file.file_name_original);
+                                        elFileRow.data('file_name_fisic',data.attached_file.file_name_fisic);
+                                        elFileRow.data('path',data.attached_file.path);
+                                        elFileRow.data('reg_status',data.attached_file.reg_status);
+                                        elFileRow.data('created_by',data.attached_file.created_by);
+                                        elFileRow.data('create_at',data.attached_file.create_at);
+                                        elFileRow.data('deleted_restored_by',data.attached_file.deleted_restored_by);
+                                        elFileRow.data('deleted_restored_at',data.attached_file.deleted_restored_at);
+                                        /***
+                                         * Append to JSON Array
+                                         ***/
+                                        var attachedFileObjArr = [];
+                                        if(!!$frm_edit_reg_attached_files.val()){
+                                            attachedFileObjArr = JSON.parse($frm_edit_reg_attached_files.val());
+                                        }
+
+                                        attachedFileObjArr.push(data.attached_file);
+                                        $frm_edit_reg_attached_files.val(JSON.stringify(attachedFileObjArr));
+
+                                        $tbl_attached_files.bootstrapTable({data: attachedFileObjArr});
+                                        elProgressBar.css({'background-color': '#5cb85c'});
+                                        $.notify(
+                                            fileName + " cargado correctamente",
+                                            {  style: 'bootstrap', className: 'success', position:"bottom right" }
+                                        );
+                                        saveRegPt();
+                                    }
+                                    else{
+                                        elProgressBar.css({'background-color': '#b83631'});
+                                        $.notify(
+                                            fileName + " error al cargar",
+                                            {  style: 'bootstrap', className: 'error', position:"bottom right" }
+                                        );
+                                    }
+                                },
+                                error: function(data){
+                                    var resFileIndex = i-1;
+                                    var fileName = file.name;
+                                    var elProgressBar = $(progressBars.eq(resFileIndex));
+
+                                    elProgressBar.css({'background-color': '#b83631'});
+
+                                    $.notify(
+                                        "Error al intentar cargar: " + fileName + "",
+                                        {  style: 'bootstrap', className: 'error', position:"bottom right" }
+                                    );
+
+                                }
+                            });
+                        }
+                    }
+                    fileIndexEvent++;
+                }).on('files.bs.filedialog', function(ev) {
+                    // handle files choice when done
+                }).on('delete.bs.filedialog', function(ev) {
+                    console.log('eliminando ' + ev.dataFileIndex + ' id ' + ev.fileId);
+                    // handle dialog cancelling
+                });
+            });
+
+            $(function () {
+                // Inicializar Tempus Dominus 6
+                const tempusDominus = window.tempusDominus;
+                if (tempusDominus) {
+                    const options = {
+                        display: {
+                            icons: {
+                                time: 'fas fa-clock',
+                                date: 'fas fa-calendar',
+                                up: 'fas fa-arrow-up',
+                                down: 'fas fa-arrow-down',
+                                previous: 'fas fa-chevron-left',
+                                next: 'fas fa-chevron-right',
+                                today: 'fas fa-calendar-check',
+                                clear: 'fas fa-trash',
+                                close: 'fas fa-times'
+                            },
+                            components: {
+                                calendar: true,
+                                date: true,
+                                month: true,
+                                year: true,
+                                decades: true,
+                                clock: true,
+                                hours: true,
+                                minutes: true,
+                                seconds: true
+                            }
+                        },
+                        localization: {
+                            locale: 'es',
+                            format: 'dd-MM-yyyy HH:mm:ss',
+                            hourCycle: 'h23'
+                        },
+                        useCurrent: false
+                    };
+
+                    const pickerFechaInicio = new tempusDominus.TempusDominus(document.getElementById('dtp_fer_FechaInicio'), options);
+                    const pickerFechaTermino = new tempusDominus.TempusDominus(document.getElementById('dtp_fer_FechaTermino'), options);
+
+                    // Restricciones min/max entre fechas
+                    pickerFechaInicio.subscribe('change.td', (e) => {
+                        pickerFechaTermino.updateOptions({
+                            restrictions: {
+                                minDate: e.date
+                            }
+                        });
+                    });
+
+                    pickerFechaTermino.subscribe('change.td', (e) => {
+                        pickerFechaInicio.updateOptions({
+                            restrictions: {
+                                maxDate: e.date
+                            }
+                        });
+                    });
+                }
+            });
+
+            $('#btn_close_edit_popup').click(function () {
+                closeAjaxFrmEditPopup();
+            });
+			/*ANTES DE ENVIAR EL FORMULARIO VERIFICO QUE LA INFORMACIÓN SEA INTEGRA Y COHERENTE*/
+            $("#frm_edit_reg_save").click(function() {
+                saveRegPt();
+                return true;
+            });
+
+            function validaFechas() {
+                if(!!$("#frm_edit_reg-fechaTermino").val()){
+                    if(!!$("#frm_edit_reg-fechaInicio").val()){
+                        return true;
+                    }
+                    else{
+                        $("#frm_edit_reg-fechaTermino").notify(
+                            "No puede ingresar fecha de finalización sin una fecha de inicio.",
+                            {style: 'bootstrap', className: 'error', position: "top right"}
+                        );
+                        return false;
+                    }
+                }
+                else {
+                    return true;
+                }
+            }
+
+            function saveRegPt() {
+                if(validaRequeridosIniciales() && validaFechas()){
+                    $.notify(
+                        "Todo bien! se está enviando la información...",
+                        {  style: 'custom', className: 'success', position:"top right" }
+                    );
+                    var path_url = "{{ path('admin_siv_dashboard_set_pt') }}";
+
+                    var data = {
+                        action: 'insert',
+                        id: $("#frm_edit_reg-id").val(),
+                        titulo: $("#frm_edit_reg-titulo").val(),
+                        descripcion_trabajo: $("#frm_edit_reg-descripcion_trabajo").val(),
+                        id_ubicacion: $("#frm_edit_reg-id_ubicacion").val(),
+                        concesionaria: '22',
+                        fechahora_inicio_trabajo: $("#frm_edit_reg-fechaInicio").val(),
+                        fechahora_fin_trabajo: $("#frm_edit_reg-fechaTermino").val(),
+                        id_empresa_solicitante: $("#frm_edit_reg-id_empresa_solicitante").val(),
+                        id_lider_trabajo_solicitante: $("#frm_edit_reg-id_lider_trabajo_solicitante").val(),
+                        id_autorizador: $("#frm_edit_reg-id_autorizador").val(),
+                        observaciones: $("#frm_edit_reg-observaciones").val(),
+                        attached_files: $frm_edit_reg_attached_files.val(),
+                        token: "{{ csrf_token('insert-pt') }}"
+                    };
+
+                    $.ajax({
+                        url : path_url,
+                        type: 'POST',
+                        data: data,
+                        dataType: "json",
+                        success: function(response) {
+                            if(response.msg){
+                                $.notify(
+                                    response.msg,
+                                    {style: 'bootstrap', className: response.msg_type, position: "top right"}
+                                );
+                                closeAjaxFrmEditPopup();
+                                getPTData();
+                            }
+                            else{
+                                $.notify(
+                                    "Ha ocurrido un error al intentar procesar los datos. Reintente la operación.",
+                                    {style: 'bootstrap', className: 'error', position: "top right"}
+                                );
+                            }
+                        },
+                        error: function(){
+                            $.notify(
+                                "Ha ocurrido un error al intentar procesar los datos. Reintente la operación.",
+                                {style: 'bootstrap', className: 'error', position: "top right"}
+                            );
+                        }
+                    });
+                    return false;
+                }
+                else {
+                    $.notify(
+                        "Se encontraron errores en los datos ingresados, por favor verifique la información e intente nuevamente.",
+                        {  style: 'bootstrap', className: 'error', position:"top right" }
+                    );
+                    return false;
+                }
+            }
+
+            function saveToEditRegPt() {
+                if(validaRequeridosIniciales() && validaFechas()){
+                    $.notify(
+                        "Todo bien! se está enviando la información...",
+                        {  style: 'custom', className: 'success', position:"top right" }
+                    );
+                    var path_url = "{{ path('admin_siv_dashboard_set_pt') }}";
+
+                    var data = {
+                        action: 'insert',
+                        id: $("#frm_edit_reg-id").val(),
+                        titulo: $("#frm_edit_reg-titulo").val(),
+                        descripcion_trabajo: $("#frm_edit_reg-descripcion_trabajo").val(),
+                        id_ubicacion: $("#frm_edit_reg-id_ubicacion").val(),
+                        concesionaria: '22',
+                        fechahora_inicio_trabajo: $("#frm_edit_reg-fechaInicio").val(),
+                        fechahora_fin_trabajo: $("#frm_edit_reg-fechaTermino").val(),
+                        id_empresa_solicitante: $("#frm_edit_reg-id_empresa_solicitante").val(),
+                        id_lider_trabajo_solicitante: $("#frm_edit_reg-id_lider_trabajo_solicitante").val(),
+                        id_autorizador: $("#frm_edit_reg-id_autorizador").val(),
+                        observaciones: $("#frm_edit_reg-observaciones").val(),
+                        attached_files: $frm_edit_reg_attached_files.val(),
+                        token: "{{ csrf_token('insert-pt') }}"
+                    };
+
+                    $.ajax({
+                        url : path_url,
+                        type: 'POST',
+                        data: data,
+                        dataType: "json",
+                        success: function(response) {
+                            if(!!response.id_pt){
+                                editPT(response.id_pt);
+							}
+
+                            if(response.msg){
+                                $.notify(
+                                    response.msg,
+                                    {style: 'bootstrap', className: response.msg_type, position: "top right"}
+                                );
+                            }
+                            else{
+                                $.notify(
+                                    "Ha ocurrido un error al intentar procesar los datos. Reintente la operación.",
+                                    {style: 'bootstrap', className: 'error', position: "top right"}
+                                );
+                            }
+                        },
+                        error: function(){
+                            $.notify(
+                                "Ha ocurrido un error al intentar procesar los datos. Reintente la operación.",
+                                {style: 'bootstrap', className: 'error', position: "top right"}
+                            );
+                        }
+                    });
+                    return false;
+                }
+                else {
+                    $.notify(
+                        "Se encontraron errores en los datos ingresados, por favor verifique la información e intente nuevamente.",
+                        {  style: 'bootstrap', className: 'error', position:"top right" }
+                    );
+                    return false;
+                }
+            }
+
+            function addCompany() {
+                window.open("{{ path('suppliers_add') }}");
+            }
+            function internalExternalStaff(){
+                var dialog = bootbox.dialog({
+                    title: '¿Que tipo de personal desea crear?',
+                    message: "<p>Haga click en el tipo de personal que desea crear.</p>",
+                    buttons: {
+                        noclose: {
+                            label: "Externo",
+                            className: 'btn-info',
+                            callback: function(){
+                                addExternalStaff();
+                            }
+                        },
+                        ok: {
+                            label: "Interno",
+                            className: 'btn-info',
+                            callback: function(){
+                                window.open("{{ path('staff_create') }}");
+                            }
+                        },
+                        cancel: {
+                            label: "Cancelar",
+                            className: 'btn-danger',
+                            callback: function(){
+                                // Cancel action
+                            }
+                        }
+                    }
+                });
+            }
+
+            function addLocation() {
+                $("#addLocation").addClass("disabled");
+                var path_url = "{{ path('admin_siv_dashboard_get_pt', { action: 'ajax_frm_add_location', token: csrf_token('ajax_frm_add_location') })|raw }}";
+
+                $.ajax({
+                    url : path_url,
+                    type: 'GET',
+                    success: function(html) {
+                        if(html){
+                            if($(html).find('#ajax_frm_add').length > 0) {
+                                $('#ajax_frm_add').replaceWith($(html).find('#ajax_frm_add'));
+                                showAjaxFrmPopup("Crear Ubicación");
+                            }
+                            else{
+                                $.notify(
+                                    "Ha ocurrido un error al intentar procesar los datos. Intente recargar la página.",
+                                    {style: 'bootstrap', className: 'error', position: "top right"}
+                                );
+                            }
+                        }
+                        else{
+                            $.notify(
+                                "Ha ocurrido un error al intentar procesar los datos. Intente recargar la página.",
+                                {style: 'bootstrap', className: 'error', position: "top right"}
+                            );
+                        }
+                    },
+                    error: function(){
+                        $.notify(
+                            "Ha ocurrido un error al intentar procesar los datos. Intente recargar la página.",
+                            {style: 'bootstrap', className: 'error', position: "top right"}
+                        );
+                    }
+                });
+                $("#addLocation").removeClass("disabled");
+            }
+
+            function addExternalStaff() {
+                $("#addExternalStaff").addClass("disabled");
+                var path_url = "{{ path('admin_siv_dashboard_get_pt', { action: 'ajax_frm_add_external_staff', token: csrf_token('ajax_frm_add_external_staff') })|raw }}";
+
+                $.ajax({
+                    url : path_url,
+                    type: 'GET',
+                    success: function(html) {
+                        if(html){
+                            if($(html).find('#ajax_frm_add').length > 0) {
+                                $('#ajax_frm_add').replaceWith($(html).find('#ajax_frm_add'));
+                                showAjaxFrmPopup("Ingrese los datos del personal externo.");
+                            }
+                            else{
+                                $.notify(
+                                    "Ha ocurrido un error al intentar procesar los datos. Intente recargar la página.",
+                                    {style: 'bootstrap', className: 'error', position: "top right"}
+                                );
+                            }
+                        }
+                        else{
+                            $.notify(
+                                "Ha ocurrido un error al intentar procesar los datos. Intente recargar la página.",
+                                {style: 'bootstrap', className: 'error', position: "top right"}
+                            );
+                        }
+                    },
+                    error: function(){
+                        $.notify(
+                            "Ha ocurrido un error al intentar procesar los datos. Intente recargar la página.",
+                            {style: 'bootstrap', className: 'error', position: "top right"}
+                        );
+                    }
+                });
+                $("#addCompany").removeClass("disabled");
+            }
+
+            // Función closeAjaxFrmEditPopup adaptada a Bootstrap 5
+            function closeAjaxFrmEditPopup() {
+                var modalElement = document.getElementById('ajax_edit_popup');
+                if (modalElement) {
+                    var bsModal = bootstrap.Modal.getInstance(modalElement);
+                    if (bsModal) {
+                        bsModal.hide();
+                    }
+                }
+            }
+
+            // Función showAjaxFrmPopup adaptada a Bootstrap 5
+            function showAjaxFrmPopup(title) {
+                $("#ajax_frm_popup_title").text(title);
+                var modalElement = document.getElementById('ajax_frm_popup');
+                var bsModal = new bootstrap.Modal(modalElement);
+                bsModal.show();
+
+                if (typeof $.fn.selectpicker !== 'undefined') {
+                    $('.selectpicker').selectpicker('render');
+                }
+            }
+
+		</script>
+	</div>
+</div>

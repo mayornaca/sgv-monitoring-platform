@@ -1,18 +1,67 @@
 {% extends '@EasyAdmin/page/content.html.twig' %}
 
+{# Detección de módulo siguiendo patrón del sistema viejo (layout.html.twig) #}
+{% set current_route = app.request.attributes.get('_route') %}
+{% set app_module_name = '' %}
+{% set is_sos_monitor = false %}
+{% set is_galibos = false %}
+{% set monitor_title = '' %}
+{% set monitor_icon = '' %}
+
+{% if 'cot_sosindex' in current_route or 'cot_dashboard_cot_sos_report_status' in current_route or 'admin_cot_sos_report_status' in current_route %}
+    {% set app_module_name = 'ASS' %}
+    {% set is_sos_monitor = true %}
+    {% set monitor_title = 'Monitor de Sensores SOS' %}
+    {% set monitor_icon = 'fa-phone-alt' %}
+{% elseif 'cot_galibos' in current_route %}
+    {% set app_module_name = 'COT' %}
+    {% set is_galibos = true %}
+    {% set monitor_title = 'Monitor de Gálibos' %}
+    {% set monitor_icon = 'fa-ruler-vertical' %}
+{% else %}
+    {% set app_module_name = 'COT' %}
+    {% set monitor_title = 'Monitor de Dispositivos' %}
+    {% set monitor_icon = 'fa-th-large' %}
+{% endif %}
+
 {% block title %}
-    {% if not videowall %}Monitor de dispositivos CN{% endif %}
+    {% if is_sos_monitor %}
+        Monitor de Sensores SOS
+    {% elseif not videowall %}
+        Monitor de dispositivos CN
+    {% endif %}
 {% endblock %}
 
-{% block page_title %}
-    {% if not videowall %}
-        <i class="fas fa-th-large"></i> Monitor de Dispositivos - COT
-    {% endif %}
+{# Sobrescribir content_title para eliminar el H1 grande que ocupa espacio #}
+{# El título ya se muestra en el toolbar (content_top_header) #}
+{% block content_title %}{% endblock %}
+
+{# Sobrescribir content_header completo para panel de ancho completo (sin columnas) #}
+{% block content_header %}
+    <div class="w-100 {% if videowall %}d-none{% endif %}">
+        {% include 'dashboard/cot/index/modern_control_panel.html.twig' %}
+    </div>
+{% endblock %}
+
+{% block content_top_header %}
+    {# Custom title in the content-top toolbar area - Título dinámico según módulo #}
+    <div class="cot-monitor-title-wrapper {% if videowall %}d-none{% endif %}">
+        <h2 class="cot-monitor-title">
+            <i class="fas {{ monitor_icon }}"></i>
+            {% if app_module_name != 'COT' %}{{ app_module_name }} - {% endif %}{{ monitor_title }}
+        </h2>
+    </div>
+
+    {# Keep the original search, user menu, and settings #}
+    {{ parent() }}
 {% endblock %}
 
 {% block head_stylesheets %}
     {{ parent() }}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.9.2/jquery.contextMenu.min.css">
+
+    <!-- Choices.js CSS for Advanced Select Controls -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js@10.2.0/public/assets/styles/choices.min.css">
 
     <style>
         /* Override EasyAdmin CSS Variables with custom values */
@@ -21,6 +70,44 @@
             --content-padding-right: 2px !important;
             --lg-content-padding-left: 5px !important;
             --lg-content-padding-right: 5px !important;
+        }
+
+        /* Custom title in content-top toolbar area */
+        .cot-monitor-title-wrapper {
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .cot-monitor-title {
+            margin: 0;
+            font-size: var(--font-size-lg, 16px);
+            font-weight: 600;
+            color: var(--text-color, #1e293b);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .cot-monitor-title i {
+            color: var(--color-primary, #5368d5);
+            font-size: 18px;
+        }
+
+        /* Responsive adjustments for mobile */
+        @media (max-width: 575px) {
+            .cot-monitor-title-wrapper {
+                padding: 8px 10px;
+            }
+
+            .cot-monitor-title {
+                font-size: var(--font-size-base, 14px);
+            }
+
+            .cot-monitor-title i {
+                font-size: 16px;
+            }
         }
     </style>
 
@@ -299,7 +386,7 @@
         }
 
         /* Solo aplicar scroll a dispositivos NO miniaturizados con muchos sensores */
-        .opc_device_container:not(.mini_device).has-many-sensors .opc_vars_container {
+        .has-many-sensors:not(.mini_device) .opc_vars_container {
             max-height: 200px;
             overflow-y: auto;
             overflow-x: hidden;
@@ -515,7 +602,8 @@
             overflow: hidden;
         {% if transitions == 2 %} -webkit-transition: width 1s;
             transition: width 1s;
-        {% endif %} white-space: nowrap;
+        {% endif %}
+            white-space: nowrap;
         }
 
         span.badge-expand-s:hover {
@@ -606,8 +694,8 @@
 
         /* ---- grid ---- */
         .grid {
-        {% if not videowall %} margin-top: 48px;
-        {% endif %}
+{#        {% if not videowall %} margin-top: 48px;#}
+{#        {% endif %}#}
         }
 
         /* clear fix */
@@ -723,22 +811,49 @@
 {% endblock %}
 
 {% block main %}
-    {% if not videowall %}
-        {% include 'dashboard/cot/index/modern_control_panel.html.twig' %}
-    {% endif %}
-
-    <main class="container-fluid px-0 py-3">
+    <main class="container-fluid px-0 pb-3">
         <div class="grid">
             {% include 'dashboard/cot/index/devices_container.html.twig' %}
         </div>
     </main>
 
+    {# Controles de presentación flotantes - TEMPORALMENTE OCULTOS hasta finalizar evaluación de utilidad #}
+    <div id="presentation-controls" class="d-none"
+         style="position: fixed; bottom: 20px; right: 20px; z-index: 1040;">
+
+        <div class="btn-group-vertical shadow-lg" role="group" style="background: white; border-radius: 8px; padding: 5px;">
+            <!-- Toggle Panel Opciones -->
+            <button id="toggle-control-panel" class="btn btn-sm btn-primary"
+                    title="Mostrar/Ocultar Panel de Control">
+                <i class="fas fa-sliders-h"></i>
+            </button>
+
+            <!-- Toggle Sidebar -->
+            <button id="toggle-sidebar" class="btn btn-sm btn-info"
+                    title="Mostrar/Ocultar Sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+
+            <!-- Toggle Header Top -->
+            <button id="toggle-header-top" class="btn btn-sm btn-warning"
+                    title="Mostrar/Ocultar Header">
+                <i class="fas fa-window-minimize"></i>
+            </button>
+
+            <!-- Modo Presentación Full -->
+            <button id="toggle-presentation-mode" class="btn btn-sm btn-danger"
+                    title="Modo Presentación Completo">
+                <i class="fas fa-expand"></i>
+            </button>
+        </div>
+    </div>
+
     {# Old static Bootstrap modal removed - now using dynamic Bootbox.js modals #}
 
     {# Old modal includes removed - now using Bootbox.js for all modals #}
-    {% if not videowall %}
+    <div class="{% if videowall %}d-none{% endif %}">
         {% include 'dashboard/cot/index/modern_status_footer.html.twig' %}
-    {% endif %}
+    </div>
 {% endblock %}
 
 {% block body_javascript %}
@@ -758,7 +873,29 @@
     <!-- Bootbox.js for Professional Modals (Bootstrap 5 compatible) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootbox.js/6.0.0/bootbox.min.js"></script>
 
+    <!-- Choices.js for Advanced Select Controls (Bootstrap 5 compatible) -->
+    <script src="https://cdn.jsdelivr.net/npm/choices.js@10.2.0/public/assets/scripts/choices.min.js"></script>
+
     <script>
+        // Initialize full-width layout for videowall mode
+        {% if videowall %}
+        document.addEventListener('DOMContentLoaded', function() {
+            // Trigger sidebar collapse using EasyAdmin's native handler
+            const sidebarResizerHandler = document.getElementById('sidebar-resizer-handler');
+            if (sidebarResizerHandler) {
+                sidebarResizerHandler.click();
+            }
+
+            // Ensure content wrapper takes full width
+            const contentWrapper = document.querySelector('.content-wrapper');
+            if (contentWrapper) {
+                contentWrapper.style.marginLeft = '0';
+                contentWrapper.style.width = '100%';
+                contentWrapper.style.maxWidth = '100%';
+            }
+        });
+        {% endif %}
+
         var $grid = $('.grid').isotope({
             itemSelector: '.grid-item-block',
             masonry: {
@@ -957,6 +1094,12 @@
                                     $('#datetime_update').html(response.SwIpDevicesMonitorLastUpdateDateTime);
                                 }
                                 renderDevicesStatus(response.dispositivos, response);
+
+                                // Procesar alarmas de sensores SOS si estamos en módulo ASS
+                                if (response.asd_ds && response.asd_ds.length > 0) {
+                                    console.log('Processing SOS sensor alarms:', response.asd_ds.length);
+                                    renderDevicesAlarms(response.asd_ds);
+                                }
                             }
                         } else {
                             console.warn('No devices in response');
@@ -1002,7 +1145,7 @@
                 // Si el dispositivo existe en el DOM
                 if (exist_el_device) {
                     var el_device = $('#device_' + device_status_data.id);
-                    console.log('Updating device', device_status_data.id, '- Estado from AJAX:', device_status_data.estado, '- Current classes:', el_device.attr('class'));
+                    //console.log('Updating device', device_status_data.id, '- Estado from AJAX:', device_status_data.estado, '- Current classes:', el_device.attr('class'));
                     el_device.attr('title', device_status_data.ip);
 
                     /********************
@@ -1151,6 +1294,141 @@
             masonryLayout();
 
             console.log('Estados actualizados:', active_devices_count, 'activos,', unactive_devices_count, 'inactivos');
+        }
+
+        /********************
+         * Renderiza Alarmas de Sensores SOS
+         * Migrado del proyecto antiguo - SensorsAlarms/index.html.twig
+         * ******************/
+        var renderingAlarms = {};
+        function renderDevicesAlarms(asd_ds) {
+            var path_url = "{{ path('asp_legacy') }}";
+            $.each(asd_ds, function(i, alarm_data) {
+                var exist_el_device = ($('#asd_' + alarm_data.id).length > 0);
+
+                // Si la alarma no está ya mostrada
+                if (!exist_el_device && !renderingAlarms[alarm_data.id]) {
+                    var txt_sensor;
+                    switch (parseInt(alarm_data.id_sensor)){
+                        case 1:
+                            txt_sensor = 'Extintor 1';
+                            break;
+                        case 2:
+                            txt_sensor = 'Extintor 2';
+                            break;
+                        case 3:
+                            txt_sensor = 'Red Húmeda';
+                            break;
+                        default:
+                            // Si no es una alarma de las tres, detener ejecución
+                            return true;
+                    }
+
+                    var msg = `<h3>Puerta de <strong><q>${txt_sensor}</q></strong> abierta</h3>
+                        <p><strong>Detección: </strong>${alarm_data.created_at}</p>
+                        <p><strong>Eje: </strong>${alarm_data.eje_nombre || '-'}</p>
+                        <p><strong>Kilómetro: </strong>${alarm_data.km || '-'}</p>
+                        <p><strong>Orientación: </strong>${alarm_data.orientacion || '-'}</p>`;
+
+                    var msg2 = `Puerta de ${txt_sensor} abierta \nDetección: ${alarm_data.created_at}`;
+                    switchTitleTimer(msg2);
+
+                    var dialog = bootbox.dialog({
+                        title: 'Alarma en poste ' + alarm_data.nombre,
+                        message: msg,
+                        size: 'large',
+                        backdrop: true,
+                        className: "alarm-sensor-popup",
+                        buttons: {
+                            ok: {
+                                label: "Aceptar",
+                                className: 'btn-danger',
+                                callback: function () {
+                                    var data = {
+                                        action: 'process',
+                                        id: alarm_data.id,
+                                        token: "{{ csrf_token('process-asd') }}",
+                                    };
+                                    $.ajax({
+                                        url: path_url,
+                                        type: "POST",
+                                        data: data,
+                                        async: true,
+                                        success: function (response) {
+                                            renderingAlarms[alarm_data.id] = false;
+                                            restoreTitle();
+                                            getDevicesStatus();
+                                        },
+                                        error: function(xhr, status, error) {
+                                            console.error('Error procesando alarma:', error);
+                                            renderingAlarms[alarm_data.id] = false;
+                                        }
+                                    });
+                                }
+                            },
+                        }
+                    });
+
+                    dialog.init(function() {
+                        dialog.attr("id", 'asd_' + alarm_data.id);
+                    });
+
+                    renderingAlarms[alarm_data.id] = true;
+                }
+            });
+        }
+
+        /********************
+         * Timer para cambio de título cuando hay alarmas activas
+         * ******************/
+        var oldTitle = document.title;
+        var switchTitleTimerInterval;
+        var runSwitchTitleTimerInterval = true;
+
+        function switchTitleTimer(newTitle) {
+            if (runSwitchTitleTimerInterval) {
+                runSwitchTitleTimerInterval = false;
+                switchTitleTimerInterval = setInterval(function () {
+                    let url_icon;
+                    if (document.title === oldTitle) {
+                        document.title = newTitle;
+                        url_icon = '/public/images/alert-png-128wh.png';
+                    } else {
+                        document.title = oldTitle;
+                        url_icon = '/favicon.ico';
+                    }
+
+                    let icon = document.querySelector("link[rel*='icon']") || document.createElement('link');
+                    icon.type = 'image/x-icon';
+                    icon.rel = 'shortcut icon';
+                    icon.href = url_icon;
+                    document.getElementsByTagName('head')[0].appendChild(icon);
+                }, 1500);
+            }
+        }
+
+        function restoreTitle() {
+            var restore = true;
+
+            // Verificar si quedan alarmas activas
+            Object.entries(renderingAlarms).forEach(([key, value]) => {
+                if (value) {
+                    restore = false;
+                }
+            });
+
+            if (restore) {
+                clearInterval(switchTitleTimerInterval);
+                runSwitchTitleTimerInterval = true;
+                var url_icon = '/favicon.ico';
+                document.title = oldTitle;
+
+                var icon = document.querySelector("link[rel*='icon']") || document.createElement('link');
+                icon.type = 'image/x-icon';
+                icon.rel = 'shortcut icon';
+                icon.href = url_icon;
+                document.getElementsByTagName('head')[0].appendChild(icon);
+            }
         }
 
         // Function to dynamically update priority sorting when device states change
@@ -1842,5 +2120,95 @@
             alert('Generando reporte para dispositivo ID: ' + deviceId);
             // TODO: Implementar generación de reporte específico
         }
+
+        // ========== PRESENTATION CONTROLS ==========
+        // Functionality for floating presentation control buttons
+        document.addEventListener('DOMContentLoaded', function() {
+            // Toggle control panel
+            const togglePanelBtn = document.getElementById('toggle-control-panel');
+            if (togglePanelBtn) {
+                togglePanelBtn.addEventListener('click', function() {
+                    const panel = document.getElementById('modern-control-panel');
+                    if (panel) {
+                        panel.classList.toggle('d-none');
+                        this.classList.toggle('active');
+                        this.style.opacity = panel.classList.contains('d-none') ? '0.6' : '1';
+                    }
+                });
+            }
+
+            // Toggle sidebar
+            const toggleSidebarBtn = document.getElementById('toggle-sidebar');
+            if (toggleSidebarBtn) {
+                toggleSidebarBtn.addEventListener('click', function() {
+                    const sidebar = document.querySelector('.ea-sidebar, #sidebar, aside.main-sidebar');
+                    if (sidebar) {
+                        sidebar.classList.toggle('d-none');
+
+                        // Adjust content wrapper margin
+                        const wrapper = document.querySelector('.ea-content-wrapper, .content-wrapper');
+                        if (wrapper) {
+                            wrapper.style.marginLeft = sidebar.classList.contains('d-none') ? '0' : '';
+                        }
+
+                        this.classList.toggle('active');
+                        this.style.opacity = sidebar.classList.contains('d-none') ? '0.6' : '1';
+                    }
+                });
+            }
+
+            // Toggle content-top header
+            const toggleHeaderBtn = document.getElementById('toggle-header-top');
+            if (toggleHeaderBtn) {
+                toggleHeaderBtn.addEventListener('click', function() {
+                    const header = document.querySelector('aside.content-top');
+                    if (header) {
+                        header.classList.toggle('d-none');
+                        this.classList.toggle('active');
+                        this.style.opacity = header.classList.contains('d-none') ? '0.6' : '1';
+                    }
+                });
+            }
+
+            // Toggle presentation mode (all elements)
+            const togglePresentationBtn = document.getElementById('toggle-presentation-mode');
+            if (togglePresentationBtn) {
+                togglePresentationBtn.addEventListener('click', function() {
+                    const panel = document.getElementById('modern-control-panel');
+                    const sidebar = document.querySelector('.ea-sidebar, #sidebar, aside.main-sidebar');
+                    const header = document.querySelector('aside.content-top');
+                    const wrapper = document.querySelector('.ea-content-wrapper, .content-wrapper');
+
+                    const isPresenting = this.classList.contains('active');
+
+                    // Toggle visibility
+                    if (panel) panel.classList.toggle('d-none', !isPresenting);
+                    if (sidebar) sidebar.classList.toggle('d-none', !isPresenting);
+                    if (header) header.classList.toggle('d-none', !isPresenting);
+
+                    // Adjust wrapper margin
+                    if (wrapper && sidebar) {
+                        wrapper.style.marginLeft = (!isPresenting && !sidebar.classList.contains('d-none')) ? '' : '0';
+                    }
+
+                    // Toggle button state
+                    this.classList.toggle('active');
+                    const icon = this.querySelector('i');
+                    if (icon) {
+                        icon.classList.toggle('fa-expand');
+                        icon.classList.toggle('fa-compress');
+                    }
+
+                    // Update other button states
+                    const allButtons = [togglePanelBtn, toggleSidebarBtn, toggleHeaderBtn];
+                    allButtons.forEach(btn => {
+                        if (btn) {
+                            btn.classList.toggle('active', !isPresenting);
+                            btn.style.opacity = !isPresenting ? '0.6' : '1';
+                        }
+                    });
+                });
+            }
+        });
     </script>
 {% endblock %}

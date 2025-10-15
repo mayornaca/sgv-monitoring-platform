@@ -1,5 +1,10 @@
 twig:
     file_name_pattern: '*.twig'
+    default_path: '%kernel.project_dir%/templates'
+    date:
+        format: 'd.m.Y, H:i:s'
+        interval_format: '%%d días'
+        timezone: '%localtimezone%'
 
 when@test:
     twig:

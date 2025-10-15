@@ -144,7 +144,7 @@ BEGIN
     CREATE TEMPORARY TABLE IF NOT EXISTS array_json engine memory AS (
         select id_dispositivo, cod_sensor,
         concat('Sensor ', cod_sensor) nombre_sensor,
-        JSON_OBJECT('v', estado, 't', JSON_ARRAY(UNIX_TIMESTAMP(fecha_min), UNIX_TIMESTAMP(fecha_max))) objetos 
+        JSON_OBJECT('v', estado, 't', JSON_ARRAY(1000*UNIX_TIMESTAMP(fecha_min), 1000*UNIX_TIMESTAMP(fecha_max))) objetos
         From Serie_estado_dispositivos
     );
 
@@ -154,11 +154,11 @@ BEGIN
 
     insert into array_json
     SELECT * FROM (
-        select '-' espira, 1 codigo, '-' nombre, 
-        concat('{"v": 1, "t": [', UNIX_TIMESTAMP(P_FECHA_DESDE), ',', UNIX_TIMESTAMP(ADDDATE(P_FECHA_DESDE, INTERVAL 1 minute)), ']}') json 
-        union all 
-        select '-', 1, '-', 
-        concat('{"v": 1, "t": [', UNIX_TIMESTAMP(P_FECHA_HASTA), ',', UNIX_TIMESTAMP(ADDDATE(P_FECHA_HASTA, INTERVAL 1 minute)), ']}')
+        select '-' espira, 1 codigo, '-' nombre,
+        concat('{"v": 1, "t": [', 1000*UNIX_TIMESTAMP(P_FECHA_DESDE), ',', 1000*UNIX_TIMESTAMP(ADDDATE(P_FECHA_DESDE, INTERVAL 1 minute)), ']}') json
+        union all
+        select '-', 1, '-',
+        concat('{"v": 1, "t": [', 1000*UNIX_TIMESTAMP(P_FECHA_HASTA), ',', 1000*UNIX_TIMESTAMP(ADDDATE(P_FECHA_HASTA, INTERVAL 1 minute)), ']}')
     ) t;
 
     DROP TABLE IF EXISTS array_json_orden;

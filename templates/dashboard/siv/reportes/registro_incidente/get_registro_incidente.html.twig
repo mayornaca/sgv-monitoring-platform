@@ -1,318 +1,365 @@
 {% extends '@EasyAdmin/page/content.html.twig' %}
-{% block page_title %}Registro Incidente{% endblock %}
-{% block stylesheets %}
+
+{% block title %}Registro Incidente{% endblock %}
+
+{# Sobrescribir content_title para eliminar el H1 que ocupa espacio #}
+{% block content_title %}{% endblock %}
+
+{# Agregar título en el toolbar superior (content_top_header) #}
+{% block content_top_header %}
+    <div class="d-flex align-items-center gap-2">
+        <h2 class="m-0" style="font-size: 1.25rem; font-weight: 500;">
+            <i class="fas fa-chart-bar" style="color: var(--color-primary, #5368d5);"></i>
+            Registro Incidente
+        </h2>
+    </div>
+
+    {# Keep the original search, user menu, and settings #}
     {{ parent() }}
-    {#<link rel="stylesheet" href="{{ asset('public/gojs/ZoomSlider.css') }}">#}
+{% endblock %}
+
+{% block head_stylesheets %}
+    {{ parent() }}
+    <!-- Tempus Dominus 6 CSS (Bootstrap 5 compatible) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@eonasdan/tempus-dominus@6/dist/css/tempus-dominus.min.css">
     <style>
-        .btn-group.stick-top.go-to-graphic.affix {
-            top: 73px;
-            left: 1px;
-            z-index: 1000;
+        .filter-panel {
+            background: #f8f9fa;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .export-section {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        /* Sticky navigation button - Modern CSS */
+        .sticky-nav-charts {
+            position: sticky;
+            top: 70px;
+            z-index: 1020;
+            margin-bottom: 1rem;
+        }
+        .table>thead>tr>th {
+            vertical-align: middle;
+        }
+        .col9{
+            background-color: cornsilk;
         }
     </style>
 {% endblock %}
 
-{% block javascripts %}
+{% block configured_head_contents %}
     {{ parent() }}
-    {#<script src="{{ asset('public/gojs/go.js') }}"></script>#}
-    <script src="{{ asset('public/js/highcharts/highcharts-3d.js') }}"></script>
-    <script src="{{ asset('public/js/highcharts/modules/data.js') }}"></script>
-    <script src="{{ asset('public/js/highcharts/modules/drilldown.js') }}"></script>
+    <!-- jQuery (necesario ANTES de Tempus Dominus) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <!-- Popper.js (requerido por Tempus Dominus) -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <!-- Tempus Dominus 6 JS (Bootstrap 5 compatible) -->
+    <script src="https://cdn.jsdelivr.net/npm/@eonasdan/tempus-dominus@6/dist/js/tempus-dominus.min.js"></script>
+    <!-- Highcharts for 3D charts (desde servidor local) -->
+    <script src="{{ asset('js/highcharts/highcharts.js') }}"></script>
+    <script src="{{ asset('js/highcharts/highcharts-3d.js') }}"></script>
+    <script src="{{ asset('js/highcharts/modules/data.js') }}"></script>
+    <script src="{{ asset('js/highcharts/modules/drilldown.js') }}"></script>
 {% endblock %}
-{% block page_content %}
-    {{ parent() }}
-    <div id="main-wrapper" class="container col-lg-12">
-        <div class="page-header margin-none" style="padding-bottom: 0px;margin: 20px 0 -12px;border-bottom: 0;">
-				<span class="thumb-sm avatar pull-left" style="margin-top: -5px;">
-					{#<img width="100" height="100" class="img-circle" alt="COPEC" src="/public/images/sivv.png" style="margin-left: 3px;">#}
-				</span>
-            <h1 class="padding-none" style="padding: 25px;border-radius:40px 0 0 40px;">Registro Incidente</h1>
 
+{% block page_content %}
+    <div class="container-fluid py-4">
+        {# Sticky Navigation to Charts #}
+        {% if data_table is defined and data_table|length > 0 %}
+        <div class="sticky-nav-charts">
             <div class="btn-group">
-                <button id="toggle_task_bar" type="button" class="btn btn-default waves-effect" data-toggle="collapse" data-target="#filter-panel"> <!--		style="float: right;"		-->
-                    <span class="glyphicon glyphicon-filter"></span> Filtros & Opciones
+                <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-chart-line me-2"></i>Ir al gráfico
                 </button>
-                <div class="btn-group stick-top go-to-graphic" role="group">
-                    <button type="button" class="btn btn-default waves-effect dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <span class="glyphicon glyphicon-filter"></span>
-                        Ir al gráfico
-                        <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu">
-                        {% for key, graphic_group in data_table %}
-                            {% set group_index = loop.index %}
-                            {% for graphic in graphic_group %}
-                            <li><a href="#{{ graphic.id }}_wrapper">#{{ group_index }}.{{ loop.index }} {{ graphic.title }} -> {{ graphic.subtitle }}</a></li>
-                            {% endfor %}
+                <ul class="dropdown-menu">
+                    {% for key, graphic_group in data_table %}
+                        {% set group_index = loop.index %}
+                        {% for graphic in graphic_group %}
+                        <li><a class="dropdown-item" href="#{{ graphic.id }}_wrapper">#{{ group_index }}.{{ loop.index }} {{ graphic.title }} → {{ graphic.subtitle }}</a></li>
                         {% endfor %}
-                    </ul>
-                </div>
+                    {% endfor %}
+                </ul>
             </div>
-            <!-- Inicio form de filtros -->
-            <div class="well-sm" style="margin-bottom: 15px;" onmouseover="stopTimerToggleTaskBar();">
-                <div id="filter-panel" class="filter-panel collapse" aria-expanded="true">
-                    <div class="panel panel-default">
-                        <div class="panel-body">
-                            <!-- Nuevo Formulario de Control -->
-                            <form id="report_params" class="form-inline" role="form" action="" method="get">
-                                <input type="hidden" value="1" id="ci" name="ci">
-                                <div class="row">
-                                    <div class="col-sm-2">
-                                        <div class="form-group">
-                                            <label for="fechaInicio" class="">Fecha de inicio </label>
-                                            <div class="input-group date col-sm-12" id="dtpFechaInicio" style="color: #222;">
-                                                <input type="text" id="fechaInicio" name="fechaInicio" class="form-control requerido required" placeholder="Fecha de inicio">
-                                                <span class="input-group-addon">
-																				<span class="glyphicon glyphicon-calendar"></span>
-																		</span>
-                                            </div>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="fechaTermino" class="required">Fecha de término </label>
-                                            <div class="input-group date col-sm-12" id="dtpFechaTermino" style="color: #222;">
-                                                <input type="text" id="fechaTermino" name="fechaTermino" class="form-control requerido required" placeholder="Fecha de término">
-                                                <span class="input-group-addon">
-																			<span class="glyphicon glyphicon-calendar"></span>
-																		</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-sm-2"></div>
-                                    <div class="col-sm-2"></div>
-                                    <div class="col-sm-2"></div>
-                                    <div class="col-sm-2"></div>
-                                    <div class="col-sm-2 pull-right">
-                                        <div class="col-sm-6">
-                                            <h4>Exportar a  PDF</h4>
-                                            <div class="onoffswitch1 center-block">
-                                                <input type="checkbox" name="generatePdf" class="onoffswitch1-checkbox" id="generatePdf">
-                                                <label class="onoffswitch1-label" for="generatePdf">
-                                                    <span class="onoffswitch1-inner"></span>
-                                                    <span class="onoffswitch1-switch"></span>
+        </div>
+        {% endif %}
+
+        {# Panel de Filtros #}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div id="filter-panel" class="filter-panel">
+                    <form id="report_params" method="get" action="">
+                        <input type="hidden" name="ci" value="1">
+
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label for="fechaInicio" class="form-label">
+                                    <i class="fas fa-calendar-alt me-1"></i>Fecha de Inicio
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group" id="dtpFechaInicio">
+                                    <input type="text"
+                                           id="fechaInicio"
+                                           name="fechaInicio"
+                                           class="form-control"
+                                           placeholder="Fecha de inicio"
+                                           value="{{ fechaInicio }}"
+                                           required>
+                                    <span class="input-group-text">
+                                        <i class="fas fa-calendar"></i>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label for="fechaTermino" class="form-label">
+                                    <i class="fas fa-calendar-check me-1"></i>Fecha de Término
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group" id="dtpFechaTermino">
+                                    <input type="text"
+                                           id="fechaTermino"
+                                           name="fechaTermino"
+                                           class="form-control"
+                                           placeholder="Fecha de término"
+                                           value="{{ fechaTermino }}"
+                                           required>
+                                    <span class="input-group-text">
+                                        <i class="fas fa-calendar"></i>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label d-block">Opciones de Exportación</label>
+                                <div class="export-section">
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="generatePdf" name="generatePdf" value="1">
+                                                <label class="form-check-label" for="generatePdf">
+                                                    <i class="fas fa-file-pdf text-danger me-1"></i>PDF
                                                 </label>
                                             </div>
                                         </div>
-                                        <div class="col-sm-6" style="padding-top: 39px;height: 78px;">
-                                            {% if return_file_name_pdf is defined and return_file_name_pdf %}
-                                                <a class="btn icon-btn btn-info waves-effect waves-light" href="#" id="btn-exp-pdf">
-                                                    <span class="glyphicon btn-glyphicon glyphicon-save img-circle text-info"></span> Descargar
-                                                </a>
-                                                <script>
-                                                    $("#btn-exp-pdf").click(function () {
-                                                        var xhttp = new XMLHttpRequest();
-                                                        xhttp.onreadystatechange = function() {
-                                                            var a;
-                                                            if (xhttp.readyState === 4 && xhttp.status === 200) {
-                                                                // Trick for making downloadable link
-                                                                a = document.createElement('a');
-                                                                a.href = window.URL.createObjectURL(xhttp.response);
-                                                                // Give filename you wish to download
-                                                                a.download = "{{ return_file_name_pdf }}";
-                                                                a.style.display = 'none';
-                                                                document.body.appendChild(a);
-                                                                a.click();
-                                                            }
-                                                        };
-                                                        // Post data to URL which handles post request
-                                                        xhttp.open("GET", '/downloads/' + "{{ return_file_name_pdf }}");
-                                                        xhttp.setRequestHeader("Content-Type", "application/json");
-                                                        // You should set responseType as blob for binary responses
-                                                        xhttp.responseType = 'blob';
-                                                        xhttp.send(); //JSON.stringify(data)
-                                                    });
-                                                </script>
-                                            {% endif %}
-                                        </div>
-                                        <div class="col-sm-6">
-                                            <h4>Exportar a Excel</h4>
-                                            <div class="onoffswitch1 center-block">
-                                                <input type="checkbox" name="generateExcel" class="onoffswitch1-checkbox" id="generateExcel">
-                                                <label class="onoffswitch1-label" for="generateExcel">
-                                                    <span class="onoffswitch1-inner"></span>
-                                                    <span class="onoffswitch1-switch"></span>
+                                        <div class="col-6">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="generateExcel" name="generateExcel" value="1">
+                                                <label class="form-check-label" for="generateExcel">
+                                                    <i class="fas fa-file-excel text-success me-1"></i>Excel
                                                 </label>
-                                            </div>
-                                        </div>
-                                        <div class="col-sm-6" style="padding-top: 39px;height: 78px;">
-                                            {% if return_file_name_excel is defined and return_file_name_excel %}
-                                                <a class="btn icon-btn btn-info waves-effect waves-light" href="#" id="btn-exp-xls">
-                                                    <span class="glyphicon btn-glyphicon glyphicon-save img-circle text-info"></span> Descargar
-                                                </a>
-                                                <script>
-                                                    $("#btn-exp-xls").click(function () {
-                                                        var xhttp = new XMLHttpRequest();
-                                                        xhttp.onreadystatechange = function() {
-                                                            var a;
-                                                            if (xhttp.readyState === 4 && xhttp.status === 200) {
-                                                                // Trick for making downloadable link
-                                                                a = document.createElement('a');
-                                                                a.href = window.URL.createObjectURL(xhttp.response);
-                                                                // Give filename you wish to download
-                                                                a.download = "{{ return_file_name_excel }}";
-                                                                a.style.display = 'none';
-                                                                document.body.appendChild(a);
-                                                                a.click();
-                                                            }
-                                                        };
-                                                        // Post data to URL which handles post request
-                                                        xhttp.open("GET", '/downloads/' + "{{ return_file_name_excel }}");
-                                                        xhttp.setRequestHeader("Content-Type", "application/json");
-                                                        // You should set responseType as blob for binary responses
-                                                        xhttp.responseType = 'blob';
-                                                        xhttp.send(); //JSON.stringify(data)
-                                                    });
-                                                </script>
-                                            {% endif %}
-                                        </div>
-                                        <div class="col-sm-12">
-                                            <h4>Aplicar filtros</h4>
-                                            <div class="form-group">
-                                                <button id="btn_submit" type="submit" class="btn icon-btn btn-warning waves-effect waves-light">
-                                                    <span class="glyphicon btn-glyphicon glyphicon-play-circle img-circle text-info"></span> Generar reporte
-                                                </button>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </form>
+                            </div>
                         </div>
+
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-chart-bar me-2"></i>Generar Gráficos
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                                    <i class="fas fa-undo me-2"></i>Limpiar
+                                </button>
+
+                                {% if return_file_name_pdf %}
+                                    <button type="button" class="btn btn-info ms-2" id="btn-exp-pdf">
+                                        <i class="fas fa-download me-2"></i>Descargar PDF
+                                    </button>
+                                {% endif %}
+
+                                {% if return_file_name_excel %}
+                                    <button type="button" class="btn btn-success ms-2" id="btn-exp-xls">
+                                        <i class="fas fa-download me-2"></i>Descargar Excel
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {# Highcharts Graphics #}
+        {% if data_table is defined and data_table|length > 0 %}
+            {{ include('dashboard/siv/reportes/registro_incidente/graphics.html.twig') }}
+        {% elseif data_table is defined %}
+            <div class="row">
+                <div class="col-12">
+                    <div class="alert alert-info text-center">
+                        <i class="fas fa-info-circle fa-2x mb-3"></i>
+                        <h5>No se encontraron registros</h5>
+                        <p>No hay datos para el período seleccionado. Intente con un rango de fechas diferente.</p>
                     </div>
                 </div>
             </div>
-            <!-- Fin form de filtros -->
-        </div>
-        <div>
-            <style>
-                .table>thead>tr>th {
-                    vertical-align: middle;
-                }
-                .col9{
-                    background-color: cornsilk;
-                }
-            </style>
-
-            {{ include('dashboard/siv/reportes/registro_incidente/graphics.html.twig') }}
-
-        </div>
-        <div class="col-xs-12 keeptogether force_row" style="height: 95px;">
-            <div class="col-xs-4 pull-left">
-                <div class="pull-left" style="height: 65px;width: 150px;background-image: url('{{ asset('public/images/concessions/HCSQELGZDdo') }}'); background-size: contain;background-repeat: no-repeat;"></div>
-                {#<img class="pull-left" src="{{ asset('public/images/concessions/HCSQELGZDdo') }}" style="background-color: #FFFFFF;padding: 5px;margin-top: -16px;border-radius: 3px 3px 3px 3px !important;background-image: -webkit-linear-gradient(top,#fff 0,#f8f8f8 100%);background-image: -o-linear-gradient(top,#fff 0,#f8f8f8 100%);background-image: -webkit-gradient(linear,left top,left bottom,from(#fff),to(#f8f8f8));background-image: linear-gradient(to bottom,#fff 0,#f8f8f8 100%);filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffffff', endColorstr='#fff8f8f8', GradientType=0);filter: progid:DXImageTransform.Microsoft.gradient(enabled=false);background-repeat: repeat-x;-webkit-box-shadow: inset 0 1px 0 rgba(255,255,255,.15),0 1px 5px rgba(0,0,0,.075);box-shadow: inset 0 1px 0 rgba(255,255,255,.15),0 1px 5px rgba(0, 0, 0, 0.69);">#}
+        {% else %}
+            <div class="row">
+                <div class="col-12">
+                    <div class="alert alert-secondary text-center">
+                        <i class="fas fa-chart-line fa-2x mb-3"></i>
+                        <h5>Seleccione un período</h5>
+                        <p>Configure las fechas de inicio y término para generar los gráficos de registro de incidentes.</p>
+                    </div>
+                </div>
             </div>
-            <div class="col-xs-4 center-block text-center">
-                <p>Sociedad Concesionaria Costanera Norte</p>
+        {% endif %}
+
+        {# Footer con logos #}
+        <div class="row mt-5">
+            <div class="col-4">
+                <img src="{{ asset('images/concessions/HCSQELGZDdo.png') }}" alt="Logo Concesionaria" style="max-height: 65px;">
             </div>
-            <div class="col-xs-4">
-                <div class="pull-right" style="height: 95px;width: 143px;background-image: url('{{ asset('public/images/coordinacion_concesiones_obras_publicas.jpg') }}'); background-size: contain;background-repeat: no-repeat;"></div>
+            <div class="col-4 text-center align-self-center">
+                <p class="mb-0">Sociedad Concesionaria Costanera Norte</p>
+            </div>
+            <div class="col-4 text-end">
+                <img src="{{ asset('images/coordinacion_concesiones_obras_publicas.jpg') }}" alt="Logo MOP" style="max-height: 95px;">
             </div>
         </div>
     </div>
-
 {% endblock %}
 
-
-{% block javascripts_footer  %}
+{% block body_javascript %}
     {{ parent() }}
     <script>
-        $('.stick-top').affix({
-            offset: {top: 300}
-        });
-        var stickyHeaderOffsetY =0;
-        var $table = $('#table');
-
-        var stoped=false;
-        var timer_toggle_task_bar;
-        function stopTimerToggleTaskBar() {
-            if(!stoped){
-                timer_toggle_task_bar.stop();
-                stoped=true;
-                //console.log('stop timer');
-            }
-        }
-
         jQuery(document).ready(function() {
-            timer_toggle_task_bar = d3.timeout(function () {
-                $("#toggle_task_bar").trigger("click");
-            }, 600);
-        });
+            // Initialize Tempus Dominus 6 (Bootstrap 5 compatible)
+            const tempusDominus = window.tempusDominus;
+            if (tempusDominus) {
+                const options = {
+                    display: {
+                        components: {
+                            calendar: true,
+                            date: true,
+                            month: true,
+                            year: true,
+                            decades: true,
+                            clock: true,
+                            hours: true,
+                            minutes: true,
+                            seconds: true
+                        },
+                        icons: {
+                            time: 'fas fa-clock',
+                            date: 'fas fa-calendar',
+                            up: 'fas fa-arrow-up',
+                            down: 'fas fa-arrow-down',
+                            previous: 'fas fa-chevron-left',
+                            next: 'fas fa-chevron-right',
+                            today: 'fas fa-calendar-check',
+                            clear: 'fas fa-trash',
+                            close: 'fas fa-times'
+                        }
+                    },
+                    localization: {
+                        locale: 'es',
+                        format: 'dd-MM-yyyy HH:mm:ss'
+                    }
+                };
 
-        function queryParams(params) {
-            params.fecha_inicio = $('#fechaInicio').val();
-            params.fecha_termino = $('#fechaTermino').val();
-            jsDump('queryParams: ' + JSON.stringify(params))
-            return params
-        }
-
-        $(function() {
-            $('.bootstrapTable').bootstrapTable();
-
-            if ( $('.navbar-fixed-top').css('height') ) {
-                stickyHeaderOffsetY = +$('.navbar-fixed-top').css('height').replace('px','');
-            }
-            if ( $('.navbar-fixed-top').css('margin-bottom') ) {
-                stickyHeaderOffsetY += +$('.navbar-fixed-top').css('margin-bottom').replace('px','');
-            }
-        });
-
-        $.extend($.fn.bootstrapTable.columnDefaults, {
-            search: true,
-            stickyHeader: true,
-            stickyHeaderOffsetY: stickyHeaderOffsetY + 'px',
-            sortable: true
-        });
-
-        $(function () {
-            $('#dtpFechaInicio').datetimepicker({
-                useCurrent: false,
-                locale: 'es',
-                format: 'DD-MM-YYYY HH:mm:ss'
-            });
-            $('#dtpFechaTermino').datetimepicker({
-                useCurrent: false, //Important! See issue #1075
-                locale: 'es',
-                format: 'DD-MM-YYYY HH:mm:ss'
-            });
-            $("#dtpFechaInicio").on("dp.change", function (e) {
-                $('#dtpFechaTermino').data("DateTimePicker").minDate(e.date);
-                //validarFechaInicio();
-            });
-            $("#dtpFechaTermino").on("dp.change", function (e) {
-                $('#dtpFechaInicio').data("DateTimePicker").maxDate(e.date);
-                //validarFechaTermino();
-            });
-        });
-        jQuery(document).ready(function() {
-            /*
-             ANTES DE ENVIAR EL FORMULARIO VERIFICO QUE LA INFORMACIÓN SEA INTEGRA Y COHERENTE
-             */
-            $("#report_params").submit(function() {
-                if(validaRequeridos()){
-                    $.notify(
-                        "Espere un momento mientras se genera el reporte...",
-                        {  style: 'custom', className: 'success', position:"bottom right" }
-                    );
-                    return true;
+                // Initialize fecha inicio - sobre el contenedor input-group
+                if (document.getElementById('dtpFechaInicio')) {
+                    const pickerInicio = new tempusDominus.TempusDominus(document.getElementById('dtpFechaInicio'), options);
                 }
-                else
-                {
-                    $.notify(
-                        "Por favor ingrese los datos requeridos, verifique la información e intente nuevamente.",
-                        {  style: 'bootstrap', className: 'warn', position:"bottom right" }
-                    );
-                    return false;
-                }
-            });
 
-            {% if fechaInicio %}
-            var fechaInicio = '{{ fechaInicio }}';
-            $('#fechaInicio').val(fechaInicio);
+                // Initialize fecha término - sobre el contenedor input-group
+                if (document.getElementById('dtpFechaTermino')) {
+                    const pickerTermino = new tempusDominus.TempusDominus(document.getElementById('dtpFechaTermino'), options);
+                }
+            }
+
+            // Set default dates if empty (DESPUÉS de inicializar Tempus Dominus)
+            {% if not fechaInicio or fechaInicio == '' %}
+                // First day of previous month
+                const defaultInicio = new Date();
+                defaultInicio.setMonth(defaultInicio.getMonth() - 1);
+                defaultInicio.setDate(1);
+                defaultInicio.setHours(0, 0, 0, 0);
+                $('#fechaInicio').val(formatDate(defaultInicio));
             {% endif %}
 
-            {% if fechaTermino %}
-            var fechaTermino = '{{ fechaTermino }}';
-            $('#fechaTermino').val(fechaTermino);
+            {% if not fechaTermino or fechaTermino == '' %}
+                // Last day of previous month
+                const defaultTermino = new Date();
+                defaultTermino.setDate(0); // Sets to last day of previous month
+                defaultTermino.setHours(23, 59, 0, 0);
+                $('#fechaTermino').val(formatDate(defaultTermino));
             {% endif %}
 
+            {% if return_file_name_pdf %}
+            // Botón descarga PDF con XMLHttpRequest blob (fuerza descarga, no abre en navegador)
+            jQuery("#btn-exp-pdf").click(function () {
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function() {
+                    if (xhttp.readyState === 4 && xhttp.status === 200) {
+                        // Crear link de descarga dinámico
+                        var a = document.createElement('a');
+                        a.href = window.URL.createObjectURL(xhttp.response);
+                        a.download = "{{ return_file_name_pdf }}";
+                        a.style.display = 'none';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    }
+                };
+                xhttp.open("GET", '/downloads/{{ return_file_name_pdf }}');
+                xhttp.responseType = 'blob';
+                xhttp.send();
+            });
+            {% endif %}
+
+            {% if return_file_name_excel %}
+            // Botón descarga Excel con XMLHttpRequest blob (fuerza descarga, no abre en navegador)
+            jQuery("#btn-exp-xls").click(function () {
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function() {
+                    if (xhttp.readyState === 4 && xhttp.status === 200) {
+                        // Crear link de descarga dinámico
+                        var a = document.createElement('a');
+                        a.href = window.URL.createObjectURL(xhttp.response);
+                        a.download = "{{ return_file_name_excel }}";
+                        a.style.display = 'none';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    }
+                };
+                xhttp.open("GET", '/downloads/{{ return_file_name_excel }}');
+                xhttp.responseType = 'blob';
+                xhttp.send();
+            });
+            {% endif %}
         });
+
+        function formatDate(date) {
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
+            return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+        }
+
+        function resetForm() {
+            document.getElementById('report_params').reset();
+            // Set default dates again
+            const defaultInicio = new Date();
+            defaultInicio.setMonth(defaultInicio.getMonth() - 1);
+            defaultInicio.setDate(1);
+            defaultInicio.setHours(0, 0, 0, 0);
+            jQuery('#fechaInicio').val(formatDate(defaultInicio));
+
+            const defaultTermino = new Date();
+            defaultTermino.setDate(0);
+            defaultTermino.setHours(23, 59, 0, 0);
+            jQuery('#fechaTermino').val(formatDate(defaultTermino));
+        }
     </script>
 {% endblock %}

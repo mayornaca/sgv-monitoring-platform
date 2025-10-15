@@ -8,7 +8,7 @@
     .paragraph_truncated{
         min-width: 500px;
         /*max-width: 800px;*/
-        padding: 4px !important;
+        /*padding: 4px !important;*/
         overflow: hidden;
         display: -webkit-box;
         -webkit-line-clamp: 3;
@@ -284,9 +284,38 @@
         {% endif %}
     });
 
+    {# ==================== TODO: CRUD COMPLETO BITÁCORA SCADA NO MIGRADO ====================
+
+       RUTA INEXISTENTE: admin_siv_dashboard_bitacora_scada
+       CONTROLADOR ANTIGUO: old_project/src/siv/DashboardBundle/Controller/OtPermController.php::BitacoraScadaAction
+       RUTA NUEVA (SOLO LECTURA): siv_dashboard_bitacora (SivController.php::bitacoraAction)
+
+       FUNCIONALIDAD PENDIENTE DE MIGRACIÓN:
+       - addRegBinnacleScada(): Crear nuevo registro de bitácora
+       - editPT(): Editar permiso de trabajo
+       - downloadRegBinnacleScada(): Descargar PDF
+       - FinishPT(): Finalizar permiso de trabajo
+       - highlightRegBinnacleScada(): Destacar registro
+       - deleteRegBinnacleScada(): Eliminar registro
+       - startRegBinnacleScada(): Iniciar permiso de trabajo
+
+       ACCIONES REQUERIDAS:
+       1. Crear controlador completo para CRUD de bitácora SCADA
+       2. Implementar todas las acciones: add, edit, update, delete, finish, start, highlight, json, pdf
+       3. Migrar vistas desde old_project/src/siv/DashboardBundle/Resources/views/BitacoraScada/
+       4. Implementar permisos granulares para estas operaciones
+       5. Descomentar y probar funciones JavaScript
+
+       MIENTRAS TANTO:
+       - Los botones de gestión de bitácora NO funcionarán
+       - Solo visualización de datos funciona
+       - Usuarios deben usar el proyecto antiguo para CRUD de bitácora
+
+       Fecha comentado: 2025-10-03
+       =============================================================================== #}
+
     function addRegBinnacleScada() {
-        var path_url = "{{ path('siv_dashboard_bitacora_scada', { action: 'add'})|raw }}";
-        //path_url= path_url.replace('__ID__', id);
+        var path_url = "{{ path('admin_siv_dashboard_bitacora_scada', { action: 'add'})|raw }}";
 
         $.ajax({
             url : path_url,
@@ -321,10 +350,25 @@
             );
         });
     }
-    {% if is_granted('EDIT', classId('ntty_36')) %}
+
+    {# ==================== TODO: SISTEMA DE PERMISOS GRANULARES ====================
+       Permiso original comentado: is_granted('EDIT', classId('ntty_36'))
+
+       DESCRIPCIÓN:
+       - ntty_36 = TblCot02Dispositivos (Editar dispositivos COT)
+       - Función editPT() permite editar permisos de trabajo desde el reporte SOS
+
+       ACCIÓN REQUERIDA:
+       - Proteger esta funcionalidad cuando se implemente el nuevo sistema de permisos granulares
+       - Verificar que solo usuarios con rol adecuado puedan editar
+       - Considerar permisos por concesionaria/área
+
+       Fecha comentado: 2025-10-03
+       =============================================================================== #}
+    {# {% if is_granted('EDIT', classId('ntty_36')) %} #}
     //Editar
     function editPT(id) {
-        var path_url = "{{ path('siv_dashboard_bitacora_scada', { action: 'edit', id: '__ID__' })|raw }}";
+        var path_url = "{{ path('admin_siv_dashboard_bitacora_scada', { action: 'edit', id: '__ID__' })|raw }}";
         path_url= path_url.replace('__ID__', id);
 
         $.ajax({
@@ -358,10 +402,10 @@
             );
         });
     }
-    {% endif %}
+    {# {% endif %} #}
 
     function downloadRegBinnacleScada(id) {
-        var path_url = "{{ path('siv_dashboard_bitacora_scada', { action: 'pdf', id: '__ID__', token: csrf_token('pdf-bs')})|raw }}";
+        var path_url = "{{ path('admin_siv_dashboard_bitacora_scada', { action: 'pdf', id: '__ID__', token: csrf_token('pdf-bs')})|raw }}";
         path_url= path_url.replace('__ID__', id) /*+ '&time=' + new Date().getTime()*/;
 
         // Data to get
@@ -462,7 +506,7 @@
         //var id_pt = e.target.parents('tr').data('id');//parseInt(e.target.id.match(/\d+/));
         $("#button_bs_finish_" + id_bs).addClass("disabled");
 
-        var path_url = "{{ path('siv_dashboard_bitacora_scada', { action: 'json', id: '__ID__' })|raw }}";
+        var path_url = "{{ path('admin_siv_dashboard_bitacora_scada', { action: 'json', id: '__ID__' })|raw }}";
 
         path_url= path_url.replace('__ID__', id_bs);
 
@@ -542,7 +586,7 @@
                         var el_txt_bs_comment = $('#txt_bs_comment');
                         var txt_bs_comment = el_txt_bs_comment.val();
 
-                        var path_url = "{{ path('siv_dashboard_bitacora_scada') }}";
+                        var path_url = "{{ path('admin_siv_dashboard_bitacora_scada') }}";
 
                         var data = {
                             action: 'finish',
@@ -612,7 +656,7 @@
     function highlightRegBinnacleScada(id_bs, status) {
         status = (status==1) ? 0 : 1;
 
-        var path_url = "{{ path('siv_dashboard_bitacora_scada') }}";
+        var path_url = "{{ path('admin_siv_dashboard_bitacora_scada') }}";
         var data = {
             action: 'highlight',
             id: id_bs,
@@ -649,7 +693,7 @@
     }
 
     function deleteRegBinnacleScada(id_bs) {
-        var path_url = "{{ path('siv_dashboard_bitacora_scada') }}";
+        var path_url = "{{ path('admin_siv_dashboard_bitacora_scada') }}";
 
         var data = {
             action: 'delete',
@@ -686,7 +730,7 @@
     }
 
     function startRegBinnacleScada(id_bs) {
-        var path_url = "{{ path('siv_dashboard_bitacora_scada') }}";
+        var path_url = "{{ path('admin_siv_dashboard_bitacora_scada') }}";
 
         var data = {
             action: 'start',

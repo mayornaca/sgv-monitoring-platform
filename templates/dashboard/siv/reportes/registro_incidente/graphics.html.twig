@@ -1,3 +1,26 @@
+{% if renderTo == 'pdf' %}
+<script>
+    // Contador para tracking de gráficos renderizados (wkhtmltopdf)
+    var totalCharts = 0;
+    var chartsRendered = 0;
+
+    {% for key, graphic_group in data_table %}
+        {% for graphic in graphic_group %}
+            totalCharts++;
+        {% endfor %}
+    {% endfor %}
+
+    function chartLoadComplete() {
+        chartsRendered++;
+        console.log('Chart rendered: ' + chartsRendered + '/' + totalCharts);
+        if (chartsRendered === totalCharts) {
+            console.log('All charts rendered! Setting window.status');
+            window.status = 'ready_to_print';
+        }
+    }
+</script>
+{% endif %}
+
 {% for key, graphic_group in data_table %}
     {#{% set tittle = key|slice(2, key|length)|replace({'_': " de "}) %} #}
     {% for graphic in graphic_group %}
@@ -31,7 +54,12 @@
                             beta: 0,
                             depth: 20,
                             viewDistance: 25
+                        },
+                        {% if renderTo == 'pdf' %}
+                        events: {
+                            load: chartLoadComplete
                         }
+                        {% endif %}
                     },
                     title: {
                         text: '{{ graphic.title }}'
@@ -121,7 +149,12 @@
                                 beta: 0,
                                 /*depth: 26,
                                 viewDistance: 25*/
+                            },
+                            {% if renderTo == 'pdf' %}
+                            events: {
+                                load: chartLoadComplete
                             }
+                            {% endif %}
                         },
                         title: {
                             text: '{{ graphic.title }}'
@@ -215,13 +248,13 @@
         {% if renderTo == 'pdf' %}
             <div class="col-xs-12 keeptogether force_row" style="/*border: 1px solid #0000001f*/;height: 95px;padding-top:2px/*bottom: -49px;*//*position: fixed;*/">
                 <div class="col-xs-4 pull-left">
-                    <div class="pull-left" style="height: 65px;width: 150px;background-image: url('{{ asset('public/images/concessions/HCSQELGZDdo') }}'); background-size: contain;background-repeat: no-repeat;"></div>
+                    <div class="pull-left" style="height: 65px;width: 150px;background-image: url('https://vs.gvops.cl/images/concessions/HCSQELGZDdo.png'); background-size: contain;background-repeat: no-repeat;"></div>
                 </div>
                 <div class="col-xs-4 center-block text-center">
                     <p>Sociedad Concesionaria Costanera Norte</p>
                 </div>
                 <div class="col-xs-4" style="bottom: 0;padding: 0;">
-                    <div class="pull-right" style="height: 95px;width: 143px;background-image: url('{{ asset('public/images/coordinacion_concesiones_obras_publicas.jpg') }}'); background-size: contain;background-repeat: no-repeat;"></div>
+                    <div class="pull-right" style="height: 95px;width: 143px;background-image: url('https://vs.gvops.cl/images/coordinacion_concesiones_obras_publicas.jpg'); background-size: contain;background-repeat: no-repeat;"></div>
                 </div>
             </div>
         {% endif %}

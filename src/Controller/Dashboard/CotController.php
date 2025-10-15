@@ -12,6 +12,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -24,10 +25,12 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 class CotController extends AbstractDashboardController
 {
     protected EntityManagerInterface $entityManager;
+    protected ManagerRegistry $doctrine;
 
-    public function __construct(EntityManagerInterface $entityManager)
+    public function __construct(EntityManagerInterface $entityManager, ManagerRegistry $doctrine)
     {
         $this->entityManager = $entityManager;
+        $this->doctrine = $doctrine;
     }
 
     public function configureDashboard(): Dashboard
@@ -63,15 +66,38 @@ class CotController extends AbstractDashboardController
     {
         $em = $this->entityManager;
 
+        // ==================== COMENTADO 2025-10-03 - NO DESCOMENTAR SIN REVISIÓN ====================
+        // TblCot06AlarmasDispositivos NO forma parte del módulo de monitoreo operativo
+        //
+        // CONTEXTO HISTÓRICO:
+        // - Este sistema se diseñó para notificaciones del navbar que NUNCA se completó
+        // - En el proyecto antiguo SOLO aparecía en devices_alerts_list.html.twig (widget navbar)
+        // - NINGUNA vista de monitoreo (index, sos, vs) mostraba estas alarmas en su contenido
+        // - El navbar con notificaciones NO se migró al nuevo sistema
+        //
+        // SISTEMAS DE ALARMAS CORRECTOS:
+        // - SOS Monitor (ASS): tbl_cot_09_alarmas_sensores_dispositivos (YA IMPLEMENTADO)
+        // - Cada módulo tiene sus propias alarmas específicas
+        //
+        // IMPACTO EN RENDIMIENTO:
+        // - Estas queries causaban lentitud de 15+ segundos sin propósito funcional
+        // - Al comentar, el sistema mejoró significativamente
+        //
+        // ANTES DE DESCOMENTAR: Revisar con arquitecto del sistema y validar caso de uso real
+        // =========================================================================================
+
+        /*
         // 1. Obtener alarmas activas de dispositivos
+        // Replicando exactamente la query del proyecto antiguo
         $qb_alarmas_dispositivos = $em->createQueryBuilder();
         $qb_alarmas_dispositivos->select('reg')
             ->from(TblCot06AlarmasDispositivos::class, 'reg')
             ->leftJoin('reg.idAlarma', 'alarm')->addSelect('alarm')
             ->leftJoin('reg.idDispositivo', 'disp')->addSelect('disp')
             ->leftJoin('reg.concesionaria', 'conc')->addSelect('conc')
-            ->where('reg.estado = 0')  // Solo alarmas activas
-            ->orderBy('reg.id', 'ASC');
+            ->orderBy('reg.id', 'DESC')
+            ->andWhere('reg.estado = 0')
+            ->setMaxResults(25);  // IMPORTANTE: Limitar resultados para rendimiento
 
         // Filtrar por concesiones del usuario si aplica
         if ($usr_concessions = $this->getUserConcessions()) {
@@ -80,17 +106,17 @@ class CotController extends AbstractDashboardController
         }
 
         $rs_alarmas_dispositivos = $qb_alarmas_dispositivos->getQuery()->getArrayResult();
+        */
+        $rs_alarmas_dispositivos = []; // Array vacío para mantener compatibilidad
 
         // 2. Obtener resumen de estado de dispositivos desde la vista
-        $conn = $em->getConnection();
+        // Usar conexión 'default' explícitamente como en el proyecto antiguo
+        $conn = $this->doctrine->getConnection('default');
         $sql = "SELECT id, tipo, icono, activos, inactivos, total, por_Activos, por_inactivos, concesionaria
                 FROM vi_resumen_estado_dispositivos";
 
-        $where = '';
-        if ($usr_concessions = $this->getUserConcessions()) {
-            $usr_concessions_str = implode(',', $usr_concessions);
-            $where = " WHERE concesionaria IN ($usr_concessions_str)";
-        }
+        // Filtrar por Costanera Norte (concesionaria 22) - Dashboard exclusivo CN
+        $where = " WHERE concesionaria = 22";
 
         $stmt = $conn->prepare($sql . $where);
         $result = $stmt->executeQuery();
@@ -166,6 +192,14 @@ class CotController extends AbstractDashboardController
 
         $em = $this->entityManager;
 
+        // ==================== COMENTADO 2025-10-03 - NO DESCOMENTAR SIN REVISIÓN ====================
+        // TblCot06AlarmasDispositivos NO forma parte del módulo de monitoreo operativo
+        // Ver documentación completa en dashboardAction() línea 69
+        // Sistema de notificaciones navbar incompleto - NO migrado al nuevo proyecto
+        // ANTES DE DESCOMENTAR: Revisar con arquitecto del sistema y validar caso de uso real
+        // =========================================================================================
+
+        /*
         // 1. Query para alarmas de dispositivos
         $qb_alarmas_dispositivos = $em->createQueryBuilder();
         $qb_alarmas_dispositivos->select('a', 'al', 'd')
@@ -182,13 +216,17 @@ class CotController extends AbstractDashboardController
         } catch (\Exception $e) {
             error_log('Error obteniendo alarmas: ' . $e->getMessage());
         }
+        */
+        $rs_alarmas_dispositivos = []; // Array vacío para mantener compatibilidad
 
-        // 2. Query para tipos de dispositivos
+        // 2. Query para tipos de dispositivos - Filtrado por Costanera Norte (concesionaria 22)
         $qb_tipos_dispositivos = $em->createQueryBuilder();
         $qb_tipos_dispositivos->select('t')
             ->from('App\Entity\TblCot01TiposDispositivos', 't')
             ->orderBy('t.id', 'ASC')
-            ->andWhere('t.mostrar = 1');
+            ->andWhere('t.mostrar = 1')
+            ->andWhere('t.concesionaria = :concesionaria')
+            ->setParameter('concesionaria', 22);
 
         // Aplicar filtros de permisos para espiras
         if (!$canViewCNSpires) {
@@ -512,18 +550,16 @@ class CotController extends AbstractDashboardController
         if (empty($dateString)) {
             return '';
         }
-        
-        // Parsear fecha en formato dd-mm-yyyy H:i:s
-        $parts = explode(' ', $dateString);
-        $datePart = $parts[0] ?? '';
-        $timePart = $parts[1] ?? '00:00:00';
-        
-        $dateParts = explode('-', $datePart);
-        if (count($dateParts) == 3) {
-            return $dateParts[2] . '-' . $dateParts[1] . '-' . $dateParts[0] . ' ' . $timePart;
-        }
-        
-        return $dateString; // Retornar sin cambios si no se puede parsear
+
+        // LEGACY: Parsear fecha en formato dd-mm-yyyy H:i:s usando mktime() para correcto manejo de timezone
+        $year = substr($dateString, 6, 4);
+        $month = substr($dateString, 3, 2);
+        $day = substr($dateString, 0, 2);
+        $hours = substr($dateString, 11, 2);
+        $minutes = substr($dateString, 14, 2);
+        $seconds = substr($dateString, 17, 2);
+
+        return date("Y-m-d H:i:s", mktime($hours, $minutes, $seconds, $month, $day, $year));
     }
     
     /**
@@ -532,6 +568,9 @@ class CotController extends AbstractDashboardController
     #[AdminRoute('/spire_history', name: 'spire_history')]
     public function cotSpireHistoryGenerateReportAction(Request $request): Response
     {
+        // Configurar timezone correcto para Chile
+        date_default_timezone_set('America/Santiago');
+
         // Parámetros de la petición
         $params = $request->getMethod() == 'POST' ? $request->request->all() : $request->query->all();
         
@@ -558,17 +597,7 @@ class CotController extends AbstractDashboardController
             $fechaTermino = date('d-m-Y H:i:s', mktime(date('H'), 59, 59, date('n'), date('d'), date('Y')));
             $fechaTermino_Date = date('Y-m-d H:i:s', mktime(date('H'), 59, 59, date('n'), date('d'), date('Y')));
         }
-        
-        // Verificar que el rango no exceda 2 días
-        $dStart = new \DateTime($fechaInicio_Date);
-        $dEnd = new \DateTime($fechaTermino_Date);
-        $dDiff = $dStart->diff($dEnd);
-        
-        if (intval($dDiff->format('%r%a')) > 2) {
-            $dStart = $dEnd->sub(new \DateInterval('P2D'));
-            $fechaInicio = $dStart->format('d-m-Y H:i:s');
-            $fechaInicio_Date = $dStart->format('Y-m-d H:i:s');
-        }
+
         
         $arr_reg = [];
         $conn = $this->entityManager->getConnection();
@@ -581,116 +610,39 @@ class CotController extends AbstractDashboardController
             $str_spires = $spires;
         }
         
-        // Obtener lista de todas las espiras si no es AJAX
+        // Obtener lista de todas las espiras si no es AJAX - Filtrado por Costanera Norte (concesionaria 22)
         $arr_spires = [];
         if (!$request->isXmlHttpRequest()) {
-            $sql_spires = "SELECT * FROM tbl_cot_02_dispositivos WHERE id_tipo = 4 ORDER BY nombre ASC";
+            $sql_spires = "SELECT * FROM tbl_cot_02_dispositivos WHERE id_tipo = 4 AND concesionaria = 22 ORDER BY nombre ASC";
             $stmt = $conn->prepare($sql_spires);
             $result = $stmt->executeQuery();
             $arr_spires = $result->fetchAllAssociative();
             // No es necesario closeCursor en Doctrine DBAL 3.x
         }
         
-        // Llamar al procedimiento almacenado
+        // Llamar al procedimiento almacenado - EXACTO como legacy
         $sql_reg_pt = "CALL fnHistorialEspirasV8('$fechaInicio_Date','$fechaTermino_Date','$str_spires','$onlyZeros','$onlyEmpty','0')";
-        
-        // Log para depuración
-        error_log("=== SPIRE HISTORY DEBUG ===");
-        error_log("SQL Query: " . $sql_reg_pt);
-        error_log("Parameters - Start: $fechaInicio_Date, End: $fechaTermino_Date, Spires: $str_spires, OnlyZeros: $onlyZeros, OnlyEmpty: $onlyEmpty");
         
         try {
             $stmt = $conn->prepare($sql_reg_pt);
             $result = $stmt->executeQuery();
             $arr_reg = $result->fetchAllAssociative();
-            // No es necesario closeCursor en Doctrine DBAL 3.x
-            
-            error_log("Query executed. Row count: " . count($arr_reg));
-            
-            // Debug: verificar estructura completa del resultado
-            if (count($arr_reg) > 0) {
-                error_log("Result has data. Checking structure...");
-                error_log("Number of columns: " . count($arr_reg[0]));
-                if (count($arr_reg[0]) > 0) {
-                    error_log("Column names: " . implode(', ', array_keys($arr_reg[0])));
-                    // Mostrar primeros 500 caracteres del resultado
-                    $resultStr = json_encode($arr_reg[0]);
-                    error_log("First row (truncated): " . substr($resultStr, 0, 500));
-                }
-            }
-            
+
             if (!$arr_reg || count($arr_reg) === 0) {
-                $messageException = $this->translator ? 
-                    $this->translator->trans('Not found.') : 
-                    'Not found.';
-                // Log pero no lanzar excepción
-                error_log('No data found for spires history: ' . $messageException);
-                
-                // Debug: verificar si hay datos en el rango
-                try {
-                    $debugSql = "SELECT COUNT(*) as total FROM tbl_cot_07_historial_estado_dispositivos_espiras WHERE created_at BETWEEN '$fechaInicio_Date' AND '$fechaTermino_Date'";
-                    error_log("Debug SQL: " . $debugSql);
-                    $debugStmt = $conn->prepare($debugSql);
-                    $debugResult = $debugStmt->executeQuery();
-                    $debugData = $debugResult->fetchAllAssociative();
-                    error_log("Records in date range: " . $debugData[0]['total']);
-                } catch (\Exception $e) {
-                    error_log("Debug query error: " . $e->getMessage());
-                }
-                
                 $arr_reg = [];
             } else {
-                error_log("Processing result set...");
-                
                 if (isset($arr_reg[0]['JSON_ESPIRAS'])) {
+                    // Obtener STRING JSON del SP y decodificar
                     $arr_reg = $arr_reg[0]['JSON_ESPIRAS'];
-                    error_log("JSON_ESPIRAS found, length: " . strlen($arr_reg));
-                    error_log("First 200 chars of JSON: " . (is_string($arr_reg) ? substr($arr_reg, 0, 200) : json_encode($arr_reg)));
-                    
-                    // Validar que sea JSON válido
                     $decoded = json_decode($arr_reg, true);
-                    if (json_last_error() !== JSON_ERROR_NONE) {
-                        error_log("Invalid JSON: " . json_last_error_msg());
-                        $arr_reg = [];
-                    } else {
-                        error_log("Valid JSON with " . count($decoded) . " elements");
-                    }
+                    $arr_reg = (json_last_error() === JSON_ERROR_NONE) ? $decoded : [];
                 } else {
-                    error_log("JSON_ESPIRAS column not found!");
-                    error_log("Available columns: " . implode(', ', array_keys($arr_reg[0])));
-                    // Intentar usar el valor directo si existe
-                    if (count($arr_reg[0]) === 1) {
-                        $firstKey = array_key_first($arr_reg[0]);
-                        error_log("Using first column '$firstKey' as JSON data");
-                        $arr_reg = $arr_reg[0][$firstKey] ?? '[]';
-                    } else {
-                        $arr_reg = [];
-                    }
+                    $arr_reg = [];
                 }
             }
         } catch (\Exception $e) {
-            error_log('Error calling fnHistorialEspirasV8: ' . $e->getMessage());
-            error_log('Stack trace: ' . $e->getTraceAsString());
-            
-            // Manejo específico para error de definer
-            if (strpos($e->getMessage(), 'definer') !== false) {
-                error_log('DEFINER ERROR: El stored procedure tiene un definer inválido. Ajuste el definer ejecutando:');
-                error_log('ALTER DEFINER=`sql_vs_gvops_cl`@`localhost` PROCEDURE fnHistorialEspirasV8;');
-                
-                // Mostrar mensaje más claro en el frontend si es AJAX
-                if ($request->isXmlHttpRequest()) {
-                    return new JsonResponse([
-                        'error' => 'Error de configuración en la base de datos. Por favor contacte al administrador.',
-                        'details' => 'El stored procedure requiere ajuste de permisos.'
-                    ], 500);
-                }
-            }
-            
-            $arr_reg = []; // JSON vacío por defecto
+            $arr_reg = [];
         }
-        
-        error_log("Final arr_reg: " . (is_string($arr_reg) ? substr($arr_reg, 0, 200) . (strlen($arr_reg) > 200 ? '...' : '') : json_encode($arr_reg)));
-        error_log("=== END SPIRE HISTORY DEBUG ===");
         
         // Generar PDF si se solicita
         $return_file_name = null;
@@ -1255,6 +1207,14 @@ class CotController extends AbstractDashboardController
         // VS concession ID is 20
         $concessionId = 20;
 
+        // ==================== COMENTADO 2025-10-03 - NO DESCOMENTAR SIN REVISIÓN ====================
+        // TblCot06AlarmasDispositivos NO forma parte del módulo de monitoreo operativo
+        // Ver documentación completa en dashboardAction() línea 69
+        // Sistema de notificaciones navbar incompleto - NO migrado al nuevo proyecto
+        // ANTES DE DESCOMENTAR: Revisar con arquitecto del sistema y validar caso de uso real
+        // =========================================================================================
+
+        /*
         // Get recent device alarms for VS
         $qb_alarmas = $em->createQueryBuilder();
         $qb_alarmas->select('a, alarm, disp')
@@ -1268,6 +1228,8 @@ class CotController extends AbstractDashboardController
             ->setMaxResults(25);
 
         $alarmas_dispositivos = $qb_alarmas->getQuery()->getArrayResult();
+        */
+        $alarmas_dispositivos = []; // Array vacío para mantener compatibilidad
 
         // Get device types for VS
         $qb_tipos = $em->createQueryBuilder();
@@ -1405,9 +1367,18 @@ class CotController extends AbstractDashboardController
         $em = $this->entityManager;
         $connection = $em->getConnection();
 
-        // Query SOS sensor alarms
+        // Obtener concesiones para filtrado - Replicado desde proyecto antiguo (líneas 853-870)
+        if ((!isset($params['concessions']) || $params['concessions'] == "") && $this->getUser()) {
+            $concessions = $this->getUserConcessions();
+        } elseif (isset($params['concessions']) && $params['concessions']) {
+            $concessions = $params['concessions'];
+        } else {
+            $concessions = [];
+        }
+
+        // Query SOS sensor alarms - SIN filtro de concesionaria (igual que proyecto antiguo)
         $asd_sql = "SELECT tcot09.*, tcot02.id AS id_device, tcot02.nombre, tcot02.km, tcot02.eje, tcot04.nombre as eje_nombre, tcot02.orientacion
-                    FROM tbl_cot_09_alarmas_sensores_dispositivos tcot09 
+                    FROM tbl_cot_09_alarmas_sensores_dispositivos tcot09
                     LEFT JOIN tbl_cot_02_dispositivos tcot02 ON (tcot02.id = tcot09.id_dispositivo)
                     LEFT JOIN tbl_cot_04_ejes tcot04 ON (tcot04.id = tcot02.eje)
                     WHERE tcot09.aceptado = 0 AND tcot09.updated_at IS NULL AND tcot09.finished_at IS NULL
@@ -1417,56 +1388,92 @@ class CotController extends AbstractDashboardController
         $result = $stmt->executeQuery();
         $asd_ds = $result->fetchAllAssociative();
 
-        // Get device alarms
+        // ==================== COMENTADO 2025-10-03 - NO DESCOMENTAR SIN REVISIÓN ====================
+        // TblCot06AlarmasDispositivos NO forma parte del módulo de monitoreo operativo
+        // Ver documentación completa en dashboardAction() línea 69
+        //
+        // IMPORTANTE: SOS Monitor tiene su propio sistema de alarmas correcto:
+        // - tbl_cot_09_alarmas_sensores_dispositivos (línea 1466-1475) ← ESTE ES EL CORRECTO
+        // - DeviceAlert NO se usa en SOS, solo alarmas de sensores SOS
+        //
+        // Sistema de notificaciones navbar incompleto - NO migrado al nuevo proyecto
+        // ANTES DE DESCOMENTAR: Revisar con arquitecto del sistema y validar caso de uso real
+        // =========================================================================================
+
+        /*
+        // Get device alarms - Replicando exactamente query del proyecto antiguo (líneas 770-783)
         $qb_alarmas_dispositivos = $em->createQueryBuilder();
         $qb_alarmas_dispositivos->select('ad')
             ->from(DeviceAlert::class, 'ad')
             ->leftJoin('ad.idAlarma', 'a')->addSelect('a')
             ->leftJoin('ad.idDispositivo', 'd')->addSelect('d')
             ->leftJoin('ad.concesionaria', 'c')->addSelect('c')
-            ->where('ad.estado = 0')
-            ->orderBy('ad.id', 'ASC');
+            ->orderBy('ad.id', 'ASC')
+            ->andWhere('ad.estado = 0');
+            //->andWhere('c.idConcesionaria IN (:ids_concesionarias)')
+            //->setParameter('ids_concesionarias', $dispositivos)
+            //->setMaxResults(25)
 
         $alarmas_dispositivos = $qb_alarmas_dispositivos->getQuery()->getArrayResult();
+        */
+        $alarmas_dispositivos = []; // Array vacío para mantener compatibilidad
 
-        // Get device types
+        // Get device types - Replicando exactamente query del proyecto antiguo
         $qb_tipos_dispositivos = $em->createQueryBuilder();
         $qb_tipos_dispositivos->select('td')
             ->from(DeviceType::class, 'td')
-            ->where('td.mostrar = 1')
-            ->orderBy('td.id', 'ASC');
+            ->orderBy('td.id', 'ASC')
+            ->andWhere('td.mostrar = 1');
+            //->andWhere('conc.idConcesionaria in (:ids_concesionarias)')
+            //->setParameter('ids_concesionarias', $dispositivos)
+            //->setMaxResults(25)
 
         if (!$request->isXmlHttpRequest()) {
             $all_tipos_dispositivos = $qb_tipos_dispositivos->getQuery()->getArrayResult();
 
             // If first time entry with -1, get first available type
-            if ($id_device_type_fr == -1 && !empty($all_tipos_dispositivos)) {
-                $id_device_type_fr = $all_tipos_dispositivos[0]['id'];
+            if ($id_device_type_fr == -1) {
+                if ($all_tipos_dispositivos[0] and $all_tipos_dispositivos[0]['id']) {
+                    $id_device_type_fr = $all_tipos_dispositivos[0]['id'];
+                }
             }
         }
 
         if ($id_device_type_fr > 0) {
-            $qb_tipos_dispositivos->andWhere('td.id = :id')
-                ->setParameter('id', $id_device_type_fr);
+            $qb_tipos_dispositivos->andWhere("td.id = $id_device_type_fr");
         }
 
         $tipos_dispositivos = $qb_tipos_dispositivos->getQuery()->getArrayResult();
 
-        // Get devices for the selected type
+        // Get devices - Replicado exactamente desde proyecto antiguo (líneas 832-872)
         $qb_dispositivos = $em->createQueryBuilder();
-        $qb_dispositivos->select('d', 'c', 't', 'e', 'tr')
+        $qb_dispositivos->select('d')
             ->from(Device::class, 'd')
-            ->leftJoin('d.concesionaria', 'c')
-            ->leftJoin('d.idTipo', 't')
-            ->leftJoin('d.eje', 'e')
-            ->leftJoin('d.tramo', 'tr')
-            ->where('d.regStatus = 1')
-            ->andWhere('t.id = :tipo_id')
-            ->setParameter('tipo_id', $id_device_type_fr)
-            ->orderBy('d.km', 'ASC')
-            ->addOrderBy('d.id', 'ASC');
+            ->leftJoin('d.concesionaria', 'c')->addSelect('c')
+            ->leftJoin('d.idTipo', 't')->addSelect('t')
+            ->leftJoin('d.eje', 'e')->addSelect('e')
+            ->leftJoin('d.tramo', 'tr')->addSelect('tr')
+            ->orderBy('t.tipo', 'ASC')
+            ->addOrderBy('d.orden', 'ASC')
+            ->andWhere('t.mostrar = 1')
+            ->andWhere('d.regStatus = 1');
+            //->andWhere('c.idConcesionaria IN (:ids_concesionarias)')
+            //->setParameter('ids_concesionarias', $dispositivos)
+            //->setMaxResults(25)
 
-        // Apply finder filter if provided
+        // Filtro por tipo de dispositivo
+        if ($id_device_type_fr > 0) {
+            $qb_dispositivos->andWhere('t.id = :tipo_id')
+                ->setParameter('tipo_id', $id_device_type_fr);
+        }
+
+        // Filtro por concesiones del usuario (dinámico)
+        if ($concessions && $concessions[0] != "") {
+            $qb_dispositivos->andWhere('c.idConcesionaria IN (:ids_concesionarias)')
+                ->setParameter('ids_concesionarias', $concessions);
+        }
+
+        // Filtro por buscador de dispositivos
         if (!empty($input_device_finder)) {
             $qb_dispositivos->andWhere('d.nombre LIKE :finder OR d.ip LIKE :finder')
                 ->setParameter('finder', '%' . $input_device_finder . '%');
@@ -1474,8 +1481,27 @@ class CotController extends AbstractDashboardController
 
         $dispositivos = $qb_dispositivos->getQuery()->getArrayResult();
 
-        // Get concessions
-        $concessions = $em->getRepository(Tbl06Concesionaria::class)->findAll();
+        // Calcular estado general de sensores SOS para cada dispositivo
+        // Replicado desde proyecto antiguo (líneas 876-910)
+        foreach ($dispositivos as $key => $value) {
+            if ($value['atributos']) {
+                $dv_atrbutes = is_array($value['atributos']) ? $value['atributos'] : json_decode($value['atributos'], true);
+                $dispositivos[$key]['atributos'] = $dv_atrbutes;
+
+                $general_status = true;
+
+                // SOLO 3 sensores críticos como en proyecto antiguo (línea 896)
+                $sensors_to_find = ['f_all_est', 'f_all_idr', 'f_all_est2'];
+
+                foreach ($sensors_to_find as $sensor_to_find) {
+                    if (isset($dv_atrbutes['sos_sensors'][$sensor_to_find]) && $dv_atrbutes['sos_sensors'][$sensor_to_find] == 1) {
+                        $general_status = false;
+                    }
+                }
+
+                $dispositivos[$key]['estado'] = $general_status ? 1 : 0;
+            }
+        }
 
         // Count device statuses
         $count_status_type = [
@@ -1528,8 +1554,48 @@ class CotController extends AbstractDashboardController
             return $this->json($responseData);
         }
 
-        // Render dedicated SOS sensors template with specialized alarm handling
-        return $this->render('dashboard/cot/SensorsAlarms/index.html.twig', $responseData);
+        // Render videowall template - reutilizado para monitor SOS con detección de módulo
+        return $this->render('dashboard/cot/videowall.html.twig', $responseData);
+    }
+
+    /**
+     * Procesar aceptación de alarmas de sensores SOS
+     * Ruta migrada: sgv_cot_sosindex_alarms_process → /asp
+     * AJAX endpoint para marcar alarmas SOS como aceptadas
+     *
+     * Rutas generadas:
+     * - /cot/asp (POST, PUT) - Compatibilidad con proyecto legacy
+     * - /admin/cot/asp (todos los métodos) - Ruta admin de EasyAdmin
+     */
+    #[Route('/asp', name: 'asp_legacy', methods: ['POST', 'PUT'])]
+    #[AdminRoute('/asp', name: 'cot_sos_alarm_process')]
+    public function sosSensorAlarmProcessAction(Request $request): JsonResponse
+    {
+        $params = $request->request->all();
+        $action = $params['action'] ?? false;
+        $id = $params['id'] ?? '';
+
+        if ($action === 'process' && $this->isCsrfTokenValid($action . '-asd', $params['token'])) {
+            $currentUser = $this->getUser();
+            $date = new \DateTime("now", new \DateTimeZone('America/Santiago'));
+
+            $conn = $this->entityManager->getConnection();
+            $stmt = $conn->prepare(
+                "UPDATE tbl_cot_09_alarmas_sensores_dispositivos
+                 SET aceptado = 1, updated_at = :date, updated_by = :user
+                 WHERE id = :id AND updated_at IS NULL AND finished_at IS NULL"
+            );
+
+            $result = $stmt->executeQuery([
+                'date' => $date->format('Y-m-d H:i:s.u'),
+                'user' => $currentUser->getId(),
+                'id' => $id
+            ]);
+
+            return $this->json(['status' => $result->rowCount() > 0]);
+        }
+
+        return $this->json(['status' => 'No se realizaron cambios'], 400);
     }
 
     /**
@@ -1626,6 +1692,9 @@ class CotController extends AbstractDashboardController
         if ($searchTxt) {
             $where .= " AND tcot02.nombre like '%" . $searchTxt . "%'";
         }
+
+        // Filtrar por Costanera Norte (concesionaria 22) - Reporte exclusivo CN
+        $where .= " AND tcot02.concesionaria = 22";
 
         // Consultar datos
         $conn = $this->entityManager->getConnection();

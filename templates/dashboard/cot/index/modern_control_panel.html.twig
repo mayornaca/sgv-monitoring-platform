@@ -15,13 +15,13 @@
 
     <!-- Collapsible Content - Collapsed by default on mobile, always visible on desktop -->
     <div class="collapse d-md-block show" id="controlPanelContent">
-        <div class="bg-light border-bottom shadow-sm">
+        <div class="bg-body-tertiary border-bottom">
             <div class="container-fluid px-2 py-1">
                 <!-- Main Controls Row - Context Aware -->
                 <div class="row g-2 align-items-center">
 
             {# Controls for Monitor View #}
-            {% if current_route in ['cot_index', 'cot_monitor', 'admin_cot_monitor', 'app_dashboard_cot_index', 'cot_galibos'] %}
+            {% if current_route in ['cot_index', 'cot_monitor', 'admin_cot_monitor', 'app_dashboard_cot_index', 'cot_galibos', 'cot_sosindex'] %}
             <!-- Device Type Filter - Hidden in Galibos mode -->
             {% if not (app_cot_galibos is defined and app_cot_galibos) %}
             <div class="col-2 mb-2 mb-md-0">
@@ -34,6 +34,22 @@
                         </option>
                     {% endfor %}
                 </select>
+            </div>
+            {% elseif current_route == 'cot_sosindex' %}
+            <!-- ASS Mode Indicator and Controls -->
+            <div class="col-12 col-md-4 mb-2 mb-md-0">
+                <div class="alert alert-warning mb-0 py-2 px-3">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Monitor ASS:</strong> Alarmas de Sensores SOS - Tipo fijo: Postes SOS (ID:1)
+                </div>
+            </div>
+
+            <!-- Botón Ir al Reporte SOS -->
+            <div class="col-12 col-md-2 mb-2 mb-md-0">
+                <label class="form-label fw-semibold d-none d-md-block">&nbsp;</label>
+                <a href="{{ path('cot_dashboard_cot_sos_report_status') }}" class="btn btn-outline-primary btn-sm w-100">
+                    <i class="fas fa-clipboard-list"></i> Ir al Reporte
+                </a>
             </div>
             {% else %}
             <!-- Galibos Mode Indicator -->
@@ -158,13 +174,13 @@
 
         <!-- Advanced Options Panel (Collapsible) -->
         <div class="collapse mt-3" id="advanced-options">
-            <div class="card border-0 bg-white">
+            <div class="card">
                 <div class="card-body">
                     <div class="row g-3">
                         <!-- Update Settings -->
                         <div class="col-lg-3 col-md-6">
                             <h6 class="card-subtitle mb-2 text-muted">
-                                <i class="fas fa-sync-alt"></i> Actualización
+                                Actualización
                             </h6>
                             <div class="mb-2">
                                 <label for="update-interval" class="form-label small">
@@ -211,7 +227,7 @@
                         <!-- Export Settings -->
                         <div class="col-lg-3 col-md-6">
                             <h6 class="card-subtitle mb-2 text-muted">
-                                <i class="fas fa-download"></i> Exportar
+                                Exportar
                             </h6>
                             <div class="mb-2">
                                 <div class="form-check">
@@ -237,20 +253,20 @@
                         <!-- Quick Actions -->
                         <div class="col-lg-3 col-md-6">
                             <h6 class="card-subtitle mb-2 text-muted">
-                                <i class="fas fa-bolt"></i> Acciones Rápidas
+                                Acciones Rápidas
                             </h6>
                             <div class="d-grid gap-1">
-                                <button class="btn btn-outline-info btn-sm" id="refresh-now">
-                                    <i class="fas fa-refresh"></i> Actualizar Ahora
+                                <button class="btn btn-outline-secondary btn-sm" id="refresh-now">
+                                    <i class="fas fa-sync-alt"></i> Actualizar Ahora
                                 </button>
-                                <button class="btn btn-outline-warning btn-sm" id="reset-filters">
-                                    <i class="fas fa-filter"></i> Limpiar Filtros
+                                <button class="btn btn-outline-secondary btn-sm" id="reset-filters">
+                                    <i class="fas fa-times"></i> Limpiar Filtros
                                 </button>
                                 <button class="btn btn-outline-secondary btn-sm" id="fullscreen-toggle">
                                     <i class="fas fa-expand"></i> Pantalla Completa
                                 </button>
-                                <button class="btn btn-outline-primary btn-sm" id="copy-videowall-url">
-                                    <i class="fas fa-link"></i> Copiar URL Videowall
+                                <button class="btn btn-outline-secondary btn-sm" id="copy-videowall-url">
+                                    <i class="fas fa-link"></i> Copiar URL
                                 </button>
                             </div>
                         </div>
@@ -986,12 +1002,10 @@ class ModernControlPanel {
 </script>
 
 <style>
-/* Modern Control Panel Styles */
+/* Modern Control Panel Styles - EasyAdmin compliant */
 #modern-control-panel {
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 0.75rem 1rem;
+    background-color: var(--body-bg);
 }
 
 /* Choices.js customization for EasyAdmin + Bootstrap 5 - Fully Responsive */

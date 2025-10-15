@@ -1,9 +1,20 @@
 {% extends '@EasyAdmin/page/content.html.twig' %}
-
 {% block title %}Resumen del monitor de dispositivos{% endblock %}
 
-{% block page_title %}
-    <i class="fas fa-chart-pie"></i> Resumen del monitor de dispositivos
+{# Sobrescribir content_title para eliminar el H1 que ocupa espacio #}
+{% block content_title %}{% endblock %}
+
+{# Agregar título en el toolbar superior (content_top_header) #}
+{% block content_top_header %}
+    <div class="d-flex align-items-center gap-2">
+        <h2 class="m-0" style="font-size: 1.25rem; font-weight: 500;">
+            <i class="fas fa-chart-pie" style="color: var(--color-primary, #5368d5);"></i>
+            Resumen del monitor de dispositivos
+        </h2>
+    </div>
+
+    {# Keep the original search, user menu, and settings #}
+    {{ parent() }}
 {% endblock %}
 
 {% block head_stylesheets %}
@@ -38,14 +49,7 @@
         }
 
         .stat-card-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 15px;
-            font-size: 20px;
+            display: none !important;
         }
 
         .stat-card-title {
@@ -105,48 +109,12 @@
             font-weight: 600;
         }
 
-        .update-timer {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: white;
-            border-radius: 30px;
-            padding: 10px 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            z-index: 100;
-        }
-
-        .timer-badge {
-            background: #28a745;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 12px;
-        }
-
         /* Color schemes for different device types */
         .icon-bg-primary { background: linear-gradient(135deg, #667eea, #764ba2); }
         .icon-bg-success { background: linear-gradient(135deg, #56ab2f, #a8e063); }
         .icon-bg-warning { background: linear-gradient(135deg, #f2994a, #f2c94c); }
         .icon-bg-danger { background: linear-gradient(135deg, #eb3349, #f45c43); }
         .icon-bg-info { background: linear-gradient(135deg, #4facfe, #00f2fe); }
-
-        /* Dashboard simplification - Hide EasyAdmin sidebar and elements */
-        .ea-sidebar, .main-sidebar, #sidebar {
-            display: none !important;
-        }
-
-        .ea-content-wrapper, .content-wrapper {
-            margin-left: 0 !important;
-            width: 100% !important;
-        }
-
-        .ea-content-header, .content-header {
-            display: none !important;
-        }
 
         /* Ensure full width for container */
         .container-fluid {
@@ -160,43 +128,12 @@
             .dashboard-grid {
                 grid-template-columns: 1fr;
             }
-
-            .update-timer {
-                bottom: 10px;
-                right: 10px;
-                padding: 8px 15px;
-            }
         }
     </style>
 {% endblock %}
 
 {% block main %}
-    {# Include context-aware control panel #}
-    {% include 'dashboard/cot/index/modern_control_panel.html.twig' %}
-
     <div class="container-fluid mt-3">
-        {# Update Timer Control #}
-        <div class="row mb-3">
-            <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
-                        <i class="fas fa-tachometer-alt"></i> Resumen del Estado de Dispositivos
-                    </h5>
-                    <div class="d-flex align-items-center gap-3">
-                        <label class="mb-0 me-2">
-                            <i class="fas fa-sync-alt"></i> Actualización:
-                        </label>
-                        <input type="range"
-                               id="timer-range-ajax-update"
-                               class="form-range"
-                               style="width: 150px;"
-                               min="10" max="600" value="60" step="10">
-                        <span id="timer-display" class="badge bg-secondary">60s</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         {# Statistics Cards Grid #}
         <div class="dashboard-grid" id="resumen">
             {% for item in data_table %}
@@ -235,8 +172,28 @@
             {% endfor %}
         </div>
 
-        {# Active Alarms Section #}
-        {% if alarmas_dispositivos|length > 0 %}
+        {# ==================== COMENTADO 2025-10-03 - NO DESCOMENTAR SIN REVISIÓN ====================
+
+        TblCot06AlarmasDispositivos (alarmas_dispositivos) NO forma parte del dashboard operativo
+
+        CONTEXTO:
+        - Sistema diseñado para notificaciones de navbar que NUNCA se completó
+        - En proyecto antiguo NO se mostraba en dashboard.html.twig ni vistas de monitoreo
+        - Solo existía en devices_alerts_list.html.twig (widget dropdown navbar)
+
+        SISTEMAS DE ALARMAS CORRECTOS POR MÓDULO:
+        - SOS Monitor: tbl_cot_09_alarmas_sensores_dispositivos (ya implementado)
+        - Cada módulo tiene su propio sistema de alarmas específico
+
+        ANTES DE DESCOMENTAR:
+        - Revisar con arquitecto del sistema
+        - Validar caso de uso real
+        - Ver CotController.php línea 69 para documentación completa
+
+        ========================================================================================= #}
+
+        {# Active Alarms Section - COMENTADO 2025-10-03 #}
+        {# {% if alarmas_dispositivos|length > 0 %}
         <div class="alarms-section">
             <div class="alarm-table">
                 <div class="alarm-header">
@@ -290,15 +247,7 @@
                 No hay alarmas activas en este momento
             </div>
         </div>
-        {% endif %}
-    </div>
-
-    {# Update Timer Badge #}
-    <div class="update-timer">
-        <span class="timer-badge">
-            <i class="fas fa-circle"></i> Actualización automática
-        </span>
-        <span id="next-update">60s</span>
+        {% endif %} #}
     </div>
 {% endblock %}
 
@@ -308,6 +257,38 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
     <script>
+        // Initialize full-width dashboard layout and timer
+        document.addEventListener('DOMContentLoaded', function() {
+            // Trigger sidebar collapse using EasyAdmin's native handler
+            const sidebarResizerHandler = document.getElementById('sidebar-resizer-handler');
+            if (sidebarResizerHandler) {
+                sidebarResizerHandler.click();
+            }
+
+            // Hide top navbar for full-screen experience
+            const headerNavbar = document.querySelector('.header-navbar');
+            if (headerNavbar) {
+                headerNavbar.style.display = 'none';
+            }
+
+            // Hide content-top header
+            const contentTop = document.querySelector('.content-top');
+            if (contentTop) {
+                contentTop.style.display = 'none';
+            }
+
+            // Ensure content wrapper takes full width
+            const contentWrapper = document.querySelector('.content-wrapper');
+            if (contentWrapper) {
+                contentWrapper.style.marginLeft = '0';
+                contentWrapper.style.width = '100%';
+                contentWrapper.style.maxWidth = '100%';
+            }
+
+            // Start auto-update timer
+            startDashboardTimer();
+        });
+
         // Chart.js configuration for device status
         const chartColors = {
             active: 'rgba(40, 167, 69, 0.8)',     // Green
@@ -404,14 +385,34 @@
             })
             .then(response => response.json())
             .then(data => {
-                // Update charts and data
-                console.log('Dashboard data updated');
-                // Here you would update the charts with new data
-                // For now, we'll just reload the section
-                const resumen = document.getElementById('resumen');
-                if (resumen && data.data_table) {
-                    // In production, update charts without full reload
-                    location.reload();
+                if (data && data.data_table) {
+                    console.log('Dashboard data updated:', data.data_table.length + ' devices');
+
+                    // Update each card with new data
+                    data.data_table.forEach((item, index) => {
+                        // Update numeric values
+                        const activosEl = document.querySelector(`#resumen .stat-card:nth-child(${index + 1}) .stat-value.text-success`);
+                        const inactivosEl = document.querySelector(`#resumen .stat-card:nth-child(${index + 1}) .stat-value.text-danger`);
+                        const totalEl = document.querySelector(`#resumen .stat-card:nth-child(${index + 1}) .stat-value.text-primary`);
+                        const activosBadge = document.querySelector(`#resumen .stat-card:nth-child(${index + 1}) .badge.bg-success`);
+                        const inactivosBadge = document.querySelector(`#resumen .stat-card:nth-child(${index + 1}) .badge.bg-danger`);
+
+                        if (activosEl) activosEl.textContent = item.activos;
+                        if (inactivosEl) inactivosEl.textContent = item.inactivos;
+                        if (totalEl) totalEl.textContent = item.total;
+                        if (activosBadge) activosBadge.textContent = parseFloat(item.por_Activos).toFixed(1) + '%';
+                        if (inactivosBadge) inactivosBadge.textContent = parseFloat(item.por_inactivos).toFixed(1) + '%';
+
+                        // Update chart if exists
+                        const chartCanvas = document.getElementById('chart_' + item.id);
+                        if (chartCanvas && window.Chart) {
+                            const chart = Chart.getChart(chartCanvas);
+                            if (chart) {
+                                chart.data.datasets[0].data = [item.activos, item.inactivos];
+                                chart.update('none'); // Update without animation for performance
+                            }
+                        }
+                    });
                 }
             })
             .catch(error => {
@@ -434,11 +435,6 @@
             // Implementation for viewing alarm details
             console.log('View alarm:', alarmId);
         }
-
-        // Start timer on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            startDashboardTimer();
-        });
 
         // Visibility API to pause updates when tab is not visible
         document.addEventListener('visibilitychange', function() {

@@ -1,6 +1,6 @@
 {% extends '@EasyAdmin/page/content.html.twig' %}
 
-{% block page_title %}Tiempos de respuesta por incidente{% endblock %}
+{% block title %}Tiempos de respuesta por incidente{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
@@ -48,7 +48,7 @@
                             </div>
 
                             <div class="col-md-3">
-                                <label for="fechaTermino" class="form-label required">Fecha de término</label>
+                                <label for="fechaTermino" class="form-label required">Fecha de tï¿½rmino</label>
                                 <div class="input-group">
                                     <input type="text" id="fechaTermino" name="fechaTermino" class="form-control required"
                                            placeholder="DD-MM-YYYY HH:mm:ss" value="{{ fechaTermino }}">
@@ -87,10 +87,10 @@
                             <th>Incidente</th>
                             <th>Tipo</th>
                             <th>Fecha/Hora</th>
-                            <th>Ubicación</th>
-                            <th>Tiempo Detección</th>
+                            <th>Ubicaciï¿½n</th>
+                            <th>Tiempo Detecciï¿½n</th>
                             <th>Tiempo Respuesta</th>
-                            <th>Tiempo Resolución</th>
+                            <th>Tiempo Resoluciï¿½n</th>
                             <th>Total</th>
                             <th>Estado</th>
                         </tr>
@@ -120,7 +120,7 @@
             <div class="alert alert-info text-center">
                 <i class="fas fa-info-circle fa-2x mb-3"></i>
                 <h5>No se encontraron datos</h5>
-                <p>Ajuste los filtros de búsqueda e intente nuevamente</p>
+                <p>Ajuste los filtros de bï¿½squeda e intente nuevamente</p>
             </div>
         {% endif %}
     </div>

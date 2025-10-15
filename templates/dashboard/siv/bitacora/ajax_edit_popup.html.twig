@@ -1,0 +1,119 @@
+<style>
+    .well {
+        min-height: 9px;
+        padding: 4px;
+    }
+    .file_upload_dialog{
+        min-width: 800px;
+        margin: 1% auto auto;
+    }
+    .vertical_form_overflow{
+        overflow: auto;
+        max-height: 722px;
+    }
+    .vertical_form{
+        width:37%;
+        margin:auto;
+        padding: 0px 5px 5px 5px;
+        min-width: 533px;
+    }
+    @media(max-width:767px){
+        .vertical_form{
+            min-width: 360px;
+        }
+        .file_upload_dialog{
+            min-width: 360px;
+        }
+        .vertical_form_overflow{
+            max-height: 500px;
+        }
+    }
+
+    .max-width-228{
+        max-width: 228px;
+    }
+
+    .mCSB_outside + .mCS-minimal.mCSB_scrollTools_vertical, .mCSB_outside + .mCS-minimal-dark.mCSB_scrollTools_vertical {
+        margin: 0px -11px;
+    }
+
+    .mCS-minimal-dark.mCSB_scrollTools .mCSB_dragger .mCSB_dragger_bar{
+        background-color: #000;
+        background-color: rgba(0, 0, 0, 0.42);
+        filter: "alpha(opacity=20)";
+        -ms-filter: "alpha(opacity=20)";
+    }
+
+    .mCS-minimal-dark.mCSB_scrollTools .mCSB_dragger:active .mCSB_dragger_bar,
+    .mCS-minimal-dark.mCSB_scrollTools .mCSB_dragger.mCSB_dragger_onDrag .mCSB_dragger_bar{
+        background-color: #000; background-color: rgba(0,0,0,0.9);
+        filter: "alpha(opacity=50)"; -ms-filter: "alpha(opacity=50)";
+    }
+</style>
+
+<!-- Bootstrap 5 Modal para Crear/Editar Registro de Bitácora -->
+<div class="modal fade" id="ajax_edit_popup" tabindex="-1" aria-labelledby="modalBitacoraTitle" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalBitacoraTitle">Bitácora SCADA</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="ajax_edit_popup_container_render">
+                <!-- Contenido cargado via AJAX -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="ajax_frm_popup" class="bootbox modal fade in windows-modal" tabindex="-1" role="dialog" style="display: none; padding-right: 17px;">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="bootbox-close-button close" data-dismiss="modal" aria-hidden="true" onclick="closeAjaxFrmPopup();">×</button>
+                <h4 id="ajax_frm_popup_title" class="modal-title"></h4>
+            </div>
+            <div class="modal-body">
+                <div class="bootbox-body" style="display: flex;">
+                    <div id="ajax_frm_add" class="form-group col-sm-12 stop-propagation"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    /**
+     * Cerrar modal de edición/creación usando Bootstrap 5 API
+     */
+    function closeAjaxFrmEditPopup() {
+        var modalElement = document.getElementById('ajax_edit_popup');
+        if (modalElement) {
+            var bsModal = bootstrap.Modal.getInstance(modalElement);
+            if (bsModal) {
+                bsModal.hide();
+            }
+        }
+    }
+
+    function closeAjaxFrmPopup() {
+        var modalElement = document.getElementById('ajax_frm_popup');
+        if (modalElement) {
+            var bsModal = bootstrap.Modal.getInstance(modalElement);
+            if (bsModal) {
+                bsModal.hide();
+            }
+        }
+    }
+
+    function showAjaxFrmPopup(title) {
+        $("#ajax_frm_popup_title").text(title);
+        var modalElement = document.getElementById('ajax_frm_popup');
+        var bsModal = new bootstrap.Modal(modalElement);
+        bsModal.show();
+
+        if (typeof $.fn.selectpicker !== 'undefined') {
+            $('.selectpicker').selectpicker('render');
+        }
+    }
+</script>

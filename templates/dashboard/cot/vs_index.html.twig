@@ -75,7 +75,7 @@
 {% endblock %}
 
 {% block main %}
-    <!-- Estadísticas generales -->
+    <!-- Estadï¿½sticas generales -->
     <div class="row">
         {% for tipo in tipos_dispositivos %}
             {% set tipo_id = tipo.id %}
@@ -99,7 +99,7 @@
         {% endfor %}
     </div>
 
-    <!-- Sección de filtros -->
+    <!-- Secciï¿½n de filtros -->
     <div class="filter-section">
         <h5><i class="fas fa-filter"></i> Filtros</h5>
         <form method="get" action="{{ path('admin_vs_index') }}" class="row">
@@ -148,7 +148,7 @@
             <h5 class="card-title">
                 <i class="fas fa-server"></i> Dispositivos
                 <span class="float-end update-time">
-                    <i class="fas fa-clock"></i> Última actualización SOS: {{ StentofonLastUpdateDateTime }}
+                    <i class="fas fa-clock"></i> ï¿½ltima actualizaciï¿½n SOS: {{ StentofonLastUpdateDateTime }}
                     | IP: {{ SwIpDevicesMonitorLastUpdateDateTime }}
                 </span>
             </h5>
@@ -186,8 +186,28 @@
         </div>
     </div>
 
-    <!-- Alarmas recientes -->
-    {% if alarmas_dispositivos|length > 0 %}
+    {# ==================== COMENTADO 2025-10-03 - NO DESCOMENTAR SIN REVISIÃ“N ====================
+
+    TblCot06AlarmasDispositivos (alarmas_dispositivos) NO forma parte del mÃ³dulo de monitoreo VS
+
+    CONTEXTO:
+    - Sistema diseÃ±ado para notificaciones de navbar que NUNCA se completÃ³
+    - En proyecto antiguo NO se mostraba en vs_index.html.twig ni vistas de monitoreo
+    - Solo existÃ­a en devices_alerts_list.html.twig (widget dropdown navbar)
+
+    SISTEMAS DE ALARMAS CORRECTOS:
+    - Cada mÃ³dulo (VS, CN, SOS) tiene sus propias alarmas especÃ­ficas
+    - VS Monitor debe tener su propio sistema de alarmas si es necesario
+
+    ANTES DE DESCOMENTAR:
+    - Revisar con arquitecto del sistema
+    - Validar caso de uso real
+    - Ver CotController.php lÃ­nea 69 para documentaciÃ³n completa
+
+    ========================================================================================= #}
+
+    {# Alarmas recientes - COMENTADO 2025-10-03 #}
+    {# {% if alarmas_dispositivos|length > 0 %}
     <div class="card mt-3">
         <div class="card-header">
             <h5 class="card-title">
@@ -198,7 +218,7 @@
             {% for alarma in alarmas_dispositivos|slice(0, 10) %}
                 <div class="alarm-item">
                     <strong>{{ alarma.idDispositivo.nombre ?? 'Dispositivo' }}</strong>
-                    - {{ alarma.idAlarma.descripcion ?? 'Sin descripción' }}
+                    - {{ alarma.idAlarma.descripcion ?? 'Sin descripciï¿½n' }}
                     <span class="float-end update-time">
                         {{ alarma.fechaActivacion|date('d/m/Y H:i:s') }}
                     </span>
@@ -206,9 +226,9 @@
             {% endfor %}
         </div>
     </div>
-    {% endif %}
+    {% endif %} #}
 
-    <!-- Opciones de visualización -->
+    <!-- Opciones de visualizaciï¿½n -->
     <div class="mt-3">
         <a href="{{ path('admin_vs_index', {'videowall': 'true'}) }}" class="btn btn-info">
             <i class="fas fa-tv"></i> Modo VideoWall
@@ -222,7 +242,7 @@
 {% block body_javascript %}
     {{ parent() }}
     <script>
-        // Función para actualizar el estado de dispositivos vía AJAX
+        // Funciï¿½n para actualizar el estado de dispositivos vï¿½a AJAX
         function updateDeviceStatus() {
             fetch('{{ path('admin_vs_index') }}', {
                 method: 'GET',
@@ -233,7 +253,7 @@
             .then(response => response.json())
             .then(data => {
                 console.log('Dispositivos actualizados:', data);
-                // Aquí podrías actualizar la UI sin recargar la página
+                // Aquï¿½ podrï¿½as actualizar la UI sin recargar la pï¿½gina
                 location.reload(); // Por ahora, simplemente recargamos
             })
             .catch(error => {
@@ -241,7 +261,7 @@
             });
         }
 
-        // Auto-actualización cada 30 segundos
+        // Auto-actualizaciï¿½n cada 30 segundos
         {% if real_mode %}
         setInterval(function() {
             updateDeviceStatus();

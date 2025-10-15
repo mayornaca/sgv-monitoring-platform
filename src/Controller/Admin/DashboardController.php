@@ -5,7 +5,9 @@ namespace App\Controller\Admin;
 use App\Entity\User;
 use App\Entity\Device;
 use App\Entity\DeviceType;
-use App\Entity\DeviceAlert;
+// COMENTADO 2025-10-03: DeviceAlert no se usa en este controlador
+// Ver CotController.php línea 69 para documentación completa sobre por qué se comentó
+// use App\Entity\DeviceAlert;
 use App\Entity\Alert;
 use App\Entity\AlertRule;
 use App\Entity\AuditLog;
@@ -16,7 +18,6 @@ use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
 use EasyCorp\Bundle\EasyAdminBundle\Config\UserMenu;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
-use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -27,10 +28,9 @@ class DashboardController extends AbstractDashboardController
 {
     public function index(): Response
     {
-        // Por ahora redirigir al CRUD de usuarios
-        // TODO: Crear un dashboard personalizado con estadísticas cuando sea necesario
-        $adminUrlGenerator = $this->container->get(AdminUrlGenerator::class);
-        return $this->redirect($adminUrlGenerator->setController(UserCrudController::class)->generateUrl());
+        // Renderizar dashboard principal en blanco
+        // En el futuro se pueden agregar estadísticas, widgets o KPIs aquí
+        return $this->render('admin/dashboard.html.twig');
     }
 
     public function configureDashboard(): Dashboard
@@ -38,7 +38,6 @@ class DashboardController extends AbstractDashboardController
         return Dashboard::new()
             ->setTitle('<img src="/assets/images/logo.png" style="height: 35px;">')
             ->setFaviconPath('favicon.ico')
-            ->setTranslationDomain('admin')
             ->renderContentMaximized();
     }
 
@@ -48,9 +47,6 @@ class DashboardController extends AbstractDashboardController
             ->setName($user->getUserIdentifier())
             ->displayUserAvatar(true)
             ->addMenuItems([
-                MenuItem::section('SGV Monitor'),
-                MenuItem::linkToRoute('Panel COT', 'fas fa-tachometer-alt', 'admin_cot_monitor', ['id' => 0]),
-                MenuItem::section(),
                 MenuItem::linkToRoute('Mi Perfil', 'fas fa-user', 'app_profile'),
             ]);
     }
@@ -58,39 +54,35 @@ class DashboardController extends AbstractDashboardController
     public function configureMenuItems(): iterable
     {
         yield MenuItem::linkToDashboard('Dashboard', 'fas fa-tachometer-alt');
-        
-        // Monitor de dispositivos
-        yield MenuItem::section('Monitor de dispositivos');
-        
-        // CN (Costanera Norte)
-        yield MenuItem::subMenu('CN', 'fas fa-road')->setSubItems([
-            MenuItem::linkToRoute('Resumen', 'fas fa-pie-chart', 'cot_dashboard'),
-            MenuItem::linkToRoute('Videowall Dispositivos', 'fas fa-th-large', 'admin_cot_monitor', [
-                'id' => 0,
-                'videowall' => 'true',
-                'device_status' => 'device_unactive',
-                'contract_ui' => 'true',
-                'masonry' => 'true',
-                'grid_items_width' => '2',
-                'fixed' => 'true',
-                'input_device_finder' => ''
-            ]),
-            MenuItem::linkToRoute('Lista Dispositivos CN', 'fas fa-list', 'admin_cot_monitor', [
-                'id' => 0,
-                'videowall' => 'false',
-                'device_status' => 'all',
-                'contract_ui' => 'true',
-                'masonry' => 'true',
-                'grid_items_width' => '2',
-                'input_device_finder' => ''
-            ]),
-            MenuItem::linkToRoute('Gálibos', 'fas fa-arrows-v', 'admin_cot_galibos'),
-            MenuItem::linkToRoute('Monitor sensores SOS', 'fas fa-exclamation-circle', 'admin_cot_sosindex', ['id' => 1]),
-            MenuItem::linkToRoute('Reporte sensores SOS', 'fas fa-file-alt', 'cot_sos_report_status'),
-            MenuItem::linkToRoute('Red', 'fas fa-network-wired', 'admin_cot_network'),
-            MenuItem::linkToRoute('Monitor Espiras CN', 'fas fa-circle-notch', 'admin_cot_monitor', ['id' => 4]),
-            MenuItem::linkToRoute('Historial Espiras CN', 'fas fa-history', 'admin_spire_history'),
+
+        // Monitor de dispositivos - CN (Costanera Norte)
+        yield MenuItem::section('CN - Costanera Norte');
+        yield MenuItem::linkToRoute('Resumen CN', 'fas fa-pie-chart', 'cot_dashboard');
+        yield MenuItem::linkToRoute('Videowall Dispositivos', 'fas fa-th-large', 'admin_cot_monitor', [
+            'id' => 0,
+            'videowall' => 'true',
+            'device_status' => 'device_unactive',
+            'contract_ui' => 'true',
+            'masonry' => 'true',
+            'grid_items_width' => '2',
+            'fixed' => 'true',
+            'input_device_finder' => ''
         ]);
+        yield MenuItem::linkToRoute('Lista Dispositivos CN', 'fas fa-list', 'admin_cot_monitor', [
+            'id' => 0,
+            'videowall' => 'false',
+            'device_status' => 'all',
+            'contract_ui' => 'true',
+            'masonry' => 'true',
+            'grid_items_width' => '2',
+            'input_device_finder' => ''
+        ]);
+        yield MenuItem::linkToRoute('Gálibos', 'fas fa-arrows-v', 'admin_cot_galibos');
+        yield MenuItem::linkToRoute('Monitor sensores SOS', 'fas fa-exclamation-circle', 'admin_cot_sosindex', ['id' => 1]);
+        yield MenuItem::linkToRoute('Reporte sensores SOS', 'fas fa-file-alt', 'admin_cot_sos_report_status');
+        yield MenuItem::linkToRoute('Red', 'fas fa-network-wired', 'admin_cot_network');
+        yield MenuItem::linkToRoute('Monitor Espiras CN', 'fas fa-circle-notch', 'admin_cot_monitor', ['id' => 4]);
+        yield MenuItem::linkToRoute('Historial Espiras CN', 'fas fa-history', 'admin_spire_history');
         
         // VS (Vespucio Sur)
         yield MenuItem::subMenu('VS', 'fas fa-highway')->setSubItems([
@@ -122,7 +114,7 @@ class DashboardController extends AbstractDashboardController
         // SCADA
         yield MenuItem::section('SCADA');
         yield MenuItem::linkToRoute('Permisos de Trabajos', 'fas fa-hard-hat', 'admin_siv_dashboard_lista_permisos_trabajos');
-        yield MenuItem::linkToRoute('Bitácora', 'fas fa-book', 'admin_siv_dashboard_bitacora');
+        yield MenuItem::linkToRoute('Bitácora', 'fas fa-book', 'admin_siv_dashboard_lista_bitacora_scada');
         
         // Gestión de Usuarios (sección administrativa)
         yield MenuItem::section('Administración');
@@ -138,13 +130,19 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToLogout('Cerrar sesión', 'fas fa-sign-out-alt');
     }
 
+    /**
+     * Configurar assets globales para todo el admin
+     * Approach oficial de EasyAdmin 4 según documentación
+     *
+     * NOTA: Siguiendo las mejores prácticas de EasyAdmin 4, usamos controles nativos HTML5
+     * (datetime-local, select multiple) en lugar de librerías JavaScript externas.
+     * Esto mejora performance, reduce dependencias y evita problemas de inicialización.
+     */
     public function configureAssets(): Assets
     {
         return parent::configureAssets()
-            // Añadir Choices.js CSS (v11.1.0 - compatible con Bootstrap 5)
-            ->addCssFile('https://cdn.jsdelivr.net/npm/choices.js@11.1.0/public/assets/styles/choices.min.css')
-            // Añadir Choices.js JS
-            ->addJsFile('https://cdn.jsdelivr.net/npm/choices.js@11.1.0/public/assets/scripts/choices.min.js');
+            // CSS global custom para títulos y estilos del sistema
+            ->addCssFile('css/easyadmin-custom.css');
     }
 
     // TODO(human): Implementar método para manejar la vista de historial de espiras

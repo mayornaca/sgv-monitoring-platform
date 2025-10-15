@@ -46,6 +46,8 @@ yarn-error.log*
 /public/screenshots/
 *.tmp
 *.log
+*.jpeg
+*.back
 
 # Extracted patterns (working files)
 /EXTRACTED_PATTERNS/
@@ -53,6 +55,13 @@ yarn-error.log*
 # Backup files
 *.backup
 *.bak
+
+# Historical documentation
+/docs/history/
+
+# Test scripts (keep test-page.js as it's the main testing script)
+test-*.js
+!test-page.js
 
 # Local configuration
 .env.local
