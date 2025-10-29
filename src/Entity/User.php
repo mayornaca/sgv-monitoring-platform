@@ -58,8 +58,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 5, nullable: true)]
     private ?string $locale = null;
 
-    #[ORM\Column(nullable: true)]
-    private ?int $idStaff = null;
+    #[ORM\ManyToOne(targetEntity: Tbl14Personal::class)]
+    #[ORM\JoinColumn(name: 'id_staff', referencedColumnName: 'id_personal', nullable: true)]
+    private ?Tbl14Personal $idStaff = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $concessions = null;
@@ -72,6 +73,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(nullable: true)]
     private ?bool $mustChangePassword = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $totpSecret = null;
+
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    private bool $twoFactorEnabled = false;
+
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $preferred2faMethod = null;
+
+    #[ORM\Column(type: Types::INTEGER, options: ['default' => 0])]
+    private int $loginCount = 0;
 
     public function __construct()
     {
@@ -247,12 +260,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getIdStaff(): ?int
+    public function getIdStaff(): ?Tbl14Personal
     {
         return $this->idStaff;
     }
 
-    public function setIdStaff(?int $idStaff): static
+    public function setIdStaff(?Tbl14Personal $idStaff): static
     {
         $this->idStaff = $idStaff;
 
@@ -303,6 +316,61 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setMustChangePassword(?bool $mustChangePassword): static
     {
         $this->mustChangePassword = $mustChangePassword;
+
+        return $this;
+    }
+
+    public function getTotpSecret(): ?string
+    {
+        return $this->totpSecret;
+    }
+
+    public function setTotpSecret(?string $totpSecret): static
+    {
+        $this->totpSecret = $totpSecret;
+
+        return $this;
+    }
+
+    public function isTwoFactorEnabled(): bool
+    {
+        return $this->twoFactorEnabled;
+    }
+
+    public function setTwoFactorEnabled(bool $twoFactorEnabled): static
+    {
+        $this->twoFactorEnabled = $twoFactorEnabled;
+
+        return $this;
+    }
+
+    public function getPreferred2faMethod(): ?string
+    {
+        return $this->preferred2faMethod;
+    }
+
+    public function setPreferred2faMethod(?string $preferred2faMethod): static
+    {
+        $this->preferred2faMethod = $preferred2faMethod;
+
+        return $this;
+    }
+
+    public function getLoginCount(): int
+    {
+        return $this->loginCount;
+    }
+
+    public function setLoginCount(int $loginCount): static
+    {
+        $this->loginCount = $loginCount;
+
+        return $this;
+    }
+
+    public function incrementLoginCount(): static
+    {
+        $this->loginCount++;
 
         return $this;
     }

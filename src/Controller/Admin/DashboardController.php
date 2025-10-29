@@ -12,6 +12,11 @@ use App\Entity\Alert;
 use App\Entity\AlertRule;
 use App\Entity\AuditLog;
 use App\Entity\NotificationLog;
+use App\Entity\Tbl14Personal;
+use App\Entity\WhatsApp\Recipient;
+use App\Entity\WhatsApp\RecipientGroup;
+use App\Entity\WhatsApp\Template;
+use App\Entity\WhatsApp\Message;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Assets;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
@@ -37,8 +42,8 @@ class DashboardController extends AbstractDashboardController
     {
         return Dashboard::new()
             ->setTitle('<img src="/assets/images/logo.png" style="height: 35px;">')
-            ->setFaviconPath('favicon.ico')
-            ->renderContentMaximized();
+            ->setFaviconPath('favicon.ico');
+            // Sidebar visible por defecto - el botón hamburguesa permite ocultarlo
     }
 
     public function configureUserMenu(UserInterface $user): UserMenu
@@ -47,28 +52,28 @@ class DashboardController extends AbstractDashboardController
             ->setName($user->getUserIdentifier())
             ->displayUserAvatar(true)
             ->addMenuItems([
-                MenuItem::linkToRoute('Mi Perfil', 'fas fa-user', 'app_profile'),
+                MenuItem::linkToUrl('Mi Perfil', 'fas fa-user', '/profile'),
             ]);
     }
 
     public function configureMenuItems(): iterable
     {
-        yield MenuItem::linkToDashboard('Dashboard', 'fas fa-tachometer-alt');
+        //yield MenuItem::linkToDashboard('Dashboard', 'fas fa-tachometer-alt');
 
         // Monitor de dispositivos - CN (Costanera Norte)
-        yield MenuItem::section('CN - Costanera Norte');
-        yield MenuItem::linkToRoute('Resumen CN', 'fas fa-pie-chart', 'cot_dashboard');
+        yield MenuItem::section('Monitoreo');
+        yield MenuItem::linkToRoute('Resumen', 'fas fa-pie-chart', 'cot_dashboard');
         yield MenuItem::linkToRoute('Videowall Dispositivos', 'fas fa-th-large', 'admin_cot_monitor', [
             'id' => 0,
             'videowall' => 'true',
-            'device_status' => 'device_unactive',
+            'device_status' => 'all',
             'contract_ui' => 'true',
             'masonry' => 'true',
             'grid_items_width' => '2',
             'fixed' => 'true',
             'input_device_finder' => ''
         ]);
-        yield MenuItem::linkToRoute('Lista Dispositivos CN', 'fas fa-list', 'admin_cot_monitor', [
+        yield MenuItem::linkToRoute('Lista Dispositivos', 'fas fa-list', 'admin_cot_monitor', [
             'id' => 0,
             'videowall' => 'false',
             'device_status' => 'all',
@@ -81,15 +86,9 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToRoute('Monitor sensores SOS', 'fas fa-exclamation-circle', 'admin_cot_sosindex', ['id' => 1]);
         yield MenuItem::linkToRoute('Reporte sensores SOS', 'fas fa-file-alt', 'admin_cot_sos_report_status');
         yield MenuItem::linkToRoute('Red', 'fas fa-network-wired', 'admin_cot_network');
-        yield MenuItem::linkToRoute('Monitor Espiras CN', 'fas fa-circle-notch', 'admin_cot_monitor', ['id' => 4]);
-        yield MenuItem::linkToRoute('Historial Espiras CN', 'fas fa-history', 'admin_spire_history');
-        
-        // VS (Vespucio Sur)
-        yield MenuItem::subMenu('VS', 'fas fa-highway')->setSubItems([
-            MenuItem::linkToRoute('Lista Dispositivos VS', 'fas fa-list', 'admin_vs_index', ['id' => 0]),
-            MenuItem::linkToRoute('Historial Espiras VS', 'fas fa-history', 'admin_spire_history_vs_min'),
-            MenuItem::linkToRoute('Monitor Espiras VS', 'fas fa-circle-notch', 'admin_vs_index', ['id' => 13]),
-        ]);
+        yield MenuItem::linkToRoute('Monitor Espiras', 'fas fa-circle-notch', 'admin_cot_monitor', ['id' => 4]);
+        yield MenuItem::linkToRoute('Historial Espiras', 'fas fa-history', 'admin_spire_history');
+
         
         // Reportes
         yield MenuItem::section('Reportes');
@@ -103,7 +102,7 @@ class DashboardController extends AbstractDashboardController
         // Incidentes
         yield MenuItem::subMenu('Incidentes', 'fas fa-car-crash')->setSubItems([
             MenuItem::linkToRoute('Registro Incidente', 'fas fa-plus-circle', 'admin_siv_dashboard_registro_incidente'),
-            MenuItem::linkToRoute('Ficha Accidente', 'fas fa-file-medical', 'admin_siv_dashboard_ficha_accidente'),
+            //MenuItem::linkToRoute('Ficha Accidente', 'fas fa-file-medical', 'admin_siv_dashboard_ficha_accidente'),
             MenuItem::linkToRoute('Atenciones por Clase de Vehículo', 'fas fa-car', 'admin_siv_dashboard_atenciones_clase_vehiculo'),
             MenuItem::linkToRoute('Tiempos recursos externos', 'fas fa-clock', 'admin_siv_dashboard_tiempos_recursos_externos'),
             MenuItem::linkToRoute('Tiempos de respuesta por recursos', 'fas fa-stopwatch', 'admin_siv_dashboard_tiempos_respuesta_recursos'),
@@ -115,18 +114,40 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::section('SCADA');
         yield MenuItem::linkToRoute('Permisos de Trabajos', 'fas fa-hard-hat', 'admin_siv_dashboard_lista_permisos_trabajos');
         yield MenuItem::linkToRoute('Bitácora', 'fas fa-book', 'admin_siv_dashboard_lista_bitacora_scada');
-        
+
+        // VS (Vespucio Sur)
+        yield MenuItem::subMenu('VS', 'fas fa-highway')->setSubItems([
+            //MenuItem::linkToRoute('Lista Dispositivos VS', 'fas fa-list', 'admin_vs_index', ['id' => 0]),
+            MenuItem::linkToRoute('Historial Espiras VS', 'fas fa-history', 'admin_spire_history_vs_min'),
+            MenuItem::linkToRoute('Monitor Espiras VS', 'fas fa-circle-notch', 'admin_vs_index', ['id' => 13]),
+        ]);
+
         // Gestión de Usuarios (sección administrativa)
         yield MenuItem::section('Administración');
         yield MenuItem::linkToCrud('Usuarios', 'fas fa-users', User::class)
             ->setPermission('ROLE_ADMIN');
+        yield MenuItem::linkToCrud('Personal', 'fas fa-id-card', Tbl14Personal::class)
+            ->setPermission('ROLE_SUPER_ADMIN');
         yield MenuItem::linkToCrud('Alertas', 'fas fa-exclamation-triangle', Alert::class)
             ->setPermission('ROLE_OPERATOR_COT');
         yield MenuItem::linkToCrud('Reglas de Alerta', 'fas fa-cogs', AlertRule::class)
             ->setPermission('ROLE_ADMIN');
+
+
         
-        yield MenuItem::section('Sistema');
-        yield MenuItem::linkToUrl('Volver al sitio', 'fas fa-home', '/');
+        //yield MenuItem::section('Sistema');
+
+        // WhatsApp Management
+        yield MenuItem::section('WhatsApp API')->setPermission('ROLE_SUPER_ADMIN');;
+        yield MenuItem::linkToCrud('Destinatarios', 'fab fa-whatsapp', Recipient::class)
+            ->setPermission('ROLE_ADMIN');
+        yield MenuItem::linkToCrud('Grupos de Destinatarios', 'fas fa-user-group', RecipientGroup::class)
+            ->setPermission('ROLE_ADMIN');
+        yield MenuItem::linkToCrud('Templates', 'fas fa-file-lines', Template::class)
+            ->setPermission('ROLE_ADMIN');
+        yield MenuItem::linkToCrud('Mensajes Enviados', 'fas fa-message', Message::class)
+            ->setPermission('ROLE_ADMIN');
+        //yield MenuItem::linkToUrl('Volver al sitio', 'fas fa-home', '/');
         yield MenuItem::linkToLogout('Cerrar sesión', 'fas fa-sign-out-alt');
     }
 
@@ -145,6 +166,4 @@ class DashboardController extends AbstractDashboardController
             ->addCssFile('css/easyadmin-custom.css');
     }
 
-    // TODO(human): Implementar método para manejar la vista de historial de espiras
-    // Esta acción personalizada permitirá mostrar el historial de espiras dentro del contexto de EasyAdmin
 }

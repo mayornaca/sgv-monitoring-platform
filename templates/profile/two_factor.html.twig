@@ -1,8 +1,36 @@
-{% extends 'base.html.twig' %}
+{% extends 'base_dashboard.html.twig' %}
 
 {% block title %}Autenticación de Dos Factores - SGV{% endblock %}
 
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}
+
 {% block body %}
+<!-- Navbar similar a EasyAdmin -->
+<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/admin">
+            <img src="/assets/images/logo.png" alt="Logo" style="height: 35px;">
+        </a>
+        <div class="ms-auto d-flex align-items-center">
+            <div class="dropdown">
+                <button class="btn btn-link text-decoration-none dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-user-circle fa-lg"></i>
+                    <span class="ms-2">{{ app.user.userIdentifier }}</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                    <li><a class="dropdown-item" href="/profile"><i class="fas fa-user me-2"></i> Mi Perfil</a></li>
+                    <li><a class="dropdown-item" href="/admin"><i class="fas fa-tachometer-alt me-2"></i> Panel Admin</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt me-2"></i> Cerrar sesión</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
+<!-- Contenido -->
 <div class="container mx-auto px-4 py-8">
     <!-- Header -->
     <div class="mb-8">
@@ -247,7 +275,7 @@
 </div>
 
 {% if user.totpSecret and qr_code %}
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    {# QRCode is now loaded via Webpack Encore #}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             QRCode.toCanvas(document.getElementById('qr-code'), '{{ qr_code }}', {

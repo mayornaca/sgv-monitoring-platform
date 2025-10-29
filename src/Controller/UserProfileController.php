@@ -28,8 +28,9 @@ class UserProfileController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
 
-        return $this->render('profile/index.html.twig', [
-            'user' => $user,
+        // Redirigir al CRUD de EasyAdmin para editar el propio usuario
+        return $this->redirectToRoute('admin_user_edit', [
+            'entityId' => $user->getId(),
         ]);
     }
 
@@ -77,9 +78,8 @@ class UserProfileController extends AbstractController
         $user->setPreferred2faMethod('totp');
 
         $this->entityManager->flush();
-        
+
         $this->auditLogger->logSecurityEvent(
-            $user,
             'totp_enabled',
             'Usuario habilitó TOTP como método de 2FA'
         );
@@ -100,9 +100,8 @@ class UserProfileController extends AbstractController
         }
 
         $this->entityManager->flush();
-        
+
         $this->auditLogger->logSecurityEvent(
-            $user,
             'totp_disabled',
             'Usuario deshabilitó TOTP'
         );
@@ -118,9 +117,8 @@ class UserProfileController extends AbstractController
         $user->setPreferred2faMethod('email');
 
         $this->entityManager->flush();
-        
+
         $this->auditLogger->logSecurityEvent(
-            $user,
             'email_2fa_enabled',
             'Usuario habilitó 2FA por email'
         );
@@ -139,9 +137,8 @@ class UserProfileController extends AbstractController
         }
 
         $this->entityManager->flush();
-        
+
         $this->auditLogger->logSecurityEvent(
-            $user,
             'email_2fa_disabled',
             'Usuario deshabilitó 2FA por email'
         );
@@ -154,9 +151,8 @@ class UserProfileController extends AbstractController
     private function regenerateBackupCodes(User $user): Response
     {
         // TODO(human): Implementar generación de códigos de respaldo
-        
+
         $this->auditLogger->logSecurityEvent(
-            $user,
             'backup_codes_regenerated',
             'Usuario regeneró códigos de respaldo'
         );
