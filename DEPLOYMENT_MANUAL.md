@@ -12,18 +12,50 @@
 2. `templates/profile/two_factor.html.twig` - Navbar agregado
 
 ### Cambios en Base de Datos
-1. Tabla `audit_log` creada
-2. Columnas agregadas a `security_user`:
-   - `totp_secret` VARCHAR(255)
-   - `two_factor_enabled` TINYINT(1)
-   - `preferred2fa_method` VARCHAR(20)
-   - `login_count` INT
+
+⚠️ **IMPORTANTE:** Hay múltiples tablas nuevas que faltan en producción.
+
+**Tablas Nuevas a Crear:**
+1. `audit_log` - Sistema de auditoría
+2. `alerts` - Sistema de alertas
+3. `alert_rules` - Reglas de notificación
+4. `notification_logs` - Log de notificaciones
+5. `otp_codes` - Códigos OTP para 2FA
+6. `whatsapp_recipients` - Destinatarios WhatsApp
+7. `whatsapp_recipient_groups` - Grupos de destinatarios
+8. `whatsapp_group_recipients` - Relación grupos-destinatarios
+9. `whatsapp_templates` - Templates de mensajes
+10. `whatsapp_messages` - Mensajes enviados
+
+**Columnas agregadas a `security_user`:**
+- `totp_secret` VARCHAR(255)
+- `two_factor_enabled` TINYINT(1)
+- `preferred2fa_method` VARCHAR(20)
+- `login_count` INT
+- `reset_token` VARCHAR(100)
+- `reset_token_expires_at` DATETIME
+- `must_change_password` TINYINT(1)
 
 ---
 
-## ESTRATEGIA RECOMENDADA: Script Simple de Deployment
+## ESTRATEGIA RECOMENDADA: Usar Script SQL Completo
 
-### Crear archivo de migración SQL
+### ⚠️ SCRIPT SQL COMPLETO DISPONIBLE
+
+Hemos creado un script SQL completo que incluye TODAS las tablas nuevas:
+
+📄 **Archivo:** `deployment-production.sql`
+
+Este script incluye:
+- ✅ Verificaciones IF NOT EXISTS (seguro de ejecutar)
+- ✅ Todas las 10 tablas nuevas
+- ✅ Todas las columnas 2FA en security_user
+- ✅ Foreign keys de WhatsApp
+- ✅ Idempotente (puedes ejecutarlo múltiples veces)
+
+### Crear archivo de migración SQL (alternativa manual)
+
+Si prefieres crear el archivo manualmente:
 
 ```bash
 cat > migration-profile-fix.sql << 'EOF'
@@ -107,11 +139,30 @@ scp templates/profile/two_factor.html.twig user@prod:/ruta/produccion/templates/
 5. Guardar
 
 #### 3. EJECUTAR SQL EN PRODUCCIÓN
+
+**Opción A: Usar el script completo (RECOMENDADO)**
+```bash
+# Transferir el archivo SQL a producción
+scp deployment-production.sql user@prod:/ruta/produccion/
+
+# En el servidor de producción
+mysql -u USUARIO -p BASE_DATOS < deployment-production.sql
+```
+
+**Opción B: Ejecutar manualmente el SQL**
 ```bash
 # Conectar a MySQL
 mysql -u USUARIO -p BASE_DATOS
 
-# Dentro de MySQL, pegar todo el SQL:
+# Dentro de MySQL, copiar y pegar el contenido de deployment-production.sql
+```
+
+**Opción C: SQL mínimo (solo para el fix del perfil)**
+```bash
+# Conectar a MySQL
+mysql -u USUARIO -p BASE_DATOS
+
+# Dentro de MySQL, pegar el siguiente SQL:
 ```
 ```sql
 -- Crear tabla audit_log
