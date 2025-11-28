@@ -1,0 +1,23 @@
+knp_snappy:
+    pdf:
+        enabled: true
+        binary: '/usr/local/bin/wkhtmltopdf'
+        options:
+            page-size: 'A4'
+            viewport-size: '1024x768'
+            orientation: 'Portrait'
+            disable-smart-shrinking: ~
+            print-media-type: ~
+            margin-top: '5mm'
+            margin-right: '4mm'
+            margin-bottom: '6mm'
+            margin-left: '4mm'
+            enable-local-file-access: true
+            no-stop-slow-scripts: true
+    image:
+        enabled: true
+        binary: '/usr/local/bin/wkhtmltoimage'
+        options:
+            - { name: 'format', value: 'png' }
+            - { name: 'width', value: '1024' }
+            - { name: 'height', value: '768' }

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Política de Privacidad - SGV</title>
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}" />
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            border-bottom: 3px solid #0066cc;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .header img {
+            max-width: 200px;
+            margin-bottom: 15px;
+        }
+        .header h1 {
+            color: #0066cc;
+            margin: 0 0 10px 0;
+            font-size: 2em;
+        }
+        .metadata {
+            background-color: #f0f7ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 30px;
+            border-left: 4px solid #0066cc;
+        }
+        .metadata p {
+            margin: 5px 0;
+            font-size: 0.9em;
+        }
+        .toc {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 30px;
+        }
+        .toc h2 {
+            margin-top: 0;
+            color: #0066cc;
+            font-size: 1.3em;
+        }
+        .toc ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .toc li {
+            margin: 8px 0;
+        }
+        .toc a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        .toc a:hover {
+            text-decoration: underline;
+        }
+        h2 {
+            color: #0066cc;
+            margin-top: 40px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        h3, h5 {
+            color: #333;
+            margin-top: 25px;
+        }
+        .important-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .contact-box {
+            background-color: #e7f3ff;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+        }
+        .btn-primary {
+            display: inline-block;
+            background-color: #0066cc;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px 5px;
+        }
+        .btn-primary:hover {
+            background-color: #0052a3;
+        }
+        @media print {
+            body {
+                background-color: white;
+            }
+            .container {
+                box-shadow: none;
+                padding: 0;
+            }
+            .btn-primary {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="{{ asset('images/gesvial_logo.png') }}" alt="Gestión Vial S.A.">
+            <h1>Política de Privacidad</h1>
+            <p><strong>Sistema de Gestión Vial (SGV)</strong></p>
+        </div>
+
+        <div class="metadata">
+            <p><strong>Última actualización:</strong> {{ "now"|date("d/m/Y") }}</p>
+            <p><strong>Versión:</strong> 2.0</p>
+        </div>
+
+        <div class="important-box">
+            <strong>Importante:</strong> Esta Política de Privacidad describe cómo el SGV recopila, utiliza, almacena y protege su información personal. El SGV es un sistema de uso interno e industrial, operado por el Área de Operaciones de Gestión Vial S.A. Le recomendamos leer este documento detenidamente antes de utilizar el sistema.
+        </div>
+
+        <div class="toc">
+            <h2>Índice de Contenidos</h2>
+            <ul>
+                <li><a href="#seccion1">1. Introducción</a></li>
+                <li><a href="#seccion2">2. Responsable del Tratamiento</a></li>
+                <li><a href="#seccion3">3. Datos Recopilados</a></li>
+                <li><a href="#seccion4">4. Finalidad del Tratamiento</a></li>
+                <li><a href="#seccion5">5. Base Legal</a></li>
+                <li><a href="#seccion6">6. Derechos de los Titulares (ARCO+)</a></li>
+                <li><a href="#seccion7">7. Ejercicio de Derechos</a></li>
+                <li><a href="#seccion8">8. Medidas de Seguridad</a></li>
+                <li><a href="#seccion9">9. Conservación de Datos</a></li>
+                <li><a href="#seccion10">10. Compartir con Terceros</a></li>
+                <li><a href="#seccion11">11. Transferencia Internacional</a></li>
+                <li><a href="#seccion12">12. Cookies</a></li>
+                <li><a href="#seccion13">13. Modificaciones</a></li>
+                <li><a href="#seccion14">14. Marco Legal</a></li>
+                <li><a href="#seccion15">15. Contacto</a></li>
+            </ul>
+        </div>
+
+        <h2 id="seccion1">1. Introducción</h2>
+        <p>Esta Política de Privacidad describe cómo el Sistema de Gestión Vial (en adelante "SGV" o "el Sistema") recopila, utiliza, almacena, procesa y protege la información personal de sus usuarios. El SGV es un sistema de uso interno e industrial, operado por el Área de Operaciones de Gestión Vial S.A. para la gestión de operaciones viales y seguridad de infraestructura.</p>
+        <p>El tratamiento de datos personales se realiza en estricto cumplimiento con:</p>
+        <ul>
+            <li><strong>Ley N° 19.628</strong> sobre Protección de la Vida Privada</li>
+            <li><strong>Ley N° 21.719</strong> que moderniza el marco normativo de protección de datos personales</li>
+            <li><strong>Constitución Política de Chile</strong> (Artículo 19 N° 4)</li>
+        </ul>
+        <p><strong>Al utilizar nuestros servicios, usted acepta las prácticas descritas en esta política.</strong></p>
+
+        <h2 id="seccion2">2. Responsable del Tratamiento de Datos</h2>
+        <p>El responsable del tratamiento de los datos personales recopilados a través de este sistema es:</p>
+        <div class="contact-box">
+            <p><strong>Razón Social:</strong> Gestión Vial S.A.</p>
+            <p><strong>RUT:</strong> 96.942.440-1</p>
+            <p><strong>Dirección:</strong> General Prieto 1430</p>
+            <p><strong>Área Operadora:</strong> Área de Operaciones</p>
+            <p><strong>Correo de Contacto:</strong> jnacaratto@gesvial.cl</p>
+        </div>
+        <p>La organización asume las obligaciones establecidas en la normativa chilena vigente sobre protección de datos personales.</p>
+
+        <h2 id="seccion3">3. Datos Personales Recopilados</h2>
+        <p>En el marco de las operaciones del sistema, se pueden recopilar y procesar los siguientes tipos de datos personales:</p>
+
+        <h3>3.1. Datos de Identificación Personal</h3>
+        <ul>
+            <li>Nombre completo (nombres y apellidos)</li>
+            <li>Número de RUT (Rol Único Tributario)</li>
+            <li>Fecha de nacimiento</li>
+            <li>Fotografía digital</li>
+        </ul>
+
+        <h3>3.2. Datos de Contacto</h3>
+        <ul>
+            <li>Dirección de correo electrónico</li>
+            <li>Número(s) de teléfono</li>
+            <li>Dirección física</li>
+        </ul>
+
+        <h3>3.3. Datos Laborales</h3>
+        <ul>
+            <li>Cargo o función desempeñada</li>
+            <li>Área de trabajo o departamento</li>
+            <li>Empresa empleadora o contratista</li>
+        </ul>
+
+        <h3>3.4. Datos de Acceso y Actividad</h3>
+        <ul>
+            <li>Nombre de usuario y contraseña cifrada</li>
+            <li>Roles y permisos asignados</li>
+            <li>Registros de sesiones y acciones realizadas</li>
+        </ul>
+
+        <h3>3.5. Datos de Seguridad</h3>
+        <ul>
+            <li>Registros de incidentes de seguridad</li>
+            <li>Reportes de emergencias</li>
+            <li>Llamadas registradas al centro de control</li>
+        </ul>
+
+        <h2 id="seccion4">4. Finalidad del Tratamiento de Datos</h2>
+        <p>Los datos personales son recopilados y tratados para las siguientes finalidades específicas:</p>
+        <ol>
+            <li><strong>Gestión de Usuarios:</strong> Creación, administración y autenticación de cuentas</li>
+            <li><strong>Seguridad y Emergencias:</strong> Registro y respuesta a incidentes</li>
+            <li><strong>Cumplimiento Legal:</strong> Obligaciones legales y contractuales</li>
+            <li><strong>Comunicaciones:</strong> Notificaciones y alertas operacionales</li>
+            <li><strong>Reportes:</strong> Generación de informes de gestión</li>
+            <li><strong>Auditoría:</strong> Trazabilidad y control interno</li>
+            <li><strong>Mejora Continua:</strong> Optimización del sistema</li>
+        </ol>
+
+        <h2 id="seccion5">5. Base Legal del Tratamiento</h2>
+        <p>El tratamiento de datos personales se fundamenta en:</p>
+        <ul>
+            <li><strong>Consentimiento expreso:</strong> Al registrarse y utilizar el sistema</li>
+            <li><strong>Ejecución contractual:</strong> Necesario para la prestación de servicios</li>
+            <li><strong>Obligación legal:</strong> Cumplimiento de normativas</li>
+            <li><strong>Interés legítimo:</strong> Garantizar la seguridad de las operaciones</li>
+        </ul>
+
+        <h2 id="seccion6">6. Derechos de los Titulares de Datos (ARCO+)</h2>
+        <p>De acuerdo con la Ley N° 19.628 y sus modificaciones, usted tiene los siguientes derechos:</p>
+
+        <h5>6.1. Derecho de Información</h5>
+        <p>Derecho a ser informado sobre los datos almacenados y su tratamiento.</p>
+
+        <h5>6.2. Derecho de Acceso</h5>
+        <p>Derecho a solicitar y obtener información sobre sus datos personales.</p>
+
+        <h5>6.3. Derecho de Rectificación</h5>
+        <p>Derecho a solicitar la corrección de datos inexactos o desactualizados.</p>
+
+        <h5>6.4. Derecho de Cancelación</h5>
+        <p>Derecho a solicitar la eliminación de sus datos personales.</p>
+
+        <h5>6.5. Derecho de Oposición</h5>
+        <p>Derecho a oponerse al tratamiento de sus datos personales.</p>
+
+        <h5>6.6. Derecho de Bloqueo</h5>
+        <p>Derecho a solicitar el bloqueo temporal de sus datos.</p>
+
+        <h5>6.7. Derecho de Portabilidad (Ley 21.719)</h5>
+        <p>Derecho a recibir sus datos en formato estructurado y transmitirlos a otro responsable.</p>
+
+        <h2 id="seccion7">7. Ejercicio de Derechos</h2>
+        <p>Para ejercer cualquiera de sus derechos, puede contactarnos a través de:</p>
+        <div class="contact-box">
+            <ul>
+                <li><strong>Correo Electrónico:</strong> jnacaratto@gesvial.cl</li>
+                <li><strong>Formulario Web:</strong> Disponible en "Mi Perfil" > "Privacidad"</li>
+                <li><strong>Solicitud Presencial:</strong> General Prieto 1430</li>
+            </ul>
+        </div>
+        <p>Las solicitudes serán respondidas dentro de <strong>10 días hábiles</strong>.</p>
+
+        <h2 id="seccion8">8. Medidas de Seguridad</h2>
+        <p>El sistema implementa medidas técnicas y organizativas apropiadas:</p>
+        <ul>
+            <li><strong>Cifrado:</strong> Contraseñas con algoritmos hash seguros (bcrypt)</li>
+            <li><strong>Conexiones Seguras:</strong> Protocolo HTTPS con certificados SSL/TLS</li>
+            <li><strong>Control de Acceso:</strong> Sistema de roles y permisos (RBAC)</li>
+            <li><strong>Auditoría:</strong> Registro detallado de acciones del sistema</li>
+            <li><strong>Copias de Seguridad:</strong> Respaldos automáticos cifrados</li>
+            <li><strong>Monitoreo:</strong> Detección de actividad sospechosa 24/7</li>
+        </ul>
+
+        <h2 id="seccion9">9. Conservación de Datos</h2>
+        <p>Los datos personales serán conservados únicamente durante el tiempo necesario para cumplir con las finalidades establecidas:</p>
+        <ul>
+            <li>Durante la vigencia de la relación contractual o laboral</li>
+            <li>Por el plazo establecido en obligaciones legales</li>
+            <li>Hasta el ejercicio del derecho de cancelación</li>
+        </ul>
+        <p>Una vez cumplidos los plazos, los datos serán eliminados de forma segura o anonimizados.</p>
+
+        <h2 id="seccion10">10. Compartir Datos con Terceros</h2>
+        <p>Los datos personales <strong>NO se venden ni comercializan</strong>. Solo se comparten en los siguientes casos:</p>
+        <ul>
+            <li>Con proveedores de servicios (hosting, soporte) bajo acuerdos de confidencialidad</li>
+            <li>Cuando lo requiera la ley o una orden judicial</li>
+            <li>Por obligaciones legales ante autoridades competentes</li>
+            <li>Con su consentimiento expreso</li>
+        </ul>
+
+        <h2 id="seccion11">11. Transferencia Internacional de Datos</h2>
+        <p>Los datos personales se almacenan en servidores ubicados en territorio chileno. Cualquier transferencia internacional contará con garantías adecuadas conforme a la normativa vigente.</p>
+
+        <h2 id="seccion12">12. Cookies y Tecnologías Similares</h2>
+        <p>El sistema utiliza cookies para:</p>
+        <ul>
+            <li>Mantener la sesión del usuario activa</li>
+            <li>Recordar preferencias de configuración</li>
+            <li>Mejorar la seguridad del sistema</li>
+            <li>Análisis de uso para optimización</li>
+        </ul>
+        <p>Puede configurar su navegador para rechazar cookies, aunque esto puede afectar la funcionalidad del sistema.</p>
+
+        <h2 id="seccion13">13. Modificaciones a esta Política</h2>
+        <p>Esta política puede ser actualizada periódicamente. Los cambios serán notificados mediante:</p>
+        <ul>
+            <li>Notificación destacada en el sistema</li>
+            <li>Correo electrónico a la dirección registrada</li>
+            <li>Publicación en el sistema con fecha de actualización</li>
+        </ul>
+        <p>El uso continuado del sistema tras la notificación constituirá su aceptación de los cambios.</p>
+
+        <h2 id="seccion14">14. Marco Legal Aplicable</h2>
+        <ul>
+            <li><strong>Ley N° 19.628</strong> sobre Protección de la Vida Privada</li>
+            <li><strong>Ley N° 21.719</strong> que moderniza la Ley N° 19.628</li>
+            <li><strong>Constitución Política de Chile</strong> (Art. 19 N° 4)</li>
+            <li>Código del Trabajo</li>
+            <li>Ley N° 16.744 sobre Accidentes del Trabajo</li>
+        </ul>
+
+        <h2 id="seccion15">15. Contacto</h2>
+        <div class="contact-box">
+            <p><strong>Razón Social:</strong> Gestión Vial S.A.</p>
+            <p><strong>RUT:</strong> 96.942.440-1</p>
+            <p><strong>Correo Electrónico:</strong> jnacaratto@gesvial.cl</p>
+            <p><strong>Dirección:</strong> General Prieto 1430</p>
+            <p><strong>Horario de Atención:</strong> Lunes a Viernes de 09:00 a 18:00 hrs</p>
+        </div>
+
+        <div class="important-box">
+            <h5><strong>Consentimiento Informado</strong></h5>
+            <p>Al utilizar este sistema, usted declara haber leído, comprendido y aceptado esta Política de Privacidad y el tratamiento de sus datos personales conforme a lo aquí establecido.</p>
+        </div>
+
+        <div class="footer">
+            <p><strong>Sistema de Gestión Vial (SGV)</strong></p>
+            <p>Política de Privacidad - Versión 2.0</p>
+            <p>Última actualización: {{ "now"|date("d/m/Y") }}</p>
+            <p>&copy; {{ "now"|date("Y") }} Gestión Vial S.A. Todos los derechos reservados.</p>
+            <p style="margin-top: 20px;">
+                <a href="{{ path('app_login') }}" class="btn-primary">Volver al Inicio de Sesión</a>
+                <a href="#" class="btn-primary" onclick="window.print(); return false;">Imprimir PDF</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        document.querySelectorAll('.toc a').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    targetElement.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

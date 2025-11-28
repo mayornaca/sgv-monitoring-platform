@@ -1,0 +1,7 @@
+framework:
+    mailer:
+        # Para desarrollo local con MailHog o similar
+        dsn: '%env(MAILER_DSN)%'
+        # Configurar delivery_addresses para interceptar emails en desarrollo
+        #envelope:
+        #    recipients: ['dev@gvops.cl']

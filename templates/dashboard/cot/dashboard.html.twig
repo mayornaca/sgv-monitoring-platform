@@ -1,0 +1,450 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+{% block title %}Resumen del monitor de dispositivos{% endblock %}
+
+{# Sobrescribir content_title para eliminar el H1 que ocupa espacio #}
+{% block content_title %}{% endblock %}
+
+{# Agregar título en el toolbar superior (content_top_header) #}
+{% block content_top_header %}
+    <div class="d-flex align-items-center gap-2">
+        <h5 class="m-0">
+            <i class="fas fa-chart-pie" style="color: var(--color-primary, #5368d5);"></i>
+            Resumen del monitor de dispositivos
+        </h5>
+    </div>
+
+    {# Keep the original search, user menu, and settings #}
+    {{ parent() }}
+{% endblock %}
+
+{% block head_stylesheets %}
+    {{ parent() }}
+    <style>
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: var(--bs-secondary-bg);
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+
+        .stat-card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .stat-card-icon {
+            display: none !important;
+        }
+
+        .stat-card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-color);
+            margin: 0;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 200px;
+            margin: 15px 0;
+        }
+
+        .stat-details {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-color);
+            text-transform: uppercase;
+            margin-top: 5px;
+        }
+
+        .alarms-section {
+            margin-top: 30px;
+            display: none !important; /* Ocultar tabla de alarmas para dashboard simplificado */
+        }
+
+        .alarm-table {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .alarm-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            font-weight: 600;
+        }
+
+        /* Color schemes for different device types */
+        .icon-bg-primary { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .icon-bg-success { background: linear-gradient(135deg, #56ab2f, #a8e063); }
+        .icon-bg-warning { background: linear-gradient(135deg, #f2994a, #f2c94c); }
+        .icon-bg-danger { background: linear-gradient(135deg, #eb3349, #f45c43); }
+        .icon-bg-info { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+
+        /* Ensure full width for container */
+        .container-fluid {
+            max-width: none !important;
+            padding-left: 15px !important;
+            padding-right: 15px !important;
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block main %}
+    <div class="container-fluid mt-3">
+        {# Statistics Cards Grid #}
+        <div class="dashboard-grid" id="resumen">
+            {% for item in data_table %}
+                {% set icon_colors = ['icon-bg-primary', 'icon-bg-success', 'icon-bg-warning', 'icon-bg-danger', 'icon-bg-info'] %}
+                {% set color_index = loop.index0 % (icon_colors|length) %}
+
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <div class="stat-card-icon {{ icon_colors[color_index] }} text-white">
+                            <i class="{{ item.icono|default('fas fa-microchip') }}"></i>
+                        </div>
+                        <h5 class="stat-card-title">{{ item.tipo }}</h5>
+                    </div>
+
+                    <div class="chart-container">
+                        <canvas id="chart_{{ item.id }}"></canvas>
+                    </div>
+
+                    <div class="stat-details">
+                        <div class="stat-item">
+                            <span class="stat-value text-success">{{ item.activos }}</span>
+                            <span class="stat-label">Activos</span>
+                            <span class="badge bg-success">{{ item.por_Activos|number_format(1) }}%</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value text-danger">{{ item.inactivos }}</span>
+                            <span class="stat-label">Inactivos</span>
+                            <span class="badge bg-danger">{{ item.por_inactivos|number_format(1) }}%</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value text-primary">{{ item.total }}</span>
+                            <span class="stat-label">Total</span>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        {# ==================== COMENTADO 2025-10-03 - NO DESCOMENTAR SIN REVISIÓN ====================
+
+        TblCot06AlarmasDispositivos (alarmas_dispositivos) NO forma parte del dashboard operativo
+
+        CONTEXTO:
+        - Sistema diseñado para notificaciones de navbar que NUNCA se completó
+        - En proyecto antiguo NO se mostraba en dashboard.html.twig ni vistas de monitoreo
+        - Solo existía en devices_alerts_list.html.twig (widget dropdown navbar)
+
+        SISTEMAS DE ALARMAS CORRECTOS POR MÓDULO:
+        - SOS Monitor: tbl_cot_09_alarmas_sensores_dispositivos (ya implementado)
+        - Cada módulo tiene su propio sistema de alarmas específico
+
+        ANTES DE DESCOMENTAR:
+        - Revisar con arquitecto del sistema
+        - Validar caso de uso real
+        - Ver CotController.php línea 69 para documentación completa
+
+        ========================================================================================= #}
+
+        {# Active Alarms Section - COMENTADO 2025-10-03 #}
+        {# {% if alarmas_dispositivos|length > 0 %}
+        <div class="alarms-section">
+            <div class="alarm-table">
+                <div class="alarm-header">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Alarmas Activas ({{ alarmas_dispositivos|length }})
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Dispositivo</th>
+                                <th>Tipo Alarma</th>
+                                <th>Concesionaria</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for alarma in alarmas_dispositivos %}
+                            <tr>
+                                <td>
+                                    <i class="fas fa-server text-muted me-2"></i>
+                                    {{ alarma.idDispositivo.nombre|default('N/A') }}
+                                </td>
+                                <td>
+                                    <span class="badge bg-warning">
+                                        {{ alarma.idAlarma.nombre|default('Sin especificar') }}
+                                    </span>
+                                </td>
+                                <td>{{ alarma.concesionaria.nombre|default('N/A') }}</td>
+                                <td>
+                                    <span class="badge bg-danger">Activa</span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary"
+                                            onclick="viewAlarmDetail({{ alarma.id }})">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="alarms-section">
+            <div class="alert alert-success" role="alert">
+                <i class="fas fa-check-circle"></i>
+                No hay alarmas activas en este momento
+            </div>
+        </div>
+        {% endif %} #}
+    </div>
+{% endblock %}
+
+{% block body_javascript %}
+    {{ parent() }}
+    <!-- Chart.js from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <script>
+        // Initialize full-width dashboard layout and timer
+        document.addEventListener('DOMContentLoaded', function() {
+            // DISABLED 2025-10-16: Auto-collapse removed to respect user's localStorage preference
+            // The sidebar will now follow the user's manual toggle state
+            // TODO: Evaluate if full-screen mode should be optional or use a different approach
+            // const sidebarResizerHandler = document.getElementById('sidebar-resizer-handler');
+            // if (sidebarResizerHandler) {
+            //     sidebarResizerHandler.click();
+            // }
+
+            // Hide top navbar for full-screen experience
+            const headerNavbar = document.querySelector('.header-navbar');
+            if (headerNavbar) {
+                headerNavbar.style.display = 'none';
+            }
+
+            // Hide content-top header
+            const contentTop = document.querySelector('.content-top');
+            if (contentTop) {
+                contentTop.style.display = 'none';
+            }
+
+            // Ensure content wrapper takes full width
+            const contentWrapper = document.querySelector('.content-wrapper');
+            if (contentWrapper) {
+                contentWrapper.style.marginLeft = '0';
+                contentWrapper.style.width = '100%';
+                contentWrapper.style.maxWidth = '100%';
+            }
+
+            // Start auto-update timer
+            startDashboardTimer();
+        });
+
+        // Chart.js configuration for device status
+        const chartColors = {
+            active: 'rgba(40, 167, 69, 0.8)',     // Green
+            inactive: 'rgba(220, 53, 69, 0.8)',   // Red
+            borderActive: 'rgba(40, 167, 69, 1)',
+            borderInactive: 'rgba(220, 53, 69, 1)'
+        };
+
+        // Initialize all charts
+        {% for item in data_table %}
+        (function() {
+            const ctx = document.getElementById('chart_{{ item.id }}');
+            if (ctx) {
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Activos', 'Inactivos'],
+                        datasets: [{
+                            data: [{{ item.activos }}, {{ item.inactivos }}],
+                            backgroundColor: [
+                                chartColors.active,
+                                chartColors.inactive
+                            ],
+                            borderColor: [
+                                chartColors.borderActive,
+                                chartColors.borderInactive
+                            ],
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const total = {{ item.total }};
+                                        const value = context.parsed;
+                                        const percentage = ((value / total) * 100).toFixed(1);
+                                        return context.label + ': ' + value + ' (' + percentage + '%)';
+                                    }
+                                }
+                            }
+                        },
+                        cutout: '70%'
+                    }
+                });
+            }
+        })();
+        {% endfor %}
+
+        // Auto-update timer
+        let updateInterval = 60; // seconds
+        let countdown = updateInterval;
+        let dashboardTimer;
+
+        function updateTimerDisplay() {
+            const display = document.getElementById('timer-display');
+            const nextUpdate = document.getElementById('next-update');
+
+            if (display) {
+                display.textContent = updateInterval + 's';
+            }
+
+            if (nextUpdate) {
+                nextUpdate.textContent = countdown + 's';
+            }
+        }
+
+        function startDashboardTimer() {
+            clearInterval(dashboardTimer);
+            countdown = updateInterval;
+
+            dashboardTimer = setInterval(function() {
+                countdown--;
+                updateTimerDisplay();
+
+                if (countdown <= 0) {
+                    getDashboardData();
+                    countdown = updateInterval;
+                }
+            }, 1000);
+        }
+
+        function getDashboardData() {
+            fetch('{{ path('cot_dashboard') }}', {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.data_table) {
+                    console.log('Dashboard data updated:', data.data_table.length + ' devices');
+
+                    // Update each card with new data
+                    data.data_table.forEach((item, index) => {
+                        // Update numeric values
+                        const activosEl = document.querySelector(`#resumen .stat-card:nth-child(${index + 1}) .stat-value.text-success`);
+                        const inactivosEl = document.querySelector(`#resumen .stat-card:nth-child(${index + 1}) .stat-value.text-danger`);
+                        const totalEl = document.querySelector(`#resumen .stat-card:nth-child(${index + 1}) .stat-value.text-primary`);
+                        const activosBadge = document.querySelector(`#resumen .stat-card:nth-child(${index + 1}) .badge.bg-success`);
+                        const inactivosBadge = document.querySelector(`#resumen .stat-card:nth-child(${index + 1}) .badge.bg-danger`);
+
+                        if (activosEl) activosEl.textContent = item.activos;
+                        if (inactivosEl) inactivosEl.textContent = item.inactivos;
+                        if (totalEl) totalEl.textContent = item.total;
+                        if (activosBadge) activosBadge.textContent = parseFloat(item.por_Activos).toFixed(1) + '%';
+                        if (inactivosBadge) inactivosBadge.textContent = parseFloat(item.por_inactivos).toFixed(1) + '%';
+
+                        // Update chart if exists
+                        const chartCanvas = document.getElementById('chart_' + item.id);
+                        if (chartCanvas && window.Chart) {
+                            const chart = Chart.getChart(chartCanvas);
+                            if (chart) {
+                                chart.data.datasets[0].data = [item.activos, item.inactivos];
+                                chart.update('none'); // Update without animation for performance
+                            }
+                        }
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error updating dashboard:', error);
+            });
+        }
+
+        // Timer range control
+        const timerRange = document.getElementById('timer-range-ajax-update');
+        if (timerRange) {
+            timerRange.addEventListener('input', function() {
+                updateInterval = parseInt(this.value);
+                updateTimerDisplay();
+                startDashboardTimer();
+            });
+        }
+
+        // View alarm detail function
+        function viewAlarmDetail(alarmId) {
+            // Implementation for viewing alarm details
+            console.log('View alarm:', alarmId);
+        }
+
+        // Visibility API to pause updates when tab is not visible
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                clearInterval(dashboardTimer);
+            } else {
+                startDashboardTimer();
+            }
+        });
+    </script>
+{% endblock %}

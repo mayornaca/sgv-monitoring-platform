@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Informe de estado operativo sistemas</title>
+    {% if renderTo is not defined or renderTo == 'html' %}
+    {# Estilos para vista HTML #}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    {% endif %}
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            margin: 0;
+            padding: 10px;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+        .table th, .table td {
+            border: 1px solid #ddd;
+            padding: 4px;
+            text-align: center;
+        }
+        .table th {
+            /*background-color: #5368d5;*/
+            /*color: white;*/
+            font-weight: bold;
+        }
+        .table tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .danger {
+            background-color: #ffd7d7 !important;
+        }
+        .label-success {
+            background-color: #28a745;
+            color: white;
+            padding: 3px 6px;
+            border-radius: 3px;
+            display: inline-block;
+        }
+        .label-danger {
+            background-color: #dc3545;
+            color: white !important;
+            padding: 3px 6px;
+            border-radius: 3px;
+            display: inline-block;
+        }
+        .header-info {
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #e7f3ff;
+            border-radius: 5px;
+        }
+        .header-info h2 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            margin: 0 5px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .badge.badge-info {
+            background-color: #17a2b8;
+            color: white;
+        }
+        .badge.badge-success {
+            background-color: #28a745;
+            color: white;
+        }
+        .badge.badge-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+{% set active_devices_count = 0 %}
+{% set unactive_devices_count = 0 %}
+
+<div id="report-container-render" style="{% if renderTo == 'html' %}margin-top: 3px; height: 100%;{% elseif renderTo == 'pdf' %}margin-top: 0;{% endif %}">
+    {% if solo_enlaces is defined and solo_enlaces == 'true' %}
+        {% set show_block = false %}
+    {% else %}
+        {% set show_block = true %}
+    {% endif %}
+
+    <div class="col-lg-12">
+        {% if show_block %}
+            {% for dispositivo in dispositivos %}
+                {% if dispositivo.estado is same as(0) %}
+                    {% set unactive_devices_count = unactive_devices_count + 1 %}
+                {% elseif dispositivo.estado is same as(1) %}
+                    {% set active_devices_count = active_devices_count + 1 %}
+                {% endif %}
+            {% endfor %}
+
+            <div class="header-info" style="margin: 0 0 10px 0;">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <h2>Estado operativo de sistemas</h2>
+                    </div>
+                    <div class="col-sm-6 text-end">
+                        <h4>{{ "now"|date('d-m-Y H:i:s') }}</h4>
+                    </div>
+                </div>
+                <div style="padding: 5px 0;">
+                    Total: <span class="badge badge-info">{{ dispositivos|length }}</span>
+                    Activos: <span class="badge badge-success">{{ active_devices_count }}</span>
+                    Inactivos: <span class="badge badge-danger">{{ unactive_devices_count }}</span>
+                </div>
+            </div>
+        {% endif %}
+
+        <div id="tables-to-print">
+            {% if tipos_dispositivos|length and dispositivos|length %}
+                <div id="report" class="row" style="{% if renderTo == 'pdf' %}margin: 0;{% else %}margin: 0 0 10px 0;{% endif %}">
+                    {% if return_file_name is defined and return_file_name and renderTo == 'html' %}
+                        <div class="btn-group mb-3 {% if show_block == false %}col-lg-12{% endif %}">
+                            <button class="btn btn-success {% if show_block == false %}col-lg-12{% endif %}"
+                                    id="btn_download_report_pdf_cot_devices"
+                                    style="{% if show_block %}width: 275px;{% endif %}">
+                                <i class="fas fa-download me-2"></i>Descargar PDF
+                            </button>
+                        </div>
+                        <script>
+                            document.getElementById("btn_download_report_pdf_cot_devices").addEventListener('click', async function() {
+                                try {
+                                    const response = await fetch('{{ path('admin_cot_download_files', { path_name_file: return_file_name|url_encode }) }}');
+
+                                    if (!response.ok) {
+                                        throw new Error('Error al descargar el archivo');
+                                    }
+
+                                    const blob = await response.blob();
+                                    const url = window.URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = "{{ return_file_name }}";
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    window.URL.revokeObjectURL(url);
+                                    document.body.removeChild(a);
+                                } catch (error) {
+                                    console.error('Error descargando archivo:', error);
+                                    alert("Ha ocurrido un error al intentar descargar el archivo.");
+                                }
+                            });
+                        </script>
+                    {% endif %}
+
+                    {% if show_block %}
+                        {% for tipo_dispositivo in tipos_dispositivos %}
+                            <table class="table table-striped table-hover table-bordered bootstrap-table">
+                                {% if dispositivos|length %}
+                                    <thead>
+                                    <tr>
+                                        <th colspan="8" class="text-center" style="/*background-color: #5368d5; color: white;*/">
+                                            <h3 style="margin: 10px 0;">{{ tipo_dispositivo.tipo }}</h3>
+                                        </th>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-center">#</th>
+                                        <th class="text-center">Tag</th>
+                                        <th class="text-center">Descripción</th>
+                                        <th class="text-center">Eje</th>
+                                        <th class="text-center">Tramo</th>
+                                        <th class="text-center">Km</th>
+                                        <th class="text-center">Orientación</th>
+                                        <th class="text-center">Estado</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% set loop_index = 0 %}
+                                    {% for dispositivo in dispositivos %}
+                                        {% if state_filter is same as('all') or dispositivo.estado is same as(state_filter) %}
+                                            {% if dispositivo.idTipo.id == tipo_dispositivo.id %}
+                                                {% set loop_index = loop_index + 1 %}
+                                                <tr class="{% if dispositivo.estado == 0 %}table-danger{% endif %}">
+                                                    <th class="text-center">{{ loop_index }}</th>
+                                                    <td class="text-center">{{ dispositivo.nombre }}</td>
+                                                    <td class="text-center">{{ dispositivo.descripcion }}</td>
+                                                    <td class="text-center">{{ dispositivo.eje.nombre }}</td>
+                                                    <td class="text-center">{{ dispositivo.tramo.nombre }}</td>
+                                                    <td class="text-center">{{ dispositivo.km|number_format(3, ',', '.') }}</td>
+                                                    <td class="text-center">{{ dispositivo.orientacion }}</td>
+                                                    <td class="text-center {% if dispositivo.estado == 0 %}danger{% elseif dispositivo.estado == 1 %}success{% endif %}">
+                                                        {% if dispositivo.estado == 0 %}
+                                                            <span class="badge bg-danger label-danger">Inactivo</span>
+                                                        {% elseif dispositivo.estado == 1 %}
+                                                            <span class="label-success">Activo</span>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    {% if state_filter is same as(1) and active_devices_count is same as(0) %}
+                                        <tr><td colspan="8" class="text-center">No hay {{ tipo_dispositivo.tipo|lower }} activos</td></tr>
+                                    {% endif %}
+                                    {% if state_filter is same as(0) and unactive_devices_count is same as(0) %}
+                                        <tr><td colspan="8" class="text-center">No hay {{ tipo_dispositivo.tipo|lower }} inactivos</td></tr>
+                                    {% endif %}
+                                    </tbody>
+                                {% else %}
+                                    <tfoot>
+                                    <tr>
+                                        <th class="text-center warning">
+                                            <h3>No se encontró información</h3>
+                                        </th>
+                                    </tr>
+                                    </tfoot>
+                                {% endif %}
+                            </table>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if renderTo == 'html' %}
+        <script>
+            jQuery(document).ready(function() {
+                //$('body').css({'overflow':'hidden'});
+                // $('#report-container-render').mCustomScrollbar({
+                //     theme:"dark",
+                //     scrollInertia:250,
+                //     mouseWheelPixels:200
+                // });
+            });
+        </script>
+    {% endif %}
+</div>
+
+</body>
+</html>

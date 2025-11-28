@@ -1,0 +1,297 @@
+{% extends 'layout.html.twig' %}
+{% block title %}Gestor de colaboradores{% endblock %}
+
+{# CSS estándar para paneles de filtros #}
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('css/filter-panels-standard.css') }}">
+{% endblock %}
+
+{% block body %}
+	{{ parent() }}
+    {{ include('sgvDashboardBundle:Staff:messages/success.html.twig') }}
+	<div id="main-wrapper" class="container">
+		<div class="col-md-12">
+			<div class="page-header margin-none">
+				<h1 class="padding-none">Gestor de colaboradores</h1>
+			</div>
+            <div class="btn-group mb-3">
+                <button class="btn btn-info waves-effect waves-light" type="button">
+                    {% trans %}Total records: {% endtrans %}
+                    <span id="total" class="badge bg-light text-dark"> {{ pagination.getTotalItemCount }} </span>
+                </button>
+                <a href="{{ path('sgv_staff_add' )}}" class="btn btn-primary waves-effect waves-light">
+                    <i class="fas fa-plus-circle" aria-hidden="true"></i> Nuevo colaborador
+                </a>
+            </div>
+
+			{# Panel de filtros estandarizado usando el template base #}
+            {% embed 'components/filter_panel_base.html.twig' with {
+                panel_id: 'staff-filter-panel',
+                panel_title: 'Filtros Avanzados',
+                collapsed: true,
+                form_method: 'get',
+                form_action: '',
+                submit_button_text: 'Mostrar resultados',
+                reset_button_text: 'Limpiar filtros'
+            } %}
+                {% block filter_fields %}
+                    <div class="filter-fields-grid">
+                        {# Filas por página #}
+                        <div class="mb-3">
+                            <label for="rowsPerPage" class="form-label">Filas por página</label>
+                            <select class="form-select selectpicker" id="rowsPerPage" name="rowsPerPage">
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10">10</option>
+                                <option value="15">15</option>
+                                <option value="20">20</option>
+                                <option value="25">25</option>
+                                <option value="30">30</option>
+                                <option value="40">40</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                                <option value="200">200</option>
+                                <option value="300">300</option>
+                                <option value="400">400</option>
+                                <option value="500">500</option>
+                                <option selected="selected" value="1000">1000</option>
+                            </select>
+                        </div>
+
+                        {# Estado de registros #}
+                        <div class="mb-3">
+                            <label for="regStatus" class="form-label">Est. Registros</label>
+                            <select class="form-select selectpicker" id="regStatus" name="regStatus">
+                                <option value="all">Todos</option>
+                                <option value="true" selected="selected">Activos</option>
+                                <option value="false">Eliminados</option>
+                            </select>
+                        </div>
+
+                        {# Concesionaria #}
+                        {% set concessions_allowed = app.user.concessions|split(',') %}
+                        <div class="mb-3">
+                            <label for="filterConcessionaries" class="form-label">Concesionaria</label>
+                            <select id="filterConcessionaries" name="concessions[]" class="form-select selectpicker" data-live-search="true" multiple data-selected-text-format="count > 3" title="Seleccione" data-actions-box="true">
+                                {% for concessionarie in all_concessionaries %}
+                                    {% if concessionarie.idConcesionaria in concessions_allowed %}
+                                        <option value="{{ concessionarie.idConcesionaria }}">{{ concessionarie.nombre }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        {# Centro de costo #}
+                        <div class="mb-3">
+                            <label for="filterCostcenters" class="form-label">Centro de costo</label>
+                            <select id="filterCostcenters" name="costcenters[]" class="form-select selectpicker" data-live-search="true" multiple data-selected-text-format="count > 3" title="Seleccione" data-actions-box="true">
+                                {% for costcenter in all_costcenters %}
+                                    <option value="{{ costcenter.idCentroDeCosto }}">{{ costcenter.nombreCentroDeCosto }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        {# Área #}
+                        <div class="mb-3">
+                            <label for="filterAreas" class="form-label">Área</label>
+                            <select id="filterAreas" name="areas[]" class="form-select selectpicker" data-live-search="true" multiple data-selected-text-format="count > 3" title="Seleccione" data-actions-box="true">
+                                {% for area in all_areas %}
+                                    <option value="{{ area.idArea }}">{{ area.nombreArea }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        {# Filtro de RUT #}
+                        <div class="mb-3">
+                            <label class="form-label" for="txtFilterStaff">Filtro de RUT:</label>
+                            <input type="text" class="form-control" id="txtFilterStaff" name="filterRUT" placeholder="RUT">
+                        </div>
+
+                        {# Nombres #}
+                        <div class="mb-3">
+                            <label class="form-label" for="filterNombres">Nombres:</label>
+                            <input type="text" class="form-control" id="filterNombres" name="filterNombres" placeholder="Nombres">
+                        </div>
+
+                        {# Apellidos #}
+                        <div class="mb-3">
+                            <label class="form-label" for="filterApellidos">Apellidos:</label>
+                            <input type="text" class="form-control" id="filterApellidos" name="filterApellidos" placeholder="Apellidos">
+                        </div>
+
+                        {# Estado #}
+                        <div class="mb-3">
+                            <label class="form-label" for="ccbFilterState">Estado</label>
+                            <select class="form-select selectpicker" id="ccbFilterState" name="filterState">
+                                <option value="all" selected="selected">Todos</option>
+                                <option value="activos">Activos</option>
+                                <option value="inactivos">Inactivos</option>
+                            </select>
+                        </div>
+                    </div>
+                {% endblock %}
+            {% endembed %}
+			<div class="table-responsive">
+				<table class="table table-striped table-hover bootstrapTable bootstrap-table search"
+					   data-toggle="table"
+					   data-search="true"
+					   data-show-toggle="true"
+					   data-show-columns="true"
+					   data-show-export="true"
+					   data-export-types="['excel', 'csv']"
+					   data-export-options='{
+												 "fileName": "Listado de personal",
+												 "worksheetName": "SGV",
+												 "jspdf": {
+												   "autotable": {
+													 "styles": { "rowHeight": 20, "fontSize": 10 },
+													 "headerStyles": { "fillColor": 255, "textColor": 0 },
+													 "alternateRowStyles": { "fillColor": [60, 69, 79], "textColor": 255 }
+												   }
+												 }
+											   }'
+					   data-toolbar="#toolbar">
+					<thead>
+						<tr>
+							<th>{{ knp_pagination_sortable(pagination, 'Id'|trans, 'reg.idPersonal') }}</th>
+							<th>{{ knp_pagination_sortable(pagination, 'Nombres'|trans, 'reg.nombres') }}</th>
+							<th>{{ knp_pagination_sortable(pagination, 'Apellidos'|trans, 'reg.apellidos') }}</th>
+							<th>{{ knp_pagination_sortable(pagination, 'RUT'|trans, 'reg.rut') }}</th>
+							<th>{{ knp_pagination_sortable(pagination, 'Email'|trans, 'reg.correoElectronico') }}</th>
+							<th>Concesionaria</th>
+							<th>Centro de costo</th>
+							<th>Licencia(s) de conducir</th>
+							<th>{{ knp_pagination_sortable(pagination, 'Vencimiento Lic.'|trans, 'reg.fechaVencimientoLicencia') }}</th>
+							<th class="actions">{{ 'Actions'|trans }}</th>
+						</tr>
+					</thead>
+					<tbody>
+				        {% for staff in pagination %}
+				            <tr data-id="{{ staff.idPersonal }}" data-restoreurl="{{ path('sgv_staff_update',{id: staff.idPersonal }) }}">
+				                <td style="width: 50px;">{{ staff.idPersonal }}</td>
+								<td style="width: 150px;">{{ staff.nombres }}</td>
+				                <td style="width: 150px;">{{ staff.apellidos }}</td>
+								<td style="width: 150px;">{{ staff.rut }}
+									{% if staff.nombres == '-' or staff.apellidos == '-' %}
+										<span id="sub_tbl_detalles" class="badge bg-info" onclick="getDataFromRut('{{ staff.rut }}')">
+                                            <i class="fas fa-search"></i>
+                                        </span>
+									{% endif %}
+								</td>
+								<td style="width: 150px;">{{ staff.correoElectronico }}</td>
+								<td style="width: 150px;">{{ staff.idConcesionaria.nombre }}</td>
+								<td style="width: 150px;">{{ staff.idCentroDeCosto.nombreCentroDeCosto }}</td>
+								<td style="width: 150px;">
+									{% if staff.licenciasConducir %}
+										{% set licencias_conductor = staff.licenciasConducir|split(',') %}
+										Clase:
+										{% for licence in licencias_conductor %}
+											<span class="badge bg-info">{{ licencias[licence] }}</span>
+										{% endfor %}
+										{% else %}
+											<span class="badge bg-danger">No posee licencia</span>
+									{% endif %}
+								</td>
+								<td>{{ staff.fechaVencimientoLicencia|date('d-m-Y') }}</td>
+								<td class="actions" style="width: 150px;">
+										<a href="{{ path('sgv_staff_edit', { id: staff.idPersonal }) }}" class="btn btn-sm btn-primary waves-effect waves-light">
+											{{ 'Edit'|trans }}
+										</a>
+									{% if staff.regStatus %}
+										<a href="#" id="btn-delete-id-{{ staff.idPersonal }}" class="btn btn-sm btn-danger waves-effect waves-light btn-delete">
+											{{ 'Delete'|trans }}
+										</a>
+									{% else %}
+										<a href="#" id="btn-restore-id-{{ staff.idPersonal }}" class="btn btn-sm btn-info waves-effect waves-light btn-restore">
+											Restaurar
+										</a>
+									{% endif %}
+								</td>
+				            </tr>
+				        {% endfor %}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+    {{ include('sgvDashboardBundle:Staff:forms/form.html.twig', { form: delete_form_ajax, message: 'Are you sure ?'|trans, id: 'form-delete', with_submit: false}) }}
+{% endblock %}
+	{% block paginator %}
+		{# display navigation #}
+		<div class="navigation">
+			{{ knp_pagination_render(pagination) }}
+		</div>
+	{% endblock %}
+{% block javascripts  %}
+	{{ parent() }}
+
+    {# Componentes estándar de filtros #}
+    <script src="{{ asset('js/components/FilterPanel.js') }}"></script>
+    <script src="{{ asset('js/components/NotificationManager.js') }}"></script>
+    <script src="{{ asset('js/utils/ajax-helpers.js') }}"></script>
+
+	<script src="{{ asset('bundles/sgvdashboard/js/delete.js') }}"></script>
+	<script>
+		jQuery(document).ready(function()
+		{
+			// Validación RUT
+			$('#txtFilterStaff').focusout(function()
+			{
+				validarRUT("txtFilterStaff")
+			});
+
+			// Restaurar valores de filtros desde servidor
+			{% if rowsPerPage %}
+			$('#rowsPerPage').val('{{ rowsPerPage }}').trigger('change');
+			$('#rowsPerPage').selectpicker('refresh');
+			{% endif %}
+
+			{% if filterRUT %}
+			$('#txtFilterStaff').val('{{ filterRUT }}');
+			{% endif %}
+
+			{% if filterState %}
+			$('#ccbFilterState').val('{{ filterState }}').trigger('change');
+			$('#ccbFilterState').selectpicker('refresh');
+			{% endif %}
+
+			{% if filterNombres %}
+			$('#filterNombres').val('{{ filterNombres }}');
+			{% endif %}
+
+			{% if filterApellidos %}
+			$('#filterApellidos').val('{{ filterApellidos }}');
+			{% endif %}
+
+			{% if concessions %}
+			$('#filterConcessionaries').selectpicker('val', [{% for concession in concessions %}{{ concession }},{% endfor %}]);
+			{% else %}
+			{% set concessions_allowed = app.user.concessions|split(',') %}
+			$('#filterConcessionaries').selectpicker('val', [{% for concession_allowed in concessions_allowed %}{{ concession_allowed }},{% endfor %}]);
+			{% endif %}
+
+			{% if costcenters %}
+			$('#filterCostcenters').selectpicker('val', [{% for costcenter in costcenters %}{{ costcenter }},{% endfor %}]);
+			{% endif %}
+
+			{% if areas %}
+			$('#filterAreas').selectpicker('val', [{% for area in areas %}{{ area }},{% endfor %}]);
+			{% endif %}
+
+            {% if regStatus %}
+            $('#regStatus').val('{{ regStatus }}').trigger('change');
+            $('#regStatus').selectpicker('refresh');
+            {% endif %}
+
+            // Inicializar selectpickers (Bootstrap Select compatible con Bootstrap 5)
+            $('.selectpicker').selectpicker('refresh');
+		});
+	</script>
+{% endblock %}

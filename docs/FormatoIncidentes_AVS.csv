@@ -1,0 +1,53 @@
+﻿;;;;;;;;;;;;;;;
+DATOS INCIDENTES;;;;;;;;;;Archivo Ocupación de Pista (Sábana);;;;;
+Código del incidente;Tipo de incidente;Descripción;Tramo;Calzada;Ubicación;Informado Por;Observaciones;Fecha hora creación;Fecha de finalización;ubicacion;pk_desde;pk_hasta;sector;fechahora_creacion_incidente;Fechahora_fin_ultimo_control_tto
+27836;TR - 01;TRABAJOS, TRABAJOS DE MANTENCIÓN Y CONSERVACIÓN;1;O-P;Pista/Calzada;Telefòno de Emergencia;PULIDO Y PINTADO DE PASARELAS SECTOR LOS TILOS ;31/07/2025 08:53:00;31/07/2025 19:40:29;Pasarela;-5,929;-5,929;Las Torres (Maipú / Cerrillos) ;31-07-2025 08:53;
+27837;ON - 01;"OPERACIÓN NORMAL, OPERACIÓN NORMAL	PATRULLAJE";3;O-P;Pista/Calzada;Telefòno de Emergencia;ST DESDE BASE INDUSTRIA PATRULLAJE AVS;31/07/2025 09:03:00;31/07/2025 13:02:52;Vía Expresa;0,7;0,7;Las Industrias ;31-07-2025 09:03;
+27842;TR - 04;TRABAJOS, TRABAJOS DEL ÁREA DE PÓRTICOS DE COBRO;3;O-P;Pista/Calzada;Otros;Mantención preventivas PDC 3.1 y 3.2;31/07/2025 10:06:00;31/07/2025 17:58:51;Vía Local;3,1;3,1;La Granja / Cerro Negro ;31-07-2025 10:06;
+27844;TR - 01;TRABAJOS, TRABAJOS DE MANTENCIÓN Y CONSERVACIÓN;5;O-P;Pista/Calzada;Telefòno de Emergencia;MANTENCIÓN DE ILUMINARIAS EN P.P. MAR TIRRENO Y UNO ORIENTE VLI ;31/07/2025 10:38:00;31/07/2025 18:07:29;Pasarela;14;11,8;Los Presidentes ;31-07-2025 10:38;
+27846;ON - 01;"OPERACIÓN NORMAL, OPERACIÓN NORMAL	PATRULLAJE";5;P-O;Pista/Calzada;Telefòno de Emergencia;"MÓVIL 3 DESDE BASE INDUSTRIA AL CORPORATIVO
+TERMINO 12.55 HRS";31/07/2025 11:19:00;31/07/2025 13:41:49;Vía Expresa;11,8;11,8;Las Torres (Peñalolen / Macul) ;31-07-2025 11:19;
+27847;B - 02;BLOQUEO DE PISTA, VEHÍCULO DETENIDO;3;P-O;Pista/Calzada;Patrullaje;"Se visualiza por cámara  3.6  vehículo detenido en pista  acceso    por panne mecánica
+
+Móvil    7 traslada hasta : Shell PAC
+Hora de traslado:  11.36
+
+*ST LO ENCUENTRA EN PATRULLAJE  *
+";31/07/2025 11:25:00;31/07/2025 12:01:40;Entrada;2,372;2,372;Acceso San Carlos (08) ;31-07-2025 11:25;31-07-2025 11:38
+27848;TR - 01;TRABAJOS, TRABAJOS DE MANTENCIÓN Y CONSERVACIÓN;1;O-P;Pista/Calzada;Telefòno de Emergencia;MANTENCION DE AREAS VERDES MATEO DE TORO Y ZAMBRANO ;31/07/2025 11:25:00;31/07/2025 17:14:58;Pasarela;-7;-7;Segunda Transversal ;31-07-2025 11:25;
+27850;TR - 01;TRABAJOS, TRABAJOS DE MANTENCIÓN Y CONSERVACIÓN;;P-O;Pista/Calzada;Telefòno de Emergencia;LIMPIEZA DE SUMIDEROS DESDE GRAN AVENIDA AL ORIENTE ;31/07/2025 11:45:00;31/07/2025 19:40:35;Vía Local;1,7;14,9;Gran Avenida ;31-07-2025 11:45;
+27851;TR - 01;TRABAJOS, TRABAJOS DE MANTENCIÓN Y CONSERVACIÓN;1;P-O;Pista/Calzada;Telefòno de Emergencia;MANTENCIÓN DE ÁREA VERDE SECTOR P.P LOS COPIHUES ;31/07/2025 11:50:00;31/07/2025 19:41:09;Pasarela;-5,54;-5,54;Acceso Los Tilos (03) ;31-07-2025 11:50;
+27852;TR - 01;TRABAJOS, TRABAJOS DE MANTENCIÓN Y CONSERVACIÓN;;P-O;Pista/Calzada;Telefòno de Emergencia;LAVADO DE PLAZAS DE PASARELAS SECTOR PLAZA OESTE AL ORIENTE ;31/07/2025 11:55:00;31/07/2025 19:40:45;Pasarela;-4;14,9;Camino Lonquen ;31-07-2025 11:55;
+27853;B - 02;BLOQUEO DE PISTA, VEHÍCULO DETENIDO;4;O-P;Pista/Calzada;Patrullaje;"Se visualiza por cámara 5.1   vehículo detenido en pista  derecha    por panne neumático
+
+Móvil  8   traslada hasta : vía local Punta Arenas
+Hora de traslado:  12.39hrs
+
+*ST LO ENCUENTRA EN PATRULLAJE  *
+";31/07/2025 12:13:00;31/07/2025 13:03:08;Vía Expresa;8;8;Gerónimo de Alderete ;31-07-2025 12:13;31-07-2025 12:44
+27854;B - 02;BLOQUEO DE PISTA, VEHÍCULO DETENIDO;1;P-O;Pista/Calzada;CCTV;"Se visualiza por cámara 1.10    camión detenido en pista derecha y central     por panne neumático (2)
+
+CAMIÓN ES REMOLCADO POR PARTICULAR HACIA VÍA LOCAL MIENTRAS SE SEGREGABA ÁREA
+ 
+DATOS 1.0: 
+
+*MÓVILES  CONCURREN  DESDE :  BASE INDUSTRIA  *
+";31/07/2025 12:17:00;31/07/2025 13:42:49;Vía Expresa;-3,3;-3,3;Salida N° 30, G. Velásquez ;31-07-2025 12:17;31-07-2025 12:56
+27855;ON - 01;"OPERACIÓN NORMAL, OPERACIÓN NORMAL	PATRULLAJE";3;O-P;Pista/Calzada;Telefòno de Emergencia;MÓVIL 3 DESDE CORPORATIVO A BASE INDUSTRIA;31/07/2025 13:34:00;31/07/2025 14:33:17;Vía Expresa;0,7;0,7;Las Industrias ;31-07-2025 13:34;
+27856;B - 02;BLOQUEO DE PISTA, VEHÍCULO DETENIDO;4;O-P;Pista/Calzada;Telefòno de Emergencia;"BO2:                          
+Se visualiza por cámara  4.2  vehículo detenido en pista   derecha   por panne combustible
+
+Móvil  7   traslada hasta : Shell PAC
+Hora de traslado:  14.25
+
+*MÓVILES  CONCURREN  DESDE : BASE INDUSTRIA   *
+";31/07/2025 14:00:00;31/07/2025 14:43:46;Vía Expresa;6,9;6,9;Punta Arenas ;31-07-2025 14:00;31-07-2025 14:25
+27857;B - 02;BLOQUEO DE PISTA, VEHÍCULO DETENIDO;2;O-P;Pista/Calzada;Telefòno de Emergencia;"Se visualiza por cámara 2.7   vehículo detenido en pista  acceso    por panne combustible
+
+Móvil  2   traslada hasta : Copec Lonquén
+Hora de traslado:  14.48 hrs
+RENAULT MASTER L2H2
+*MÓVILES  CONCURREN  DESDE : BASE INDUSTRIA  *
+";31/07/2025 14:26:00;31/07/2025 15:05:54;Entrada;-0,509;-0,509;Acceso Cementerio (25) ;31-07-2025 14:26;31-07-2025 14:49
+27858;TR - 01;TRABAJOS, TRABAJOS DE MANTENCIÓN Y CONSERVACIÓN;1;O-P;Pista/Calzada;Telefòno de Emergencia;REPOSICIÓN DE MALLAS SECTOR CAMINO A LONQUEN ;31/07/2025 14:41:00;31/07/2025 19:40:58;Vía Local;-4;-4;Camino Lonquen ;31-07-2025 14:41;
+27859;TR - 01;TRABAJOS, TRABAJOS DE MANTENCIÓN Y CONSERVACIÓN;4;P-O;Pista/Calzada;Telefòno de Emergencia;MANTENCIÓN GENERAL DE PLAZA DE PASARELA ROJAS MAGALLANES.  ;31/07/2025 14:52:00;31/07/2025 19:41:15;Pasarela;7,48;7,48;Acceso Rojas Magallanes (11) ;31-07-2025 14:52;

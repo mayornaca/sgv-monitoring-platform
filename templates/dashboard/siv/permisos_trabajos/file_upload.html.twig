@@ -1,0 +1,266 @@
+{# Bootstrap-Fileinput v5.5.x - Modal de Upload (Patrón Legacy) #}
+<div class="modal fade" id="modal_upload_files" tabindex="-1" aria-labelledby="modalUploadLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalUploadLabel">
+                    <i class="fas fa-cloud-upload"></i> Adjuntar Archivos
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="file-upload-container">
+                    <input id="file-upload-input" name="files[]" type="file" multiple class="file-loading">
+
+                    {# Campo oculto JSON (compatibilidad legacy) #}
+                    <input type="hidden" id="frm_edit_reg_attached_files" value="{{ attached_files|default('') }}">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    'use strict';
+
+    var $fileInput = $("#file-upload-input");
+    var $attachedFilesField = $("#frm_edit_reg_attached_files");
+    var $modal = $('#modal_upload_files');
+
+    // Inicializar SOLO cuando el modal se abre (evita problemas de rendering)
+    $modal.on('shown.bs.modal', function () {
+        // ✅ Leer ID dinámicamente del campo hidden (siempre actualizado)
+        var permiso_trabajo_id = $("#frm_edit_reg-id").val() || null;
+        console.log('[DEBUG] ID Permiso Trabajo:', permiso_trabajo_id);
+
+        if (!$fileInput.data('fileinput')) {
+            console.log('[DEBUG] Inicializando Bootstrap-Fileinput en modal');
+
+            $fileInput.fileinput({
+                language: 'es',
+                uploadUrl: "{{ path('siv_permisos_trabajos_upload_files') }}",
+                uploadAsync: true,
+                maxFileCount: 10,
+                showUpload: true,
+                showRemove: true,
+                showCancel: true,
+                allowedFileExtensions: ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'zip', 'msg'],
+                maxFileSize: 10240,  // 10MB
+                uploadExtraData: function() {
+                    return {
+                        permiso_trabajo_id: permiso_trabajo_id,
+                        attached_files_json: $attachedFilesField.val()
+                    };
+                },
+                theme: 'bs5',
+                browseClass: 'btn btn-primary',
+                removeClass: 'btn btn-danger',
+                uploadClass: 'btn btn-success',
+                deleteUrl: "{{ path('siv_permisos_trabajos_delete_file') }}",
+                deleteExtraData: function() {
+                    return {
+                        permiso_trabajo_id: permiso_trabajo_id
+                    };
+                },
+                overwriteInitial: false,
+                initialPreviewAsData: true,
+                purifyHtml: true,
+                showBrowse: true,
+                browseOnZoneClick: true,
+
+                // Mensajes personalizados
+                msgUploadBegin: 'Subiendo archivo {index} de {files}...',
+                msgUploadEnd: 'Subida completada',
+                msgFilesTooMany: 'Número máximo de archivos permitidos ({n}) excedido. Solo se subirán {m} archivos.',
+                msgSizeTooLarge: 'El archivo "{name}" ({size} KB) excede el tamaño máximo permitido de {maxSize} KB.',
+                msgInvalidFileExtension: 'Extensión inválida para el archivo "{name}". Solo se permiten: {extensions}.',
+
+                // Layout configuración
+                layoutTemplates: {
+                    main1: '{preview}\n<div class="kv-upload-progress kv-hidden"></div>\n<div class="clearfix"></div>\n{remove}\n{upload}\n{browse}\n',
+                },
+
+                // Configuración de preview
+                previewZoomButtonIcons: {
+                    prev: '<i class="fa fa-chevron-left"></i>',
+                    next: '<i class="fa fa-chevron-right"></i>',
+                    toggleheader: '<i class="fa fa-fw fa-arrows-alt-v"></i>',
+                    fullscreen: '<i class="fa fa-fw fa-arrows-alt"></i>',
+                    borderless: '<i class="fa fa-fw fa-external-link-alt"></i>',
+                    close: '<i class="fa fa-fw fa-times"></i>'
+                },
+                previewZoomButtonClasses: {
+                    prev: 'btn btn-navigate',
+                    next: 'btn btn-navigate',
+                    toggleheader: 'btn btn-sm btn-kv btn-default btn-outline-secondary',
+                    fullscreen: 'btn btn-sm btn-kv btn-default btn-outline-secondary',
+                    borderless: 'btn btn-sm btn-kv btn-default btn-outline-secondary',
+                    close: 'btn btn-sm btn-kv btn-default btn-outline-secondary'
+                }
+            });
+        }
+    });
+
+    // Cuando un archivo se sube exitosamente
+    $fileInput.on('fileuploaded', function(event, data, previewId, index) {
+        console.log('[DEBUG] Archivo subido:', data.response);
+
+        if (data.response && data.response.success) {
+            var fileInfo = data.response.file_info;
+
+            // Parsear JSON existente
+            var attachedFiles = [];
+            if ($attachedFilesField.val()) {
+                try {
+                    attachedFiles = JSON.parse($attachedFilesField.val());
+                } catch(e) {
+                    console.error('Error parsing attached_files JSON:', e);
+                    attachedFiles = [];
+                }
+            }
+
+            // ✅ Agregar archivo (backend ya retorna formato legacy correcto)
+            attachedFiles.push(fileInfo);
+            $attachedFilesField.val(JSON.stringify(attachedFiles));
+
+            // Recargar tabla
+            if (typeof loadAttachedFileObjArr === 'function') {
+                loadAttachedFileObjArr();
+            }
+
+            $.notify(fileInfo.file_name_original + ' subido correctamente', {
+                style: 'bootstrap',
+                className: 'success',
+                position: 'top right'
+            });
+        } else {
+            $.notify('Error al subir archivo: ' + (data.response.error || 'Error desconocido'), {
+                style: 'bootstrap',
+                className: 'error',
+                position: 'top right'
+            });
+        }
+    });
+
+    // Cuando falla la subida
+    $fileInput.on('fileuploaderror', function(event, data, msg) {
+        console.error('[ERROR] Fallo en subida:', msg);
+        $.notify('Error al subir archivo: ' + msg, {
+            style: 'bootstrap',
+            className: 'error',
+            position: 'top right'
+        });
+    });
+
+    // Cuando se completan TODAS las subidas
+    $fileInput.on('filebatchuploadcomplete', function(event, files, extra) {
+        console.log('[DEBUG] Todas las subidas completadas');
+
+        // ✅ Solo notificar, NO cerrar modal ni auto-save
+        $.notify('Todos los archivos se subieron correctamente', {
+            style: 'bootstrap',
+            className: 'success',
+            position: 'top right'
+        });
+    });
+
+    // Cuando se elimina un archivo desde el preview
+    $fileInput.on('filedeleted', function(event, key, jqXHR, data) {
+        console.log('[DEBUG] Archivo eliminado:', data);
+
+        if (data && data.success) {
+            // Actualizar JSON
+            var attachedFiles = [];
+            if ($attachedFilesField.val()) {
+                try {
+                    attachedFiles = JSON.parse($attachedFilesField.val());
+                } catch(e) {
+                    console.error('Error parsing attached_files JSON:', e);
+                }
+            }
+
+            // Remover archivo
+            attachedFiles = attachedFiles.filter(function(file) {
+                return file.file_id !== data.file_id;
+            });
+
+            // Reindexar
+            attachedFiles.forEach(function(file, index) {
+                file.file_index = index + 1;
+            });
+
+            $attachedFilesField.val(JSON.stringify(attachedFiles));
+
+            // Recargar tabla
+            if (typeof loadAttachedFileObjArr === 'function') {
+                loadAttachedFileObjArr();
+            }
+
+            $.notify('Archivo eliminado correctamente', {
+                style: 'bootstrap',
+                className: 'success',
+                position: 'top right'
+            });
+        }
+    });
+
+    // Limpiar widget cuando se cierra el modal
+    $modal.on('hidden.bs.modal', function () {
+        if ($fileInput.data('fileinput')) {
+            $fileInput.fileinput('clear');
+        }
+    });
+
+    // Exponer funciones globalmente
+    window.fileUploadWidget = {
+        openModal: function() {
+            $modal.modal('show');
+        },
+        closeModal: function() {
+            $modal.modal('hide');
+        },
+        refresh: function() {
+            if ($fileInput.data('fileinput')) {
+                $fileInput.fileinput('refresh');
+            }
+        },
+        clear: function() {
+            if ($fileInput.data('fileinput')) {
+                $fileInput.fileinput('clear');
+            }
+        }
+    };
+})();
+</script>
+
+<style>
+/* Estilos para modal de upload */
+.file-upload-container {
+    padding: 10px 0;
+}
+
+.kv-file-zoom {
+    z-index: 10000 !important;
+}
+
+.file-preview-frame {
+    margin: 8px;
+}
+
+/* Modal hijo debe estar POR ENCIMA del modal padre */
+#modal_upload_files {
+    z-index: 1060;  /* Mayor que modal padre ajax_edit_popup (1055) */
+}
+
+/* Backdrop del modal hijo - Bootstrap 5 crea backdrop como hermano en body */
+/* Seleccionar el segundo backdrop (modal hijo) */
+.modal-backdrop.show:nth-of-type(2) {
+    z-index: 1057;  /* Entre modal padre (1055) y modal hijo (1060) */
+}
+</style>

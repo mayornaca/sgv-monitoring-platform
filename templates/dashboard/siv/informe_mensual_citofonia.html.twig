@@ -1,0 +1,494 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block title %}Informe Mensual de Citofonía{% endblock %}
+
+{# Sobrescribir content_title para eliminar el H1 que ocupa espacio #}
+{% block content_title %}{% endblock %}
+
+{# Agregar título en el toolbar superior (content_top_header) #}
+{% block content_top_header %}
+    <div class="d-flex align-items-center gap-2">
+        <h5 class="m-0">
+            <i class="fas fa-file-invoice" style="color: var(--color-primary, #5368d5);"></i>
+            Informe Mensual de Citofonía
+        </h5>
+    </div>
+
+    {# Keep the original search, user menu, and settings #}
+    {{ parent() }}
+{% endblock %}
+
+{% block head_stylesheets %}
+    {{ parent() }}
+    <!-- Tempus Dominus 6 CSS (Bootstrap 5 compatible) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@eonasdan/tempus-dominus@6/dist/css/tempus-dominus.min.css">
+    <style>
+        .filter-panel {
+            background: #f8f9fa;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .export-section {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .table-container {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+    </style>
+{% endblock %}
+
+{% block configured_head_contents %}
+    {{ parent() }}
+    <!-- jQuery (necesario ANTES de Tempus Dominus) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <!-- Popper.js (requerido por Tempus Dominus) -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <!-- Tempus Dominus 6 JS (Bootstrap 5 compatible) -->
+    <script src="https://cdn.jsdelivr.net/npm/@eonasdan/tempus-dominus@6/dist/js/tempus-dominus.min.js"></script>
+    <!-- Report Loader -->
+    <script src="{{ asset('js/report-loader.js') }}"></script>
+{% endblock %}
+
+{% block page_content %}
+    <div class="container-fluid py-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                {# Panel de Filtros #}
+                <div id="filter-panel" class="filter-panel">
+                    <form id="report_params" method="get" action="">
+                        <input type="hidden" name="ci" value="1">
+
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label for="fechaInicio" class="form-label">
+                                    <i class="fas fa-calendar-alt me-1"></i>Fecha de Inicio
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group" id="dtpFechaInicio">
+                                    <input type="text"
+                                           id="fechaInicio"
+                                           name="fechaInicio"
+                                           class="form-control"
+                                           placeholder="Fecha de inicio"
+                                           value="{{ fechaInicio }}"
+                                           required>
+                                    <span class="input-group-text">
+                                        <i class="fas fa-calendar"></i>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label for="fechaTermino" class="form-label">
+                                    <i class="fas fa-calendar-check me-1"></i>Fecha de Término
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group" id="dtpFechaTermino">
+                                    <input type="text"
+                                           id="fechaTermino"
+                                           name="fechaTermino"
+                                           class="form-control"
+                                           placeholder="Fecha de término"
+                                           value="{{ fechaTermino }}"
+                                           required>
+                                    <span class="input-group-text">
+                                        <i class="fas fa-calendar"></i>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">&nbsp;</label>
+                                <div class="d-flex align-items-end gap-2">
+                                    {% if data_table is defined and data_table|length > 0 %}
+                                        <button type="button" class="btn btn-danger" id="btn-export-pdf-citofonia" onclick="downloadInformeMensualPdf()">
+                                            <i class="fas fa-file-pdf me-2"></i>Descargar PDF
+                                        </button>
+                                        <button type="button" class="btn btn-success" id="btn-export-excel-citofonia" onclick="downloadInformeMensualExcel()">
+                                            <i class="fas fa-file-excel me-2"></i>Descargar Excel
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary" id="btn-generar-informe">
+                                    <i class="fas fa-search me-2"></i>Generar Reporte
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {# Tabla de Resultados #}
+        {% if data_table is defined and data_table|length > 0 %}
+            <div class="row">
+                <div class="col-12">
+                    <div class="table-container">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover table-sm table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th class="text-start align-middle">Mes</th>
+                                        <th class="text-center">Consulta por información<br>de call center</th>
+                                        <th class="text-center">Consulta por condiciones<br>de la vía</th>
+                                        <th class="text-center">Corte de llamada</th>
+                                        <th class="text-center">Prueba/Trabajo de<br>Poste en la<br>autopista</th>
+                                        <th class="text-center">Reclamos</th>
+                                        <th class="text-center">Registro de<br>incidente</th>
+                                        <th class="text-center">Total</th>
+                                        <th class="text-center">Realizadas por<br>postes SOS</th>
+                                        <th class="text-center" style="background-color: cornsilk;">Realizadas por<br>usuarios a Postes<br>SOS</th>
+                                        <th class="text-center">Realizadas por<br>24900767</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% if data_table is defined and data_table %}
+                                        {% for row in data_table %}
+                                            {% if row.mes_r != 'Total' %}
+                                            <tr>
+                                                <th scope="row" class="text-start">{{ row.mes_r }}</th>
+                                                <td class="text-center">{{ row.call_center_r }}</td>
+                                                <td class="text-center">{{ row.consulta_via_r }}</td>
+                                                <td class="text-center">{{ row.corte_llamada_r }}</td>
+                                                <td class="text-center">{{ row.prueba_trabajo_postes_r }}</td>
+                                                <td class="text-center">{{ row.reclamo_r }}</td>
+                                                <td class="text-center">{{ row.registro_incidente_r }}</td>
+                                                <td class="text-center"><strong>{{ row.total_r }}</strong></td>
+                                                <td class="text-center">{{ row.realizada_por_sos_r }}</td>
+                                                <td class="text-center" style="background-color: cornsilk;">{{ row.realizada_por_usuario_a_sos_r }}</td>
+                                                <td class="text-center">{{ row.realizada_por_767_r }}</td>
+                                            </tr>
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+                                </tbody>
+                                <tfoot>
+                                    {% if data_table is defined and data_table %}
+                                        {% set totalRow = data_table|last %}
+                                        {% if totalRow.mes_r == 'Total' %}
+                                        <tr class="fw-bold">
+                                            <th scope="row" class="text-start">{{ totalRow.mes_r }}</th>
+                                            <th class="text-center">{{ totalRow.call_center_r }}</th>
+                                            <th class="text-center">{{ totalRow.consulta_via_r }}</th>
+                                            <th class="text-center">{{ totalRow.corte_llamada_r }}</th>
+                                            <th class="text-center">{{ totalRow.prueba_trabajo_postes_r }}</th>
+                                            <th class="text-center">{{ totalRow.reclamo_r }}</th>
+                                            <th class="text-center">{{ totalRow.registro_incidente_r }}</th>
+                                            <th class="text-center">{{ totalRow.total_r }}</th>
+                                            <th class="text-center">{{ totalRow.realizada_por_sos_r }}</th>
+                                            <th class="text-center" style="background-color: cornsilk;">{{ totalRow.realizada_por_usuario_a_sos_r }}</th>
+                                            <th class="text-center">{{ totalRow.realizada_por_767_r }}</th>
+                                        </tr>
+                                        {% endif %}
+                                    {% endif %}
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% elseif data_table is defined %}
+            <div class="row">
+                <div class="col-12">
+                    <div class="alert alert-info text-center">
+                        <i class="fas fa-info-circle fa-2x mb-3"></i>
+                        <h5>No se encontraron registros</h5>
+                        <p>No hay datos para el período seleccionado. Intente con un rango de fechas diferente.</p>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="row">
+                <div class="col-12">
+                    <div class="alert alert-secondary text-center">
+                        <i class="fas fa-chart-line fa-2x mb-3"></i>
+                        <h5>Seleccione un período</h5>
+                        <p>Configure las fechas de inicio y término para generar el informe mensual de citofonía.</p>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block body_javascript %}
+    {{ parent() }}
+    <script>
+        // Helper function to parse server date format (DD-MM-YYYY HH:mm:ss or partial)
+        function parseServerDate(dateString) {
+            if (!dateString || dateString.trim() === '') {
+                return null;
+            }
+
+            try {
+                // Normalizar espacios y reemplazar + por espacio (URL encoding)
+                dateString = dateString.trim().replace(/\+/g, ' ');
+
+                // Split por espacio para separar fecha y hora
+                const parts = dateString.split(' ');
+
+                // Parse fecha (DD-MM-YYYY)
+                const datePart = parts[0];
+                const dateComponents = datePart.split('-');
+
+                if (dateComponents.length < 3) {
+                    console.warn('Invalid date format:', dateString);
+                    return null;
+                }
+
+                const day = parseInt(dateComponents[0], 10);
+                const month = parseInt(dateComponents[1], 10) - 1; // JS months are 0-indexed
+                const year = parseInt(dateComponents[2], 10);
+
+                // Parse hora (HH:mm:ss) con defaults
+                let hours = 0, minutes = 0, seconds = 0;
+
+                if (parts.length > 1 && parts[1]) {
+                    const timeComponents = parts[1].split(':');
+                    hours = parseInt(timeComponents[0], 10) || 0;
+                    minutes = parseInt(timeComponents[1], 10) || 0;
+                    seconds = parseInt(timeComponents[2], 10) || 0;
+                }
+
+                return new Date(year, month, day, hours, minutes, seconds);
+            } catch (e) {
+                console.error('Error parsing date:', dateString, e);
+                return null;
+            }
+        }
+
+        jQuery(document).ready(function() {
+            // Initialize Tempus Dominus 6 (Bootstrap 5 compatible) con try-catch para aislar errores
+            try {
+                const tempusDominus = window.tempusDominus;
+                if (tempusDominus) {
+                    const options = {
+                        display: {
+                            components: {
+                                calendar: true,
+                                date: true,
+                                month: true,
+                                year: true,
+                                decades: true,
+                                clock: true,
+                                hours: true,
+                                minutes: true,
+                                seconds: true
+                            },
+                            icons: {
+                                time: 'fas fa-clock',
+                                date: 'fas fa-calendar',
+                                up: 'fas fa-arrow-up',
+                                down: 'fas fa-arrow-down',
+                                previous: 'fas fa-chevron-left',
+                                next: 'fas fa-chevron-right',
+                                today: 'fas fa-calendar-check',
+                                clear: 'fas fa-trash',
+                                close: 'fas fa-times'
+                            }
+                        },
+                        localization: {
+                            locale: 'es',
+                            format: 'dd-MM-yyyy HH:mm:ss',
+                            hourCycle: 'h23'
+                        },
+                        useCurrent: false,
+                        keepInvalid: true
+                    };
+
+                    // Parse fecha inicio desde servidor o usar default
+                    let dateObjInicio = null;
+                    {% if fechaInicio and fechaInicio != '' %}
+                    const fechaInicioValue = '{{ fechaInicio|raw }}';
+                    dateObjInicio = parseServerDate(fechaInicioValue);
+                    if (dateObjInicio) {
+                        options.viewDate = dateObjInicio;
+                    }
+                    {% endif %}
+
+                    // Si no hay fecha del servidor, usar default (primer día mes anterior)
+                    if (!dateObjInicio) {
+                        dateObjInicio = new Date();
+                        dateObjInicio.setMonth(dateObjInicio.getMonth() - 1);
+                        dateObjInicio.setDate(1);
+                        dateObjInicio.setHours(0, 0, 0, 0);
+                        options.viewDate = dateObjInicio;
+                    }
+
+                    // Initialize fecha inicio
+                    let pickerInicio = null;
+                    if (document.getElementById('dtpFechaInicio')) {
+                        pickerInicio = new tempusDominus.TempusDominus(document.getElementById('dtpFechaInicio'), options);
+                        if (dateObjInicio) {
+                            pickerInicio.dates.setValue(dateObjInicio);
+                        }
+                    }
+
+                    // Parse fecha termino desde servidor o usar default
+                    let dateObjTermino = null;
+                    {% if fechaTermino and fechaTermino != '' %}
+                    const fechaTerminoValue = '{{ fechaTermino|raw }}';
+                    dateObjTermino = parseServerDate(fechaTerminoValue);
+                    if (dateObjTermino) {
+                        options.viewDate = dateObjTermino;
+                    } else {
+                        delete options.viewDate;
+                    }
+                    {% else %}
+                    delete options.viewDate;
+                    {% endif %}
+
+                    // Si no hay fecha del servidor, usar default (último día mes anterior)
+                    if (!dateObjTermino) {
+                        dateObjTermino = new Date();
+                        dateObjTermino.setDate(0);
+                        dateObjTermino.setHours(23, 59, 59, 0);
+                        options.viewDate = dateObjTermino;
+                    }
+
+                    // Initialize fecha término
+                    let pickerTermino = null;
+                    if (document.getElementById('dtpFechaTermino')) {
+                        pickerTermino = new tempusDominus.TempusDominus(document.getElementById('dtpFechaTermino'), options);
+                        if (dateObjTermino) {
+                            pickerTermino.dates.setValue(dateObjTermino);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('Error inicializando date pickers:', e);
+            }
+
+            // Loader en submit del formulario
+            jQuery('#report_params').on('submit', function() {
+                ReportLoader.show('#btn-generar-informe', 'Generando...');
+            });
+
+        });
+
+        // Función para descargar PDF con XHR en segundo plano
+        function downloadInformeMensualPdf() {
+            ReportLoader.show('#btn-export-pdf-citofonia', 'Descargando...');
+
+            const xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (xhttp.readyState === 4) {
+                    ReportLoader.hide('#btn-export-pdf-citofonia');
+                    if (xhttp.status === 200) {
+                        var filename = 'Informe_Mensual_Citofonia_' + new Date().getTime() + '.pdf';
+                        var disposition = xhttp.getResponseHeader('Content-Disposition');
+                        if (disposition && disposition.indexOf('attachment') !== -1) {
+                            var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                            var matches = filenameRegex.exec(disposition);
+                            if (matches != null && matches[1]) {
+                                filename = matches[1].replace(/['"]/g, '');
+                            }
+                        }
+
+                        const a = document.createElement('a');
+                        a.href = window.URL.createObjectURL(xhttp.response);
+                        a.download = filename;
+                        a.style.display = 'none';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(a.href);
+                    } else {
+                        alert('Error al descargar el archivo PDF');
+                    }
+                }
+            };
+            xhttp.onerror = function() {
+                ReportLoader.hide('#btn-export-pdf-citofonia');
+                alert('Error al descargar el archivo PDF');
+            };
+            xhttp.open('GET', '{{ path('admin_siv_dashboard_informe_mensual_citofonia_export_pdf', {
+                'fechaInicio': fechaInicio,
+                'fechaTermino': fechaTermino
+            }) }}');
+            xhttp.responseType = 'blob';
+            xhttp.send();
+        }
+
+        // Función para descargar Excel con XHR en segundo plano
+        function downloadInformeMensualExcel() {
+            ReportLoader.show('#btn-export-excel-citofonia', 'Descargando...');
+
+            const xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (xhttp.readyState === 4) {
+                    ReportLoader.hide('#btn-export-excel-citofonia');
+                    if (xhttp.status === 200) {
+                        var filename = 'Informe_Mensual_Citofonia_' + new Date().getTime() + '.xlsx';
+                        var disposition = xhttp.getResponseHeader('Content-Disposition');
+                        if (disposition && disposition.indexOf('attachment') !== -1) {
+                            var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                            var matches = filenameRegex.exec(disposition);
+                            if (matches != null && matches[1]) {
+                                filename = matches[1].replace(/['"]/g, '');
+                            }
+                        }
+
+                        const a = document.createElement('a');
+                        a.href = window.URL.createObjectURL(xhttp.response);
+                        a.download = filename;
+                        a.style.display = 'none';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(a.href);
+                    } else {
+                        alert('Error al descargar el archivo Excel');
+                    }
+                }
+            };
+            xhttp.onerror = function() {
+                ReportLoader.hide('#btn-export-excel-citofonia');
+                alert('Error al descargar el archivo Excel');
+            };
+            xhttp.open('GET', '{{ path('admin_siv_dashboard_informe_mensual_citofonia_export_excel', {
+                'fechaInicio': fechaInicio,
+                'fechaTermino': fechaTermino
+            }) }}');
+            xhttp.responseType = 'blob';
+            xhttp.send();
+        }
+
+        function formatDate(date) {
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
+            return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+        }
+
+        function resetForm() {
+            document.getElementById('report_params').reset();
+            // Set default dates again
+            const defaultInicio = new Date();
+            defaultInicio.setMonth(defaultInicio.getMonth() - 1);
+            defaultInicio.setDate(1);
+            defaultInicio.setHours(0, 0, 0, 0);
+            jQuery('#fechaInicio').val(formatDate(defaultInicio));
+
+            const defaultTermino = new Date();
+            defaultTermino.setDate(0);
+            defaultTermino.setHours(23, 59, 0, 0);
+            jQuery('#fechaTermino').val(formatDate(defaultTermino));
+        }
+    </script>
+{% endblock %}

@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="es" class="no-focus">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>Iniciar Sesión - SGV</title>
+
+    <meta name="description" content="Sistema de Gestión y Monitoreo - SGV">
+    <meta name="robots" content="noindex, nofollow">
+
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}" />
+
+    {# Google Fonts #}
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Muli:300,400,400i,600,700">
+
+    {# Webpack Encore Assets (includes jQuery, FontAwesome, and dependencies) #}
+    {{ encore_entry_link_tags('app') }}
+
+    {# Custom Legacy CSS (loaded after Encore to override styles) #}
+    <link rel="stylesheet" href="{{ asset('css/auth-legacy-style.css') }}">
+</head>
+<body>
+
+{# Progress Bar #}
+<div class="loader-css-bar" style="display: none;"></div>
+
+{# Page Container #}
+<div id="page-container" class="main-content-boxed">
+    {# Main Container #}
+    <main id="main-container">
+        {# Background Image with Split Screen #}
+        <div class="bg-image" style="background-image: url('{{ asset('images/auth/login-background.jpg') }}');">
+            <div class="row mx-0 bg-black-op">
+                {# Left Section - Image with overlay text #}
+                <div class="hero-static col-md-6 col-xl-8 d-none d-md-flex align-items-md-end">
+                    <div class="p-30 invisible" data-toggle="appear">
+                        <p class="font-size-h3 font-w600 text-white">
+                            Sistema de Gestión y Monitoreo
+                        </p>
+                        <p class="font-italic text-white-op">
+                            &copy; <span>{{ "now"|date("Y") }}</span> SGV - Todos los derechos reservados
+                        </p>
+                    </div>
+                </div>
+
+                {# Right Section - Login Form #}
+                <div class="hero-static col-md-6 col-xl-4 d-flex align-items-center bg-white invisible" data-toggle="appear" data-class="animated fadeInRight">
+                    <div class="content content-full">
+                        {# Header #}
+                        <div class="px-30 py-30">
+                            <a class="navbar-brand" href="{{ path('app_home') }}">
+                                <img alt="Logo SGV" src="{{ asset('images/logo_w300px.png') }}" class="img-transparent-dark-bg" style="max-width: 100%;">
+                            </a>
+                            <h1 class="h3 font-w700 mt-30 mb-10">Bienvenida/o</h1>
+                            <h2 class="h5 font-w400 text-muted mb-0">Por favor inicie sesión</h2>
+                        </div>
+                        {# END Header #}
+
+                        {# Login Form #}
+                        <form id="form_login" class="px-30" action="{{ path('app_login') }}" method="post">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+                            {# Error Messages #}
+                            {% if error %}
+                                <div class="alert alert-danger">
+                                    {{ error.messageKey|trans(error.messageData, 'security') }}
+                                </div>
+                            {% endif %}
+
+                            {# Flash Messages #}
+                            {% for flashMessage in app.session.flashbag.get('success_password') %}
+                                <div class="alert alert-success">
+                                    {{ flashMessage }}
+                                </div>
+                            {% endfor %}
+
+                            {# Username Field with Floating Label #}
+                            <div class="form-group row">
+                                <div class="col-12">
+                                    <div class="form-material floating">
+                                        <input type="text"
+                                               class="form-control"
+                                               id="username"
+                                               name="_username"
+                                               value="{{ last_username }}"
+                                               placeholder=" "
+                                               required
+                                               autofocus
+                                               autocomplete="username">
+                                        <label for="username">Nombre de usuario</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {# Password Field with Floating Label #}
+                            <div class="form-group row">
+                                <div class="col-12">
+                                    <div class="form-material floating">
+                                        <input type="password"
+                                               class="form-control"
+                                               id="password"
+                                               name="_password"
+                                               placeholder=" "
+                                               required
+                                               autocomplete="current-password">
+                                        <label for="password">Contraseña</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {# Remember Me Checkbox #}
+                            <div class="form-group row">
+                                <div class="col-12">
+                                    <div class="custom-control custom-checkbox">
+                                        <input type="checkbox"
+                                               class="custom-control-input"
+                                               id="remember_me"
+                                               name="_remember_me">
+                                        <label class="custom-control-label" for="remember_me">
+                                            Mantener la sesión iniciada
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+
+                        {# Submit Button (Outside form for AJAX) #}
+                        <div class="form-group px-30">
+                            <button id="btn-ajax-login"
+                                    class="w3-btn w3-margin-bottom"
+                                    style="width: 100%; height: 50px; font-size: 20pt; position: relative;">
+                                <span class="has-spinner" style="vertical-align: super; left: -18px;">
+                                    <div class="spinner"></div>
+                                </span>
+                                Iniciar Sesión <i class="fa fa-sign-in-alt mr-10"></i>
+                            </button>
+
+                            <div class="mt-30">
+                                <a class="link-effect text-muted mr-10 mb-5 d-inline-block"
+                                   href="{{ path('app_forgot_password') }}">
+                                    <i class="fa fa-exclamation-triangle mr-5"></i> ¿Has olvidado tu contraseña?
+                                </a>
+                            </div>
+                        </div>
+                        {# END Login Form #}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+{# Webpack Encore Assets (includes jQuery and dependencies) #}
+{{ encore_entry_script_tags('app') }}
+
+{# Custom Auth JavaScript (requires jQuery from Encore) #}
+<script src="{{ asset('js/auth-ajax-login.js') }}"></script>
+
+</body>
+</html>

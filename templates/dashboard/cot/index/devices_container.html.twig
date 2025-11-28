@@ -1,0 +1,272 @@
+<style>
+    .device_indeterminate {
+        text-shadow: 0 1px 0 #fff;
+        background-image: -webkit-linear-gradient(top, #f7f7f7 0, #777 100%);
+        background-image: -o-linear-gradient(top, #f7f7f7 0, #777 100%);
+        background-image: -webkit-gradient(linear, left top, left bottom, from(#f7f7f7), to(#777));
+        background-image: linear-gradient(to bottom, #f7f7f7 0, #777 100%);
+        filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffffff', endColorstr='#777', GradientType=0);
+        filter: progid:DXImageTransform.Microsoft.gradient(enabled=false);
+        background-repeat: repeat-x;
+        border-color: #ccc;
+        color: black;
+    }
+</style>
+
+{% if id_device_type_fr is defined and id_device_type_fr > 0 %}
+    {% set basicWidth = 12 %}
+    {% set alertWidth = 12 %}
+{% else %}
+    {% set id_route_params = 5 %}
+    {# Use grid_items_width from the selector to determine device widths #}
+    {% if grid_items_width is defined %}
+        {% set basicWidth = grid_items_width %}io sur,
+        {% set alertWidth = grid_items_width %}
+    {% else %}
+        {% set basicWidth = 2 %}
+        {% set alertWidth = 4 %}
+    {% endif %}
+{% endif %}
+
+{% for tipo_dispositivo in tipos_dispositivos %}
+    {% set type_devices_count = 0 %}
+    {% set type_devices_count_u = 0 %}
+    {% set dispositivos_por_tipo = [] %}
+    {% for dispositivo in dispositivos %}
+        {% if dispositivo.idTipo.id == tipo_dispositivo.id %}
+            {% set dispositivos_por_tipo = dispositivos_por_tipo|merge([dispositivo]) %}
+            {% set type_devices_count = type_devices_count + 1 %}
+            {% if dispositivo.estado == 0 %}
+                {% set type_devices_count_u = type_devices_count_u + 1 %}
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+
+    {% set id_route_params = id_device_type_fr ?? 0 %}
+    {% if id_route_params > 0 %}
+        {# When viewing a single device type, use full width #}
+        {% set apliedWidth = 12 %}
+    {% else %}
+        {# Use grid_items_width to determine both container and device widths #}
+        {% if grid_items_width is defined %}
+            {# Map grid_items_width values: 1=3cols, 2=6cols, 3=4cols, 4=2cols, 12=1col #}
+            {% if grid_items_width == 1 %}
+                {% set apliedWidth = 4 %}  {# 3 columns #}
+            {% elseif grid_items_width == 2 %}
+                {% set apliedWidth = 2 %}  {# 6 columns - default #}
+            {% elseif grid_items_width == 3 %}
+                {% set apliedWidth = 3 %}  {# 4 columns #}
+            {% elseif grid_items_width == 4 %}
+                {% set apliedWidth = 6 %}  {# 2 columns #}
+            {% elseif grid_items_width == 12 %}
+                {% set apliedWidth = 12 %} {# 1 column #}
+            {% else %}
+                {% set apliedWidth = 2 %}  {# Default to 6 columns #}
+            {% endif %}
+
+            {# Override for types with many failed devices #}
+            {% if type_devices_count_u >= 3 and apliedWidth < 4 %}
+                {% set apliedWidth = 4 %}  {# Minimum 3 columns for alert state #}
+            {% endif %}
+        {% else %}
+            {# Fallback if grid_items_width not defined #}
+            {% set apliedWidth = 2 %}
+            {% if type_devices_count_u >= 3 %}
+                {% set apliedWidth = 4 %}
+            {% endif %}
+        {% endif %}
+    {% endif %}
+
+    {% if type_devices_count > 0 %}
+        <div class="grid-item-block col-6 col-sm-6 col-md-4 col-lg-{{ apliedWidth }}" style="padding: 1px;"
+             data-order="{{ type_devices_count_u }}">
+            <div id="cot-main-wrapper_type_{{ tipo_dispositivo.id }}"
+                 class="col-sm-12 col-lg-12 px-1 py-1"
+                 style="margin-bottom: 0px !important;padding-top:10px;padding-bottom:10px;">
+                <div class="gallery col-lg-12 col-md-12 col-sm-12 col-12">
+                    <span class="gallery-title" style="font-size: 18px;">
+                        {% if grid_items_width == 2 %}{{ tipo_dispositivo.tipo|slice(0,14) }}{% if tipo_dispositivo.tipo|length > 14 %}...{% endif %}{% else %}{{ tipo_dispositivo.tipo }}{% endif %}
+                        <span class="float-end">
+                            <span id="count_unactive_type_{{ tipo_dispositivo.id }}"
+                                  class="badge status_count {% if type_devices_count_u == 0 %}btn-success{% else %}btn-danger{% endif %} waves-effect waves-light">{% if type_devices_count_u == 0 %}<i class="fa fa-check" aria-hidden="true"></i>{% else %}{{ type_devices_count_u }}{% endif %}</span>
+                            <span id="count_total_type_{{ tipo_dispositivo.id }}"
+                                  style="font-size: 18px;">/{{ type_devices_count }}</span>
+                        </span>
+                    </span>
+                </div>
+                <div class="devices_grid">
+                    <div class="devices_grid_sizer"></div>
+                    {% for dispositivo in dispositivos_por_tipo %}
+                            {# NO OPC: Si es diferente de metodo OPC se carga vista normal #}
+                            {% if tipo_dispositivo.metodoMonitoreo not in [3,4,6,7] %}
+                                <div id="device_{{ dispositivo.id }}" title="{{ dispositivo.ip }}"
+                                     class="text-center float-start devices_grid_item cot_device_container icon-btn type_{{ tipo_dispositivo.id }}
+                                        {% if dispositivo.estado == 1 or dispositivo.id == 787 %}
+                                            device_active btn-success waves-effect waves-light
+                                        {% elseif dispositivo.estado == 0 %}
+                                            device_unactive btn-danger waves-effect waves-light
+                                        {% elseif dispositivo.estado == 2 %}
+                                            hidden
+                                        {% endif %}"
+                                     data-id="{{ dispositivo.id }}"
+                                     data-id_tipo="{{ dispositivo.idTipo.id }}"
+                                     data-nombre_tipo="{{ dispositivo.idTipo.tipo }}"
+                                     data-ip="{{ dispositivo.ip }}"
+                                     data-nombre="{{ dispositivo.nombre }}"
+                                     data-descripcion="{{ dispositivo.descripcion }}"
+                                     data-km="{{ dispositivo.km|number_format(3, ',', '.') }}"
+                                     data-eje="{{ dispositivo.eje.nombre ?? '' }}"
+                                     data-tramo="{{ dispositivo.tramo.cod ?? '' }} {{ dispositivo.tramo.nombre ?? '' }}"
+                                     data-orientacion="{{ dispositivo.orientacion }}"
+                                     data-estado="{{ dispositivo.estado }}"
+                                     data-supervisado=""
+                                     data-concesionaria=""
+                                     data-atributos=""
+                                     data-nupdates="0">
+                                    <i class="fa {{ dispositivo.idTipo.icono ?? 'fa-newspaper-o' }} btn-glyphicon img-circle btn_circle_icon_left"></i>
+                                    <div class="btn_circle_text">
+                                        {% if dispositivo.idTipo.id != 3 %}
+                                            {{ dispositivo.nombre }}
+                                        {% else %}
+                                            {{ dispositivo.descripcion }}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% elseif tipo_dispositivo.metodoMonitoreo == 3 %}
+                                {# SI OPC: Si metodo == OPC se carga vista OPC #}
+                                <div id="device_{{ dispositivo.id }}" title="{{ dispositivo.nombre }}"
+                                     class="text-center float-start devices_grid_item opc_device_container icon-btn type_{{ tipo_dispositivo.id }}
+                                        {% if dispositivo.estado == 1 %}
+                                            device_active btn-success waves-effect waves-light
+                                        {% elseif dispositivo.estado == 0 %}
+                                            device_unactive btn-danger waves-effect waves-light
+                                        {% elseif dispositivo.estado == 2 %}
+                                            device_indeterminate waves-effect waves-dark
+                                        {% elseif dispositivo.estado == -1 %}
+                                            hidden
+                                        {% endif %}"
+                                     data-id="{{ dispositivo.id }}"
+                                     data-id_tipo="{{ dispositivo.idTipo.id }}"
+                                     data-nombre_tipo="{{ dispositivo.idTipo.tipo }}"
+                                     data-ip="{{ dispositivo.ip }}"
+                                     data-nombre="{{ dispositivo.nombre }}"
+                                     data-descripcion="{{ dispositivo.descripcion }}"
+                                     data-km="{{ dispositivo.km|number_format(3, ',', '.') }}"
+                                     data-eje="{{ dispositivo.eje.nombre ?? '' }}"
+                                     data-tramo="{{ dispositivo.tramo.cod ?? '' }} {{ dispositivo.tramo.nombre ?? '' }}"
+                                     data-orientacion="{{ dispositivo.orientacion }}"
+                                     data-estado="{{ dispositivo.estado }}"
+                                     data-supervisado=""
+                                     data-concesionaria=""
+                                     data-atributos=""
+                                     data-nupdates="0">
+                                    <div class="devices_grid_header" style="width: 100%;">
+                                        <i class="fa {{ dispositivo.idTipo.icono ?? 'fa-newspaper-o' }} btn-glyphicon img-circle btn_circle_icon_left"
+                                           style="margin:0 1px 0 0;"></i>
+                                        <div class="btn_circle_text">
+                                            {{ dispositivo.nombre }}
+                                        </div>
+                                    </div>
+                                    <div class="opc_vars_container">
+                                        {% set opc_vars = dispositivo.atributos ? dispositivo.atributos|json_decode : null %}
+                                        {% if opc_vars.opc_vars is defined %}
+                                            {% for opc_var in opc_vars.opc_vars %}
+                                                <span id="{{ opc_var.opc_var|preg_replace("/[^A-Za-z0-9\\-]/", "-") }}"
+                                                      class="opc_var_device_container icon-btn
+                                                {% if opc_var.opc_value == opc_var.result_success_value %}
+                                                    device_active btn-success waves-effect waves-light
+                                                {% elseif opc_var.opc_value == 2 %}
+                                                    device_indeterminate waves-effect waves-dark
+                                                {% else %}
+                                                    device_unactive btn-danger waves-effect waves-light
+                                                {% endif %}"
+                                                      title="{{ opc_var.opc_var }}">
+                                                    <i class="fa fa-microchip btn-glyphicon img-circle btn_circle_icon_left"></i>
+                                                    <div class="btn_circle_text">{{ opc_var.name }}</div>
+                                                </span>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% elseif tipo_dispositivo.metodoMonitoreo == 4 or tipo_dispositivo.metodoMonitoreo == 6 or tipo_dispositivo.metodoMonitoreo == 7 %}
+                                {# SI Espiras #}
+                                <div id="device_{{ dispositivo.id }}" title="{{ dispositivo.nombre }}"
+                                     class="text-center float-start devices_grid_item opc_device_container icon-btn type_{{ tipo_dispositivo.id }} monitoreo{{ tipo_dispositivo.metodoMonitoreo }}
+                                        {% if dispositivo.estado == 1 %}
+                                            device_active btn-success waves-effect waves-light
+                                        {% elseif dispositivo.estado == 0 %}
+                                            device_unactive btn-warning waves-effect waves-light
+                                        {% elseif dispositivo.estado == -1 %}
+                                            device_unactive btn-danger waves-effect waves-light
+                                        {% elseif dispositivo.estado == 2 %}
+                                            hidden
+                                        {% endif %}"
+                                     data-id="{{ dispositivo.id }}"
+                                     data-id_tipo="{{ dispositivo.idTipo.id }}"
+                                     data-nombre_tipo="{{ dispositivo.idTipo.tipo }}"
+                                     data-ip="{{ dispositivo.ip }}"
+                                     data-nombre="{{ dispositivo.nombre }}"
+                                     data-descripcion="{{ dispositivo.descripcion }}"
+                                     data-km="{{ dispositivo.km|number_format(3, ',', '.') }}"
+                                     data-eje="{{ dispositivo.eje.nombre ?? '' }}"
+                                     data-tramo="{{ dispositivo.tramo.cod ?? '' }} {{ dispositivo.tramo.nombre ?? '' }}"
+                                     data-orientacion="{{ dispositivo.orientacion }}"
+                                     data-estado="{{ dispositivo.estado }}"
+                                     data-supervisado=""
+                                     data-concesionaria=""
+                                     data-atributos=""
+                                     data-nupdates="0">
+
+                                    <div style="width: 100%;">
+                                        {% if dispositivo.idTipo.id == 18 %}
+                                            <img width="30" height="30" class="img-circle btn_circle_image_left"
+                                                 src="{{ asset('images/ambiental.jpg') }}"
+                                                 style="box-shadow: 0 2px 5px rgba(0,0,0,.15);">
+                                            <div class="btn_circle_text">
+                                                {{ dispositivo.descripcion }}
+                                            </div>
+                                            <span>{{ dispositivo.nombre }}</span>
+                                        {% else %}
+                                            <i class="fa {{ dispositivo.idTipo.icono ?? 'fa-newspaper-o' }} btn-glyphicon img-circle btn_circle_icon_left"
+                                               style="margin:0 1px 0 0;"></i>
+                                            <div class="btn_circle_text">
+                                                {{ dispositivo.nombre }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="opc_vars_container">
+                                        {% set obj_vars = dispositivo.atributos ? dispositivo.atributos|json_decode : null %}
+                                        {% if obj_vars.sensors is defined %}
+                                            {% for obj_var in obj_vars.sensors %}
+                                                <span id="esp_{{ dispositivo.id }}_sen_{{ obj_var.id }}"
+                                                      class="opc_var_device_container icon-btn
+                                                    {% if obj_var.status == 1 %}
+                                                        device_active btn-success waves-effect waves-light
+                                                    {% elseif obj_var.status == 0 %}
+                                                        device_unactive btn-warning waves-effect waves-light
+                                                    {% elseif obj_var.status == -1 %}
+                                                        device_unactive btn-danger waves-effect waves-light
+                                                    {% endif %}"
+                                                      title="{% if obj_var.orden == 1 %}Medidor de CO{% elseif obj_var.orden == 2 %}Anemómetro{% elseif obj_var.orden == 3 %}Medidor de Opacidad{% else %}{{ obj_var.name }}{% endif %}">
+                                                    {% if dispositivo.idTipo.id == 18 %}
+                                                        <img width="30" height="30" class="img-circle btn_circle_image_left"
+                                                             src="{% if obj_var.orden == 1 %}{{ asset('images/co.jpg') }}{% elseif obj_var.orden == 2 %}{{ asset('images/anemometro.jpg') }}{% elseif obj_var.orden == 3 %}{{ asset('images/opacidad.jpg') }}{% endif %}"
+                                                             style="box-shadow: 0 2px 5px rgba(0,0,0,.15);">
+                                                    {% else %}
+                                                        <i class="fa fa-microchip btn-glyphicon img-circle btn_circle_icon_left"></i>
+                                                    {% endif %}
+                                                    <div class="btn_circle_text"
+                                                         title="{% if obj_var.orden == 1 %}Medidor de CO{% elseif obj_var.orden == 2 %}Anemómetro{% elseif obj_var.orden == 3 %}Medidor de Opacidad{% else %}{{ obj_var.name }}{% endif %}">{{ obj_var.name }}</div>
+                                                </span>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endfor %}

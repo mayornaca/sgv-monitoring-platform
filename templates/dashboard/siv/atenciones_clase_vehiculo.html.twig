@@ -1,0 +1,527 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block title %}Atenciones por Clase de Vehículo{% endblock %}
+
+{# Sobrescribir content_title para eliminar el H1 que ocupa espacio #}
+{% block content_title %}{% endblock %}
+
+{# Agregar título en el toolbar superior (content_top_header) #}
+{% block content_top_header %}
+    <div class="d-flex align-items-center gap-2">
+        <h5 class="m-0">
+            <i class="fas fa-car" style="color: var(--color-primary, #5368d5);"></i>
+            Atenciones por Clase de Vehículo
+        </h5>
+    </div>
+
+    {# Keep the original search, user menu, and settings #}
+    {{ parent() }}
+{% endblock %}
+
+{% block head_stylesheets %}
+    {{ parent() }}
+    <!-- Tempus Dominus 6 CSS (Bootstrap 5 compatible) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@eonasdan/tempus-dominus@6/dist/css/tempus-dominus.min.css">
+    <!-- Bootstrap Select CSS (Bootstrap 5 compatible) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">
+    <!-- Bootstrap Table CSS (legacy pattern) -->
+    <link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.22.1/dist/bootstrap-table.min.css">
+
+    <style>
+        /* Fix input-group-text height to match inputs */
+        .input-group-text {
+            block-size: auto !important;
+            height: auto !important;
+        }
+
+        .filter-panel {
+            background: #f8f9fa;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .table th {
+            background-color: #f4f6f9;
+            font-weight: 600;
+        }
+
+        .col-width-fixed-sm {
+            max-width: 30px;
+        }
+    </style>
+{% endblock %}
+
+{% block configured_head_contents %}
+    {{ parent() }}
+    <!-- jQuery (necesario ANTES de Tempus Dominus) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <!-- Popper.js (requerido por Tempus Dominus) -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <!-- Tempus Dominus 6 JS (Bootstrap 5 compatible) -->
+    <script src="https://cdn.jsdelivr.net/npm/@eonasdan/tempus-dominus@6/dist/js/tempus-dominus.min.js"></script>
+    <!-- Bootstrap Select JS (Bootstrap 5 compatible) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/i18n/defaults-es_ES.min.js"></script>
+    <!-- Bootstrap Table JS (legacy pattern) -->
+    <script src="https://unpkg.com/bootstrap-table@1.22.1/dist/bootstrap-table.min.js"></script>
+    <script src="https://unpkg.com/bootstrap-table@1.22.1/dist/locale/bootstrap-table-es-ES.min.js"></script>
+    <!-- jQuery twbsPagination for server-side pagination (legacy pattern) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twbs-pagination/1.4.2/jquery.twbsPagination.min.js"></script>
+    <!-- Report Loader -->
+    <script src="{{ asset('js/report-loader.js') }}"></script>
+{% endblock %}
+
+{% block page_content %}
+    <div class="container-fluid py-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                {# Panel de Filtros #}
+                <div id="filter-panel" class="filter-panel">
+                    <form id="report_filters" method="get">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label for="fechaInicio" class="form-label">
+                                    <i class="fas fa-calendar-alt me-1"></i>Fecha de Inicio
+                                </label>
+                                <div class="input-group" id="dtpFechaInicio">
+                                    <input type="text"
+                                           id="fechaInicio"
+                                           name="fechaInicio"
+                                           class="form-control"
+                                           placeholder="DD-MM-YYYY HH:mm:ss">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-calendar"></i>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label for="fechaTermino" class="form-label">
+                                    <i class="fas fa-calendar-check me-1"></i>Fecha de Término
+                                </label>
+                                <div class="input-group" id="dtpFechaTermino">
+                                    <input type="text"
+                                           id="fechaTermino"
+                                           name="fechaTermino"
+                                           class="form-control"
+                                           placeholder="DD-MM-YYYY HH:mm:ss">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-calendar"></i>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label for="p_tipo_contingencia" class="form-label">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>Contingencias
+                                </label>
+                                <select name="p_tipo_contingencia[]"
+                                        id="p_tipo_contingencia"
+                                        class="selectpicker form-control filter_panel_control"
+                                        multiple
+                                        data-selected-text-format="count > 3"
+                                        data-actions-box="true"
+                                        data-live-search="true"
+                                        data-select-all-text="Todos"
+                                        data-deselect-all-text="Ninguno">
+                                    {% for item in m_tipo_contingencia %}
+                                        <option value="{{ item.cod_contingencia }}" selected>
+                                            ({{ item.cod_contingencia }}) {{ item.contingencia }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label for="p_categorias_vehiculos" class="form-label">
+                                    <i class="fas fa-truck me-1"></i>Tipo de Recurso
+                                </label>
+                                <select name="p_categorias_vehiculos[]"
+                                        id="p_categorias_vehiculos"
+                                        class="selectpicker form-control filter_panel_control"
+                                        multiple
+                                        data-selected-text-format="count > 3"
+                                        data-actions-box="true"
+                                        data-live-search="true"
+                                        data-select-all-text="Todos"
+                                        data-deselect-all-text="Ninguno">
+                                    {% for item in m_categorias_vehiculos %}
+                                        <option value="{{ item.c_tip_mzz }}" selected>
+                                            ({{ item.c_tip_mzz }}) {{ item.t_des_tip_mzz }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        {# Row 2: Ruta, Sentido, KMs #}
+                        <div class="row g-3 mt-2">
+                            <div class="col-md-2">
+                                <label for="ccbRuta" class="form-label">
+                                    <i class="fas fa-road me-1"></i>Ruta
+                                </label>
+                                <select name="p_ruta" id="ccbRuta" class="form-select">
+                                    <option value="0" {% if p_ruta == '0' %}selected{% endif %}>Todas</option>
+                                    <option value="1" {% if p_ruta == '1' %}selected{% endif %}>Costanera</option>
+                                    <option value="2" {% if p_ruta == '2' %}selected{% endif %}>Kennedy</option>
+                                    <option value="10" {% if p_ruta == '10' %}selected{% endif %}>AMB</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-2">
+                                <label for="ccbSentido" class="form-label">
+                                    <i class="fas fa-arrows-alt-h me-1"></i>Sentido
+                                </label>
+                                <select name="p_sentido" id="ccbSentido" class="form-select">
+                                    <option value="all" {% if p_sentido == 'all' %}selected{% endif %}>Todos</option>
+                                    <option value="OP" {% if p_sentido == 'OP' %}selected{% endif %}>Oriente-Poniente</option>
+                                    <option value="PO" {% if p_sentido == 'PO' %}selected{% endif %}>Poniente-Oriente</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-2">
+                                <label for="p_km_ini" class="form-label">Km Inicio</label>
+                                <input type="number"
+                                       name="p_km_ini"
+                                       id="p_km_ini"
+                                       class="form-control"
+                                       value="{{ p_km_ini }}"
+                                       {% if p_ruta == '0' %}disabled{% endif %}>
+                            </div>
+
+                            <div class="col-md-2">
+                                <label for="p_km_fin" class="form-label">Km Fin</label>
+                                <input type="number"
+                                       name="p_km_fin"
+                                       id="p_km_fin"
+                                       class="form-control"
+                                       value="{{ p_km_fin }}"
+                                       {% if p_ruta == '0' %}disabled{% endif %}>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label">&nbsp;</label>
+                                <div>
+                                    <button type="submit" class="btn btn-primary" id="btn-generar-atenciones">
+                                        <i class="fas fa-search me-2"></i>Generar Reporte
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" onclick="window.location.href='{{ path('admin_siv_dashboard_atenciones_clase_vehiculo') }}'">
+                                        <i class="fas fa-undo me-2"></i>Limpiar
+                                    </button>
+                                    {% if data_table is defined and data_table|length > 0 %}
+                                        <a href="?{{ app.request.queryString }}&export=excel" class="btn btn-success" id="btn-export-excel-atenciones">
+                                            <i class="fas fa-file-excel me-2"></i>Descargar Excel
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {# Tabla de Resultados #}
+        {% if data_table is defined and data_table|length > 0 %}
+            <div class="row">
+                <div class="col-12">
+                    <div class="table-container">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover table-sm table-bordered bootstrapTable"
+                                   id="tbl_report"
+                                   data-search="true"
+                                   data-show-toggle="true"
+                                   data-show-fullscreen="true"
+                                   data-show-columns="true"
+                                   data-id-field="incidente_r">
+                                <thead>
+                                    <tr>
+                                        {# Columnas fijas - algunas ocultas por defecto (legacy pattern) #}
+                                        <th data-sortable="true" data-width="150" data-width-unit="px" data-visible="false">Incidente</th>
+                                        <th data-sortable="true" data-width="150" data-width-unit="px" data-visible="false">Fecha Hora</th>
+                                        <th data-sortable="true" data-width="150" data-width-unit="px" data-visible="false">Cód_Contingencia</th>
+                                        <th data-sortable="true" data-width="250" data-width-unit="px">Desc_Contingencia</th>
+                                        <th data-sortable="true" data-width="150" data-width-unit="px" data-visible="false">Eje Original</th>
+                                        <th data-sortable="true" data-width="150" data-width-unit="px">Eje Corregido</th>
+                                        <th data-sortable="true" data-width="150" data-width-unit="px">Sentido</th>
+
+                                        {# Columnas dinámicas con visibilidad condicional (legacy pattern) #}
+                                        {% if data_table[0].CAMB is defined or 'AMB' in p_categorias_vehiculos %}
+                                        <th class="col-width-fixed-sm" data-sortable="true" data-visible="{% if data_table[0].CAMB is defined or 'AMB' in p_categorias_vehiculos %}true{% else %}false{% endif %}">Ambulancia</th>
+                                        {% endif %}
+                                        {% if data_table[0].C8 is defined or '8' in p_categorias_vehiculos %}
+                                        <th class="col-width-fixed-sm" data-sortable="true" data-visible="{% if data_table[0].C8 is defined or '8' in p_categorias_vehiculos %}true{% else %}false{% endif %}">Ambulancia Ext.</th>
+                                        {% endif %}
+                                        {% if data_table[0].C7 is defined or '7' in p_categorias_vehiculos %}
+                                        <th class="col-width-fixed-sm" data-sortable="true" data-visible="{% if data_table[0].C7 is defined or '7' in p_categorias_vehiculos %}true{% else %}false{% endif %}">Barredora</th>
+                                        {% endif %}
+                                        {% if data_table[0].CEXT is defined or 'EXT' in p_categorias_vehiculos %}
+                                        <th class="col-width-fixed-sm" data-sortable="true" data-visible="{% if data_table[0].CEXT is defined or 'EXT' in p_categorias_vehiculos %}true{% else %}false{% endif %}">Externo</th>
+                                        {% endif %}
+                                        {% if data_table[0].CGER is defined or 'GER' in p_categorias_vehiculos %}
+                                        <th class="col-width-fixed-sm" data-sortable="true" data-visible="{% if data_table[0].CGER is defined or 'GER' in p_categorias_vehiculos %}true{% else %}false{% endif %}">Gerente del área</th>
+                                        {% endif %}
+                                        {% if data_table[0].CGRU is defined or 'GRU' in p_categorias_vehiculos %}
+                                        <th class="col-width-fixed-sm" data-sortable="true" data-visible="{% if data_table[0].CGRU is defined or 'GRU' in p_categorias_vehiculos %}true{% else %}false{% endif %}">Grúa</th>
+                                        {% endif %}
+                                        {% if data_table[0].C2 is defined or '2' in p_categorias_vehiculos %}
+                                        <th class="col-width-fixed-sm" data-sortable="true" data-visible="{% if data_table[0].C2 is defined or '2' in p_categorias_vehiculos %}true{% else %}false{% endif %}">Grúa Externa</th>
+                                        {% endif %}
+                                        {% if data_table[0].CMAN is defined or 'MAN' in p_categorias_vehiculos %}
+                                        <th class="col-width-fixed-sm" data-sortable="true" data-visible="{% if data_table[0].CMAN is defined or 'MAN' in p_categorias_vehiculos %}true{% else %}false{% endif %}">Mantención</th>
+                                        {% endif %}
+                                        {% if data_table[0].CMSV is defined or 'MSV' in p_categorias_vehiculos %}
+                                        <th class="col-width-fixed-sm" data-sortable="true" data-visible="{% if data_table[0].CMSV is defined or 'MSV' in p_categorias_vehiculos %}true{% else %}false{% endif %}">Paramédico de Avanzada (ST)</th>
+                                        {% endif %}
+                                        {% if data_table[0].CPAT is defined or 'PAT' in p_categorias_vehiculos %}
+                                        <th class="col-width-fixed-sm" data-sortable="true" data-visible="{% if data_table[0].CPAT is defined or 'PAT' in p_categorias_vehiculos %}true{% else %}false{% endif %}">Patrulla</th>
+                                        {% endif %}
+                                        {% if data_table[0].C9 is defined or '9' in p_categorias_vehiculos %}
+                                        <th class="col-width-fixed-sm" data-sortable="true" data-visible="{% if data_table[0].C9 is defined or '9' in p_categorias_vehiculos %}true{% else %}false{% endif %}">Prensa</th>
+                                        {% endif %}
+                                        {% if data_table[0].CRES is defined or 'RES' in p_categorias_vehiculos %}
+                                        <th class="col-width-fixed-sm" data-sortable="true" data-visible="{% if data_table[0].CRES is defined or 'RES' in p_categorias_vehiculos %}true{% else %}false{% endif %}">Rescate</th>
+                                        {% endif %}
+                                        {% if data_table[0].CCSV is defined or 'CSV' in p_categorias_vehiculos %}
+                                        <th class="col-width-fixed-sm" data-sortable="true" data-visible="{% if data_table[0].CCSV is defined or 'CSV' in p_categorias_vehiculos %}true{% else %}false{% endif %}">Supervisor Vial</th>
+                                        {% endif %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in data_table %}
+                                        <tr>
+                                            <td>{{ row.incidente_r }}</td>
+                                            <td>{{ row.fecha_hora_r|date('d-m-Y H:i:s') }}</td>
+                                            <td>{{ row.cod_contingencia_r }}</td>
+                                            <td>{{ row.contingencia_r }}</td>
+                                            <td>{{ row.eje_r }}</td>
+                                            <td>{{ row.eje_r }}</td>
+                                            <td>{{ row.direccion_r }}</td>
+
+                                            {# Valores dinámicos #}
+                                            {% if row.CAMB is defined %}<td>{{ row.CAMB }}</td>{% endif %}
+                                            {% if row.C8 is defined %}<td>{{ row.C8 }}</td>{% endif %}
+                                            {% if row.C7 is defined %}<td>{{ row.C7 }}</td>{% endif %}
+                                            {% if row.CEXT is defined %}<td>{{ row.CEXT }}</td>{% endif %}
+                                            {% if row.CGER is defined %}<td>{{ row.CGER }}</td>{% endif %}
+                                            {% if row.CGRU is defined %}<td>{{ row.CGRU }}</td>{% endif %}
+                                            {% if row.C2 is defined %}<td>{{ row.C2 }}</td>{% endif %}
+                                            {% if row.CMAN is defined %}<td>{{ row.CMAN }}</td>{% endif %}
+                                            {% if row.CMSV is defined %}<td>{{ row.CMSV }}</td>{% endif %}
+                                            {% if row.CPAT is defined %}<td>{{ row.CPAT }}</td>{% endif %}
+                                            {% if row.C9 is defined %}<td>{{ row.C9 }}</td>{% endif %}
+                                            {% if row.CRES is defined %}<td>{{ row.CRES }}</td>{% endif %}
+                                            {% if row.CCSV is defined %}<td>{{ row.CCSV }}</td>{% endif %}
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {# Total de registros (legacy pattern - mostrar total en BD, no solo página actual) #}
+                        <p class="text-muted mt-2 mb-0">
+                            <strong>Total de registros:</strong>
+                            {% if count_table is defined and count_table|length > 0 and count_table[0].total is defined %}
+                                {{ count_table[0].total }}
+                                {% if count_table[0].total_paginas > 1 %}
+                                    (mostrando página {{ count_table[0].pagina_actual }} de {{ count_table[0].total_paginas }})
+                                {% endif %}
+                            {% else %}
+                                {{ data_table|length }}
+                            {% endif %}
+                        </p>
+
+                        {# Paginación (legacy pattern) #}
+                        {% if pagination is defined and pagination.total_paginas > 1 %}
+                        <div class="paginationRow mt-3">
+                            <div id="pagination" class="paginationWrapper">
+                                <div class="d-flex align-items-center justify-content-between flex-wrap">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <label class="me-2 mb-0">Filas por página:</label>
+                                        <select class="selectpicker rows-x-page" id="ccbRowsPerPage" name="rowsPerPage" data-width="fit">
+                                            <option value="10" {% if limit == 10 %}selected{% endif %}>10</option>
+                                            <option value="25" {% if limit == 25 %}selected{% endif %}>25</option>
+                                            <option value="50" {% if limit == 50 %}selected{% endif %}>50</option>
+                                            <option value="100" {% if limit == 100 %}selected{% endif %}>100</option>
+                                            <option value="250" {% if limit == 250 %}selected{% endif %}>250</option>
+                                            <option value="500" {% if limit == 500 %}selected{% endif %}>500</option>
+                                            <option value="1000" {% if limit == 1000 %}selected{% endif %}>1000</option>
+                                        </select>
+                                    </div>
+                                    <ul id="pagination_fra" class="pagination pagination-sm mb-2"></ul>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% elseif data_table is defined %}
+            <div class="row">
+                <div class="col-12">
+                    <div class="alert alert-info text-center">
+                        <i class="fas fa-info-circle fa-2x mb-3"></i>
+                        <h5>No se encontraron registros</h5>
+                        <p>No hay datos para los filtros seleccionados. Intente con criterios diferentes.</p>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="row">
+                <div class="col-12">
+                    <div class="alert alert-secondary text-center">
+                        <i class="fas fa-filter fa-2x mb-3"></i>
+                        <h5>Seleccione un período</h5>
+                        <p>Configure las fechas y filtros para generar el reporte de atenciones por clase de vehículo.</p>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block body_javascript %}
+    {{ parent() }}
+    <script>
+        jQuery(document).ready(function() {
+            // Initialize Bootstrap Table with icons (legacy pattern)
+            $('#tbl_report').bootstrapTable({
+                iconsPrefix: 'fa',
+                icons: {
+                    paginationSwitchDown: 'fa-caret-square-down',
+                    paginationSwitchUp: 'fa-caret-square-up',
+                    refresh: 'fa-sync',
+                    toggleOff: 'fa-toggle-off',
+                    toggleOn: 'fa-toggle-on',
+                    columns: 'fa-th-list',
+                    fullscreen: 'fa-arrows-alt',
+                    detailOpen: 'fa-plus',
+                    detailClose: 'fa-minus'
+                }
+            });
+
+            // Initialize Bootstrap Select (legacy pattern)
+            $('.selectpicker').selectpicker();
+
+            // Restore selected values for tipo_contingencia (legacy pattern)
+            {% if p_tipo_contingencia and p_tipo_contingencia != ["all"] %}
+            $('#p_tipo_contingencia').selectpicker('val', [{% for item in p_tipo_contingencia %}'{{ item }}',{% endfor %}]);
+            {% endif %}
+
+            // Restore selected values for categorias_vehiculos (legacy pattern)
+            {% if p_categorias_vehiculos and p_categorias_vehiculos != ["all"] %}
+            $('#p_categorias_vehiculos').selectpicker('val', [{% for item in p_categorias_vehiculos %}'{{ item }}',{% endfor %}]);
+            {% endif %}
+
+            // Initialize pagination (legacy pattern)
+            {% if pagination is defined and pagination.total_paginas > 1 %}
+            var paginationPlugin = $('#pagination_fra').twbsPagination({
+                totalPages: {{ pagination.total_paginas }},
+                startPage: {{ pagination.pagina_actual }},
+                hideOnlyOnePage: true,
+                visiblePages: 10,
+                initiateStartPageClick: false,
+                first: 'Primera',
+                prev: '<span aria-hidden="true">«</span>',
+                next: '<span aria-hidden="true">»</span>',
+                last: 'Última',
+                onPageClick: function (event, page) {
+                    var form = $('#report_filters');
+                    $('<input>').attr({type: 'hidden', name: 'page', value: page}).appendTo(form);
+                    form.submit();
+                }
+            });
+
+            $('#ccbRowsPerPage').change(function () {
+                var form = $('#report_filters');
+                $('<input>').attr({type: 'hidden', name: 'filasPorPagina', value: $(this).val()}).appendTo(form);
+                form.submit();
+            });
+            {% endif %}
+
+            // Initialize Tempus Dominus 6 date pickers
+            const tempusDominus = window.tempusDominus;
+            if (tempusDominus) {
+                const dateOptions = {
+                    display: {
+                        components: {
+                            calendar: true,
+                            date: true,
+                            month: true,
+                            year: true,
+                            decades: true,
+                            clock: true,
+                            hours: true,
+                            minutes: true,
+                            seconds: true
+                        },
+                        icons: {
+                            time: 'fas fa-clock',
+                            date: 'fas fa-calendar',
+                            up: 'fas fa-arrow-up',
+                            down: 'fas fa-arrow-down',
+                            previous: 'fas fa-chevron-left',
+                            next: 'fas fa-chevron-right',
+                            today: 'fas fa-calendar-check',
+                            clear: 'fas fa-trash',
+                            close: 'fas fa-times'
+                        }
+                    },
+                    localization: {
+                        locale: 'es',
+                        format: 'dd-MM-yyyy HH:mm:ss',
+                        hourCycle: 'h23'
+                    }
+                };
+
+                // Initialize pickers on the INPUT GROUP containers
+                const pickerInicio = new tempusDominus.TempusDominus(document.getElementById('dtpFechaInicio'), dateOptions);
+                const pickerTermino = new tempusDominus.TempusDominus(document.getElementById('dtpFechaTermino'), dateOptions);
+            }
+
+            // Ruta change handler for enabling/disabling KM inputs
+            const rutaSelect = document.getElementById('ccbRuta');
+            const kmIni = document.getElementById('p_km_ini');
+            const kmFin = document.getElementById('p_km_fin');
+
+            rutaSelect.addEventListener('change', function() {
+                if (this.value === '0') {
+                    kmIni.disabled = true;
+                    kmFin.disabled = true;
+                    kmIni.value = '0';
+                    kmFin.value = '0';
+                } else {
+                    kmIni.disabled = false;
+                    kmFin.disabled = false;
+                }
+            });
+
+            // Load default values AFTER Tempus Dominus initialization
+            {% if fechaInicio %}
+            $('#fechaInicio').val('{{ fechaInicio }}');
+            {% endif %}
+
+            {% if fechaTermino %}
+            $('#fechaTermino').val('{{ fechaTermino }}');
+            {% endif %}
+
+            // Loader en submit del formulario
+            jQuery('#report_filters').on('submit', function() {
+                ReportLoader.show('#btn-generar-atenciones', 'Generando...');
+            });
+
+            // Loader en exportación Excel
+            jQuery('#btn-export-excel-atenciones').on('click', function() {
+                ReportLoader.showForDirectDownload('#btn-export-excel-atenciones', 'Descargando...', 2000);
+            });
+        });
+    </script>
+{% endblock %}

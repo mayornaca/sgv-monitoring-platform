@@ -1,0 +1,271 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block title %}Monitor de Dispositivos VS - Dashboard{% endblock %}
+
+{% block page_title %}
+    <i class="fas fa-desktop"></i> Monitor de Dispositivos - Vespucio Sur
+{% endblock %}
+
+{% block head_stylesheets %}
+    {{ parent() }}
+    <style>
+        .device-container {
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+            width: 151px;
+            padding: 2px;
+            margin: 0 1px 4px 0;
+            background-color: #9E9E9E;
+            border-radius: 30px;
+            overflow: hidden;
+            transition: width 0.3s;
+        }
+        .device-container:hover {
+            width: 153.5px;
+            z-index: 1;
+        }
+        .device-container.active {
+            background-color: #4CAF50;
+        }
+        .device-container.inactive {
+            background-color: #f44336;
+        }
+        .device-icon {
+            float: left;
+            background: #fff;
+            margin-right: 1px;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            padding-top: 5px;
+        }
+        .device-text {
+            font-size: 10pt;
+            word-wrap: break-word;
+            overflow: hidden;
+            text-align: left;
+            color: white;
+            padding: 5px;
+        }
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .filter-section {
+            background: #f5f5f5;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .alarm-item {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        .update-time {
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+    </style>
+{% endblock %}
+
+{% block main %}
+    <!-- Estad�sticas generales -->
+    <div class="row">
+        {% for tipo in tipos_dispositivos %}
+            {% set tipo_id = tipo.id %}
+            {% set stats = count_status_type[tipo_id] ?? {'total': 0, 'active': 0, 'unactive': 0} %}
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <h5>{{ tipo.tipo }}</h5>
+                    <div class="row">
+                        <div class="col-6">
+                            <i class="fas fa-check-circle"></i> Activos: {{ stats.active }}
+                        </div>
+                        <div class="col-6">
+                            <i class="fas fa-times-circle"></i> Inactivos: {{ stats.unactive }}
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <strong>Total: {{ stats.total }}</strong>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Secci�n de filtros -->
+    <div class="filter-section">
+        <h5><i class="fas fa-filter"></i> Filtros</h5>
+        <form method="get" action="{{ path('admin_vs_index') }}" class="row">
+            <div class="col-md-3">
+                <label for="device_type">Tipo de Dispositivo:</label>
+                <select name="id" id="device_type" class="form-control">
+                    <option value="-1">Todos</option>
+                    {% for tipo in all_tipos_dispositivos %}
+                        <option value="{{ tipo.id }}" {% if tipo.id == id_device_type_fr %}selected{% endif %}>
+                            {{ tipo.tipo }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="device_status">Estado:</label>
+                <select name="device_status" id="device_status" class="form-control">
+                    <option value="">Todos</option>
+                    <option value="device_active" {% if device_status == 'device_active' %}selected{% endif %}>Activos</option>
+                    <option value="device_unactive" {% if device_status == 'device_unactive' %}selected{% endif %}>Inactivos</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="input_device_finder">Buscar dispositivo:</label>
+                <input type="text" name="input_device_finder" id="input_device_finder"
+                       class="form-control" placeholder="Nombre del dispositivo"
+                       value="{{ input_device_finder }}">
+            </div>
+            <div class="col-md-3">
+                <label>&nbsp;</label>
+                <div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Filtrar
+                    </button>
+                    <a href="{{ path('admin_vs_index') }}" class="btn btn-secondary">
+                        <i class="fas fa-undo"></i> Limpiar
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Dispositivos -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title">
+                <i class="fas fa-server"></i> Dispositivos
+                <span class="float-end update-time">
+                    <i class="fas fa-clock"></i> �ltima actualizaci�n SOS: {{ StentofonLastUpdateDateTime }}
+                    | IP: {{ SwIpDevicesMonitorLastUpdateDateTime }}
+                </span>
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for device in dispositivos %}
+                    <div class="col-auto">
+                        <div class="device-container {% if device.estado == 1 %}active{% else %}inactive{% endif %}"
+                             title="{{ device.nombre }} - {{ device.idTipo.tipo }}">
+                            <div class="device-icon">
+                                {% if device.idTipo.id == 1 %}
+                                    <i class="fas fa-video"></i>
+                                {% elseif device.idTipo.id == 2 %}
+                                    <i class="fas fa-phone"></i>
+                                {% elseif device.idTipo.id == 3 %}
+                                    <i class="fas fa-info-circle"></i>
+                                {% else %}
+                                    <i class="fas fa-microchip"></i>
+                                {% endif %}
+                            </div>
+                            <div class="device-text">
+                                {{ device.nombre|slice(0, 15) }}
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> No se encontraron dispositivos con los filtros aplicados.
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    {# ==================== COMENTADO 2025-10-03 - NO DESCOMENTAR SIN REVISIÓN ====================
+
+    TblCot06AlarmasDispositivos (alarmas_dispositivos) NO forma parte del módulo de monitoreo VS
+
+    CONTEXTO:
+    - Sistema diseñado para notificaciones de navbar que NUNCA se completó
+    - En proyecto antiguo NO se mostraba en vs_index.html.twig ni vistas de monitoreo
+    - Solo existía en devices_alerts_list.html.twig (widget dropdown navbar)
+
+    SISTEMAS DE ALARMAS CORRECTOS:
+    - Cada módulo (VS, CN, SOS) tiene sus propias alarmas específicas
+    - VS Monitor debe tener su propio sistema de alarmas si es necesario
+
+    ANTES DE DESCOMENTAR:
+    - Revisar con arquitecto del sistema
+    - Validar caso de uso real
+    - Ver CotController.php línea 69 para documentación completa
+
+    ========================================================================================= #}
+
+    {# Alarmas recientes - COMENTADO 2025-10-03 #}
+    {# {% if alarmas_dispositivos|length > 0 %}
+    <div class="card mt-3">
+        <div class="card-header">
+            <h5 class="card-title">
+                <i class="fas fa-exclamation-triangle"></i> Alarmas Activas ({{ alarmas_dispositivos|length }})
+            </h5>
+        </div>
+        <div class="card-body">
+            {% for alarma in alarmas_dispositivos|slice(0, 10) %}
+                <div class="alarm-item">
+                    <strong>{{ alarma.idDispositivo.nombre ?? 'Dispositivo' }}</strong>
+                    - {{ alarma.idAlarma.descripcion ?? 'Sin descripci�n' }}
+                    <span class="float-end update-time">
+                        {{ alarma.fechaActivacion|date('d/m/Y H:i:s') }}
+                    </span>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %} #}
+
+    <!-- Opciones de visualizaci�n -->
+    <div class="mt-3">
+        <a href="{{ path('admin_vs_index', {'videowall': 'true'}) }}" class="btn btn-info">
+            <i class="fas fa-tv"></i> Modo VideoWall
+        </a>
+        <button type="button" class="btn btn-success" onclick="updateDeviceStatus()">
+            <i class="fas fa-sync"></i> Actualizar Estado
+        </button>
+    </div>
+{% endblock %}
+
+{% block body_javascript %}
+    {{ parent() }}
+    <script>
+        // Funci�n para actualizar el estado de dispositivos v�a AJAX
+        function updateDeviceStatus() {
+            fetch('{{ path('admin_vs_index') }}', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Dispositivos actualizados:', data);
+                // Aqu� podr�as actualizar la UI sin recargar la p�gina
+                location.reload(); // Por ahora, simplemente recargamos
+            })
+            .catch(error => {
+                console.error('Error actualizando dispositivos:', error);
+            });
+        }
+
+        // Auto-actualizaci�n cada 30 segundos
+        {% if real_mode %}
+        setInterval(function() {
+            updateDeviceStatus();
+        }, 30000);
+        {% endif %}
+    </script>
+{% endblock %}

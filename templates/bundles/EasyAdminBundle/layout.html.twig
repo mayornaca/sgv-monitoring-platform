@@ -1,0 +1,179 @@
+{% extends '@!EasyAdmin/layout.html.twig' %}
+
+{# Override header_navbar to add sidebar toggle button before content #}
+{% block header_navbar %}
+    <nav class="navbar" role="navigation">
+        {# Sidebar toggle button - Always visible #}
+        <button class="navbar-toggler sidebar-toggle-btn" type="button" id="navigation-toggler" aria-label="Toggle sidebar">
+            <i class="fas fa-bars"></i>
+        </button>
+
+        {# Original navbar content #}
+        {{ parent() }}
+    </nav>
+{% endblock header_navbar %}
+
+{#{% block content_title %}#}
+
+{#    {{ parent() }}#}
+{#{% endblock %}#}
+
+{# Add custom CSS for the toggle button #}
+{% block head_stylesheets %}
+    {{ parent() }}
+    <style>
+        /* Fix input-group-text height to match inputs */
+        .input-group-text {
+            block-size: auto !important;
+            height: auto !important;
+        }
+        .bootstrap-select .dropdown-toggle .filter-option {
+            line-height: 28px;
+        }
+
+        /* Sidebar toggle button styling */
+        .sidebar-toggle-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-color, #2c3e50);
+            font-size: 1.25rem;
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+            margin-right: 1rem;
+            border-radius: 4px;
+            min-width: 40px;
+            height: 40px;
+        }
+
+        .sidebar-toggle-btn:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .sidebar-toggle-btn:active {
+            background: rgba(0, 0, 0, 0.1);
+            transform: scale(0.95);
+        }
+
+        .sidebar-toggle-btn:focus {
+            outline: 2px solid var(--color-primary, #5368d5);
+            outline-offset: 2px;
+        }
+
+        /* Dark mode support */
+        body.ea-dark-scheme .sidebar-toggle-btn {
+            color: var(--text-color, #fff);
+        }
+
+        body.ea-dark-scheme .sidebar-toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Ensure navbar displays flex */
+        .navbar {
+            display: flex;
+            align-items: center;
+        }
+    </style>
+{% endblock head_stylesheets %}
+
+{# Add toggle functionality #}
+{% block body_javascript %}
+    {{ parent() }}
+    <script>
+
+
+        /**
+         * EasyAdmin Content Width Manager
+         * Fuerza automáticamente el ancho de contenido a 'full' y ajusta el footer
+         */
+        class EAContentWidthManager {
+            constructor() {
+                // Key de localStorage que usa EasyAdmin para el ancho del contenido
+                this.contentWidthKey = 'ea/content/width';
+                this.init();
+            }
+
+            init() {
+                // 1. Forzar ancho completo al cargar la página
+                this.forceFullWidth();
+
+                // 2. Observar cambios en las clases del body para reaccionar automáticamente
+                this.setupMutationObserver();
+            }
+
+            /**
+             * Fuerza el ancho del contenido a 'full' automáticamente
+             */
+            forceFullWidth() {
+                const currentWidth = localStorage.getItem(this.contentWidthKey);
+
+                // Solo cambiar si no está ya en 'full'
+                if (currentWidth !== 'full') {
+                    localStorage.setItem(this.contentWidthKey, 'full');
+
+                    // Actualizar clases del body
+                    document.body.classList.remove('ea-content-width-normal');
+                    document.body.classList.add('ea-content-width-full');
+
+                    console.log('✅ Content width forzado a FULL');
+                }
+
+                // Ajustar footer inmediatamente
+                this.adjustFooter();
+            }
+
+            /**
+             * Observa cambios en las clases del body para reaccionar cuando el usuario
+             * manualmente cambie el ancho usando el resizer de EasyAdmin
+             */
+            setupMutationObserver() {
+                const observer = new MutationObserver((mutations) => {
+                    mutations.forEach((mutation) => {
+                        if (mutation.attributeName === 'class') {
+                            // Cuando cambian las clases del body, ajustar el footer
+                            this.adjustFooter();
+                        }
+                    });
+                });
+
+                observer.observe(document.body, {
+                    attributes: true,
+                    attributeFilter: ['class']
+                });
+            }
+
+            /**
+             * Ajusta el margen del footer según el ancho del contenido
+             * - Full width: sin márgenes laterales
+             * - Normal width: con márgenes para el sidebar
+             */
+            adjustFooter() {
+                const footer = document.getElementById('status-footer');
+                if (!footer) return;
+
+                const isFullWidth = document.body.classList.contains('ea-content-width-full');
+
+                if (isFullWidth) {
+                    // Modo full: footer ocupa todo el ancho
+                    footer.style.marginLeft = '0';
+                    footer.style.width = '100%';
+                } else {
+                    // Modo normal: restaurar márgenes originales
+                    footer.style.marginLeft = '';
+                    footer.style.width = '';
+                }
+            }
+        }
+
+        // Inicializar al cargar el DOM
+        document.addEventListener('DOMContentLoaded', () => {
+            window.eaContentManager = new EAContentWidthManager();
+        });
+
+        //$('.selectpicker').addClass('fit-width').selectpicker('setStyle');
+    </script>
+{% endblock body_javascript %}

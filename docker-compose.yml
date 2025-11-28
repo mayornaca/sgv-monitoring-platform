@@ -1,0 +1,128 @@
+version: '3.8'
+
+services:
+  # PHP-FPM Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sgv_app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      # Hot-reload: mount source code
+      - .:/var/www/html
+      # Exclude vendor for performance
+      - /var/www/html/vendor
+      - /var/www/html/var
+      - /var/www/html/node_modules
+    environment:
+      - APP_ENV=dev
+      - APP_DEBUG=1
+    env_file:
+      - .env.docker
+    depends_on:
+      - mysql
+      - postgresql
+    networks:
+      - sgv_network
+
+  # Nginx Web Server
+  nginx:
+    image: nginx:alpine
+    container_name: sgv_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - .:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    networks:
+      - sgv_network
+
+  # MySQL 8.0 Database (default entity manager - gesvial_sgv)
+  mysql:
+    image: mysql:8.0
+    container_name: sgv_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: gesvial_sgv
+      MYSQL_USER: sgv_user
+      MYSQL_PASSWORD: sgv_password
+    ports:
+      - "3306:3306"
+    volumes:
+      # Database persistence
+      - mysql_data:/var/lib/mysql
+      # Initialization scripts
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    networks:
+      - sgv_network
+
+  # PostgreSQL 12 Database (siv entity manager - dbpuente)
+  postgresql:
+    image: postgres:12
+    container_name: sgv_postgresql
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: dbpuente
+    ports:
+      - "5432:5432"
+    volumes:
+      # Database persistence
+      - postgresql_data:/var/lib/postgresql/data
+      # Initialization scripts
+      - ./docker/postgresql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - sgv_network
+
+  # phpMyAdmin for MySQL management (optional)
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: sgv_phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: root
+      PMA_PASSWORD: root
+    depends_on:
+      - mysql
+    networks:
+      - sgv_network
+    profiles:
+      - tools
+
+  # pgAdmin for PostgreSQL management (optional)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: sgv_pgadmin
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@sgv.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+    depends_on:
+      - postgresql
+    networks:
+      - sgv_network
+    profiles:
+      - tools
+
+networks:
+  sgv_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local
+  postgresql_data:
+    driver: local

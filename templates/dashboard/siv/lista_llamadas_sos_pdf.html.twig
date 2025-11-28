@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Llamadas SOS</title>
+    <style>
+        /* Reset básico para PDF */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            line-height: 1.4;
+            color: #333;
+            background: #fff;
+        }
+
+        /* Contenedor principal */
+        .container {
+            width: 100%;
+            max-width: 210mm; /* A4 width */
+            margin: 0 auto;
+            padding: 5mm;
+        }
+
+        /* Header con logos */
+        .header {
+            display: table;
+            width: 100%;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+
+        .header-left,
+        .header-center,
+        .header-right {
+            display: table-cell;
+            vertical-align: middle;
+        }
+
+        .header-left {
+            width: 25%;
+            text-align: left;
+        }
+
+        .header-center {
+            width: 50%;
+            text-align: center;
+            padding: 0 10px;
+        }
+
+        .header-right {
+            width: 25%;
+            text-align: right;
+        }
+
+        .logo-left,
+        .logo-right {
+            max-height: 60px;
+            max-width: 100%;
+        }
+
+        .header-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #2f75b5;
+            margin: 5px 0;
+        }
+
+        /* Información del reporte */
+        .report-info {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #2f75b5;
+        }
+
+        .report-info h2 {
+            font-size: 16px;
+            color: #2f75b5;
+            margin-bottom: 5px;
+        }
+
+        .info-row {
+            display: table;
+            width: 100%;
+            margin: 3px 0;
+        }
+
+        .info-label,
+        .info-value {
+            display: table-cell;
+            padding: 2px 0;
+        }
+
+        .info-label {
+            font-weight: bold;
+            width: 25%;
+        }
+
+        .info-value {
+            width: 75%;
+        }
+
+        /* Tabla de datos */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 10px;
+        }
+
+        .data-table th {
+            background-color: #2f75b5;
+            color: white;
+            padding: 8px 4px;
+            text-align: left;
+            font-weight: bold;
+            border: 1px solid #1e5a8a;
+        }
+
+        .data-table td {
+            padding: 6px 4px;
+            border: 1px solid #ddd;
+        }
+
+        .data-table tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        /* Columnas específicas */
+        .col-poste { width: 18%; }
+        .col-eje { width: 22%; }
+        .col-calzada { width: 25%; }
+        .col-km { width: 12%; text-align: center; }
+        .col-fecha { width: 23%; text-align: center; }
+
+        /* Filtros aplicados */
+        .filters-applied {
+            margin: 10px 0;
+            padding: 8px;
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 3px;
+        }
+
+        .filters-title {
+            font-weight: bold;
+            color: #856404;
+            margin-bottom: 5px;
+        }
+
+        .filter-item {
+            margin: 2px 0;
+            color: #856404;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            font-size: 10px;
+            color: #666;
+        }
+
+        /* Page breaks para wkhtmltopdf */
+        @page {
+            margin: 15mm;
+        }
+
+        /* Print optimizations */
+        @media print {
+            body {
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header con logos -->
+        <div class="header">
+            <div class="header-left">
+                <img src="{{ absolute_url('/images/concessions/HCSQELGZDdo.png') }}"
+                     alt="Concesionaria Costanera Norte"
+                     class="logo-left">
+            </div>
+            <div class="header-center">
+                <div class="header-title">Sociedad Concesionaria Costanera Norte</div>
+                <div>Autopista Costanera Norte</div>
+            </div>
+            <div class="header-right">
+                <img src="{{ absolute_url('/images/coordinacion_concesiones_obras_publicas.jpg') }}"
+                     alt="MOP"
+                     class="logo-right">
+            </div>
+        </div>
+
+        <!-- Información del reporte -->
+        <div class="report-info">
+            <h2>Lista de Llamadas SOS</h2>
+            <div class="info-row">
+                <div class="info-label">Obra concesionada:</div>
+                <div class="info-value">Autopista Costanera Norte</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Año:</div>
+                <div class="info-value">{{ "now"|date("Y") }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Total registros:</div>
+                <div class="info-value">{{ total_count }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Fecha generación:</div>
+                <div class="info-value">{{ "now"|date("d-m-Y H:i:s") }}</div>
+            </div>
+        </div>
+
+        <!-- Filtros aplicados -->
+        {% if filters.filterSos or filters.fechaInicio or filters.fechaTermino %}
+        <div class="filters-applied">
+            <div class="filters-title">
+                Periodo: {% if filters.fechaInicio %}• Fecha inicio: {{ filters.fechaInicio }}{% endif %}{% if filters.fechaTermino %} • Fecha término: {{ filters.fechaTermino }}{% endif %}{% if filters.filterSos %} • Poste SOS: {{ filters.filterSos }}{% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Tabla de datos -->
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th class="col-poste">Poste</th>
+                    <th class="col-eje">Eje</th>
+                    <th class="col-calzada">Calzada</th>
+                    <th class="col-km">Km</th>
+                    <th class="col-fecha">Fecha Hora</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for llamada in llamadas %}
+                    <tr>
+                        <td class="col-poste">{{ llamada.sos }}</td>
+                        <td class="col-eje">{{ llamada.eje }}</td>
+                        <td class="col-calzada">{{ llamada.calzada }}</td>
+                        <td class="col-km">{{ llamada.km|number_format(1, ',', '.') }}</td>
+                        <td class="col-fecha">
+                            {% if llamada.fechaUtc %}
+                                {{ llamada.fechaUtc|date('d-m-Y H:i:s') }}
+                            {% else %}
+                                {{ llamada.fechaHora }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 20px; color: #666;">
+                            No se encontraron llamadas SOS con los criterios especificados
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Documento generado el {{ "now"|date("d/m/Y") }} a las {{ "now"|date("H:i:s") }}</p>
+            <p>Sociedad Concesionaria Costanera Norte - Sistema de Información Vial (SIV)</p>
+        </div>
+    </div>
+</body>
+</html>

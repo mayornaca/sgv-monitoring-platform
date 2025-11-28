@@ -1,0 +1,747 @@
+{#{{ dump(data_table) }}#}
+<style>
+    .timeText:before {
+        content: "Seleccione Horario";
+    }
+    .bold{font-weight: bold;}
+    .tachado{text-decoration:line-through;}
+    .paragraph_truncated{
+        min-width: 500px;
+        /*max-width: 800px;*/
+        /*padding: 4px !important;*/
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+    }
+    .featured_row{
+        background-color: #FFEB3B !important;
+    }
+</style>
+<div style="margin-top: -8px;">
+    <table class="table table-striped table-hover bootstrapTable"
+           id="tbl_report"
+           data-toolbar="#toolbar"
+           data-sub-toolbar="#subToolbar"
+           data-search="false"
+            {% if search %}
+           data-search-text="{{ search }}"
+            {% endif %}
+           data-show-toggle="true"
+           data-show-fullscreen="true"
+           data-show-columns="true"
+           data-id-field="id"
+           data-remember-order="true"
+           data-click-to-select="false"
+           {#data-custom-sort="customSort"#}
+    >
+        <thead id="tbl_report_header">
+        <tr>
+            {#<th data-checkbox="false" data-sortable="false"></th>#}
+            <th data-field="id" data-sortable="true">Id Alarma</th>
+            <th data-sortable="true">Equipo</th>
+            <th data-sortable="true">Tipo</th>
+            <th data-sortable="true">Estado</th>
+            <th data-sortable="true">Creación</th>
+            <th data-sortable="true">Aceptación</th>
+            <th data-sortable="true">Finalización</th>
+            {#<th data-sortable="false" class="text-center no_pdf_render hidden">Acciones</th>#}
+        </tr>
+        </thead>
+        <tbody>
+        {% for row in data_table|json_decode %}
+            <tr data-id="{{ row.id }}" class="{% if not row.finished_at  %}danger{% endif %}" {#class="{% if row.status == 1 %}featured_row{% endif %}" class="{% if row.estado == 2 %}success{% elseif row.estado == 3 %}warning{% elseif row.estado == 4 %}danger{% endif %}"#}>
+                {#  0 => array:14 [▼
+                        "id" => "27340"
+                        "id_dispositivo" => "117"
+                        "id_externo" => "100151"
+                        "id_sensor" => "1"
+                        "estado" => "1"
+                        "aceptado" => "1"
+                        "concesionaria" => "22"
+                        "reg_status" => "1"
+                        "created_at" => "2020-04-09 15:42:34"
+                        "created_by" => "0"
+                        "updated_at" => "2020-04-21 11:19:10"
+                        "updated_by" => null
+                        "finished_at" => "2020-04-09 15:44:04"
+                        "nombre" => "40-SOSI-0002"
+                      ]#}
+                <td>{{ row.id }}</td>
+                <td class="{#{% if row.aceptado == 1 %}tachado{% endif %}#}">{{ row.nombre }}</td>
+                <td>
+                    {% if row.id_sensor == 1 %}
+                        Puerta Extintor 1
+                    {% elseif row.id_sensor == 2 %}
+                        Puerta Extintor 2
+                    {% elseif row.id_sensor == 3 %}
+                        Red Húmeda
+                    {% endif %}
+                </td>
+                <td>
+                    {% if row.finished_at %}
+                        {% if row.aceptado == 1 and row.finished_at %}
+                        Aceptada y Finalizada
+                        {% else %}
+                        Finalizada
+                        {% endif %}
+                    {% elseif row.aceptado == 1 %}
+                        Aceptada
+                        {% else %}
+                        Creada
+                    {% endif %}
+                </td>
+                <td>{{ row.created_at|date('d-m-Y H:i:s') }}</td>
+                <td>
+                    {% if row.updated_at %}
+                    {{ row.updated_at|date('d-m-Y H:i:s.u') }}
+                    {% endif %}
+                </td>
+                <td>
+                    {% if row.finished_at %}
+                    {{ row.finished_at|date('d-m-Y H:i:s') }}
+                    {% endif %}
+                </td>
+
+                {#fechaUtc|date('d-m-Y H:i:s')#}
+
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <style>
+        .rows-x-page{
+            float: left !important;
+            margin: 7px 0 0 0px;
+        }
+    </style>
+    <div class="paginationRow">
+        <div id="pagination" class="paginationWrapper col-md-12 responsiveAlign">
+            <ul class="pagination">
+                <select class="selectpicker filter_panel_control rows-x-page"  id="rowsPerPage" name="rowsPerPage" data-width="fit" data-header="Filas por página">
+                    <option value="10">10</option>
+                    <option value="30">30</option>
+                    <option value="50">50</option>
+                    <option selected="selected" value="100">100</option>
+                    <option value="250">250</option>
+                    <option value="500">500</option>
+                    <option value="1000">1000</option>
+                </select>
+                <ul id="pagination_fra" class="pagination-sm" style="margin: 9px 38px 9px 9px;"></ul>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+    /*$('.stick-top').affix({
+        offset: {top: 300}
+    });*/
+    var tbl_report = $('#tbl_report');
+
+    var pagination =$('#pagination_fra').twbsPagination({
+        totalPages: {{ maxPages }},
+        startPage: {{ currentPage }},
+        hideOnlyOnePage: false,
+        visiblePages: 10,
+        initiateStartPageClick: false,
+        first: 'Primera',
+        prev:'<span aria-hidden="true">《</span>',
+        next:'<span aria-hidden="true">》</span>',
+        last:'Última',
+        onPageClick: function (event, page) {
+            $.notify(
+                'Cargando Página ' + page,
+                {  style: 'bootstrap', className: 'success', position:"bottom right",autoHideDelay:1500 }
+            );
+
+            getReportSensorData();
+            //$("#btn_view_fra_"+page).trigger('click');
+        }
+    });
+
+    $('#rowsPerPage').change(function () {
+        pagination.twbsPagination('show', 1);
+        //$(selector).pagination('selectPage', pageNumber);
+    });
+
+    var stoped=false;
+    var timer_toggle_task_bar;
+    function stopTimerToggleTaskBar() {
+        if(!stoped && timer_toggle_task_bar){
+            timer_toggle_task_bar.stop();
+            stoped=true;
+        }
+    }
+
+    jQuery(document).ready(function() {
+        timer_toggle_task_bar = d3.timeout(function () {
+            //$("#toggle_task_bar").trigger("click");
+        }, 3000);
+        //console.log('Is fullscreen ' + tableIsFullscreen);
+        {% if tableIsFullscreen is defined  and tableIsFullscreen is same as(true)%}
+        tableIsFullscreen = true;
+        {% endif %}
+        {% if toolbarIsToggle is defined  and toolbarIsToggle is same as(true) %}
+        $('#filter-panel').collapse('show');
+        {% endif %}
+    });
+    var stickyHeaderOffsetY =0;
+    $(function() {
+        d3.timeout(function() {
+            $('.rotate_ajax_icon').removeClass('spin_rotate_icon');
+        }, 1800);
+        tbl_report.bootstrapTable();
+        if ( $('.navbar-fixed-top').css('height') ) {
+            stickyHeaderOffsetY = +$('.navbar-fixed-top').css('height').replace('px','');
+        }
+        if ( $('.navbar-fixed-top').css('margin-bottom') ) {
+            stickyHeaderOffsetY += +$('.navbar-fixed-top').css('margin-bottom').replace('px','');
+        }
+    });
+    $.extend($.fn.bootstrapTable.columnDefaults, {
+        search: true,
+        stickyHeader: true,
+        stickyHeaderOffsetY: stickyHeaderOffsetY + 'px',
+        sortable: true
+    });
+
+    /**********************
+     * Se Añade Control de Timer
+     ***********************/
+    {#console.log({{ autoUpdateInterval }});#}
+    $("#timer-range-ajax-update").asRange({
+        step: 5,
+        range: false,
+        min: 5,
+        max: 60,
+        tip: {
+            active: 'onMove'
+        }
+    });
+    /**********************
+     * Se Añade Evento al Control de Timer
+     ***********************/
+//
+    $("#timer-range-ajax-update").on('asRange::change', function (e) {
+        clearInterval(cot_devices_timer_interval);
+        SetPTTimer();
+    });
+
+    jQuery(document).ready(function() {
+        {% if fechaInicio %}
+        var fechaInicio = '{{ fechaInicio }}';
+        $('#fechaInicio').val(fechaInicio);
+        {% endif %}
+
+        {% if fechaTermino %}
+        var fechaTermino = '{{ fechaTermino }}';
+        $('#fechaTermino').val(fechaTermino);
+        {% endif %}
+
+        {% if regStatus %}
+        $('#regStatus').selectpicker('val', '{{ regStatus }}');
+        {% endif %}
+
+        {% if alarmType %}
+        $('#alarmType').selectpicker('val', [{% for type in alarmType %}'{{ type }}',{% endfor %}]);
+        {% endif %}
+
+        {% if autoUpdate %}
+        $('#actualizacionAutomatica').prop('checked', true);
+        {% else %}
+        $('#actualizacionAutomatica').prop('checked', false);
+        {% endif %}
+
+        {% if searchTxt %}
+        var searchTxt = '{{ searchTxt }}';
+        $('#searchTxt').val(searchTxt);
+        jsDump(searchTxt)
+        {% endif %}
+        {% if rowsPerPage %}
+        $('#rowsPerPage').selectpicker('val', '{{ rowsPerPage }}');
+        {% endif %}
+    });
+
+    {# ==================== TODO: CRUD COMPLETO BITÁCORA SCADA NO MIGRADO ====================
+
+       RUTA INEXISTENTE: admin_siv_dashboard_bitacora_scada
+       CONTROLADOR ANTIGUO: old_project/src/siv/DashboardBundle/Controller/OtPermController.php::BitacoraScadaAction
+       RUTA NUEVA (SOLO LECTURA): siv_dashboard_bitacora (SivController.php::bitacoraAction)
+
+       FUNCIONALIDAD PENDIENTE DE MIGRACIÓN:
+       - addRegBinnacleScada(): Crear nuevo registro de bitácora
+       - editPT(): Editar permiso de trabajo
+       - downloadRegBinnacleScada(): Descargar PDF
+       - FinishPT(): Finalizar permiso de trabajo
+       - highlightRegBinnacleScada(): Destacar registro
+       - deleteRegBinnacleScada(): Eliminar registro
+       - startRegBinnacleScada(): Iniciar permiso de trabajo
+
+       ACCIONES REQUERIDAS:
+       1. Crear controlador completo para CRUD de bitácora SCADA
+       2. Implementar todas las acciones: add, edit, update, delete, finish, start, highlight, json, pdf
+       3. Migrar vistas desde old_project/src/siv/DashboardBundle/Resources/views/BitacoraScada/
+       4. Implementar permisos granulares para estas operaciones
+       5. Descomentar y probar funciones JavaScript
+
+       MIENTRAS TANTO:
+       - Los botones de gestión de bitácora NO funcionarán
+       - Solo visualización de datos funciona
+       - Usuarios deben usar el proyecto antiguo para CRUD de bitácora
+
+       Fecha comentado: 2025-10-03
+       =============================================================================== #}
+
+    function addRegBinnacleScada() {
+        var path_url = "{{ path('admin_siv_dashboard_bitacora_scada', { action: 'add'})|raw }}";
+
+        $.ajax({
+            url : path_url,
+            type: 'GET',
+            success: function(html) {
+                if(html){
+                    if($(html).find('#ajax_edit_popup_container_render').length > 0) {
+                        $('#ajax_edit_popup_container_render').replaceWith($(html).find('#ajax_edit_popup_container_render'));
+                        $("#new-bs").blur();
+                        $('#frm_edit_reg-titulo').focus();
+                    }
+                    else{
+                        $.notify(
+                            "Ha ocurrido un error al intentar procesar los datos. Intente recargar la página.",
+                            {style: 'bootstrap', className: 'error', position: "top right"}
+                        );
+                    }
+                    $('#ajax_edit_popup').show();
+                    $('#dialog-bg').show();
+                    $('.selectpicker').selectpicker('render');
+                }
+                else{
+                    $.notify(
+                        "Ha ocurrido un error al intentar procesar los datos. Intente recargar la página.",
+                        {style: 'bootstrap', className: 'error', position: "top right"}
+                    );
+                }
+            }}).error(function(){
+            $.notify(
+                "Ha ocurrido un error al intentar procesar los datos. Intente recargar la página.",
+                {style: 'bootstrap', className: 'error', position: "top right"}
+            );
+        });
+    }
+
+    {# ==================== TODO: SISTEMA DE PERMISOS GRANULARES ====================
+       Permiso original comentado: is_granted('EDIT', classId('ntty_36'))
+
+       DESCRIPCIÓN:
+       - ntty_36 = TblCot02Dispositivos (Editar dispositivos COT)
+       - Función editPT() permite editar permisos de trabajo desde el reporte SOS
+
+       ACCIÓN REQUERIDA:
+       - Proteger esta funcionalidad cuando se implemente el nuevo sistema de permisos granulares
+       - Verificar que solo usuarios con rol adecuado puedan editar
+       - Considerar permisos por concesionaria/área
+
+       Fecha comentado: 2025-10-03
+       =============================================================================== #}
+    {# {% if is_granted('EDIT', classId('ntty_36')) %} #}
+    //Editar
+    function editPT(id) {
+        var path_url = "{{ path('admin_siv_dashboard_bitacora_scada', { action: 'edit', id: '__ID__' })|raw }}";
+        path_url= path_url.replace('__ID__', id);
+
+        $.ajax({
+            url : path_url,
+            type: 'GET',
+            success: function(html) {
+                if(html){
+                    if($(html).find('#ajax_edit_popup_container_render').length > 0) {
+                        $('#ajax_edit_popup_container_render').replaceWith($(html).find('#ajax_edit_popup_container_render'));
+                    }
+                    else{
+                        $.notify(
+                            "Ha ocurrido un error al intentar procesar los datos. Intente recargar la página.",
+                            {style: 'bootstrap', className: 'error', position: "top right"}
+                        );
+                    }
+                    $('#ajax_edit_popup').show();
+                    $('#dialog-bg').show();
+                    $('.selectpicker').selectpicker('render');
+                }
+                else{
+                    $.notify(
+                        "Ha ocurrido un error al intentar procesar los datos. Intente recargar la página.",
+                        {style: 'bootstrap', className: 'error', position: "top right"}
+                    );
+                }
+            }}).error(function(){
+            $.notify(
+                "Ha ocurrido un error al intentar procesar los datos. Intente recargar la página.",
+                {style: 'bootstrap', className: 'error', position: "top right"}
+            );
+        });
+    }
+    {# {% endif %} #}
+
+    function downloadRegBinnacleScada(id) {
+        var path_url = "{{ path('admin_siv_dashboard_bitacora_scada', { action: 'pdf', id: '__ID__', token: csrf_token('pdf-bs')})|raw }}";
+        path_url= path_url.replace('__ID__', id) /*+ '&time=' + new Date().getTime()*/;
+
+        // Data to get
+        {#  //https://stackoverflow.com/questions/16086162/handle-file-download-from-ajax-post  #}
+        // Use XMLHttpRequest instead of Jquery $ajax
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function () {
+            var a;
+            if (xhttp.readyState === 4 && xhttp.status === 200) {
+                // Trick for making downloadable link
+                a = document.createElement('a');
+                a.href = window.URL.createObjectURL(xhttp.response);
+                // Give filename you wish to download
+                a.download = "Permiso de Trabajo "+id+" .pdf";
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+            }
+        };
+        xhttp.onerror = function () {
+            $.notify(
+                "Ha ocurrido un error al intentar descargar el archivo.",
+                {  style: 'bootstrap', className: 'error', position:"top right" }
+            );
+        };
+        // Post data to URL which handles post request
+        xhttp.open("GET", path_url);
+        xhttp.setRequestHeader("Content-Type", "application/json");
+        /*xhttp.setRequestHeader('cache-control', 'no-cache, must-revalidate, post-check=0, pre-check=0');
+        xhttp.setRequestHeader('cache-control', 'max-age=0');
+        xhttp.setRequestHeader('expires', '0');
+        xhttp.setRequestHeader('expires', 'Tue, 01 Jan 1980 1:00:00 GMT');
+        xhttp.setRequestHeader('pragma', 'no-cache');*/
+        // You should set responseType as blob for binary responses
+        xhttp.responseType = 'blob';
+        xhttp.send();
+    }
+
+    // Validates that the input string is a valid date formatted as "mm/dd/yyyy"
+    function isValidDate(dateString)
+    {
+        // First check for the pattern
+        if(!/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dateString))
+            return false;
+
+        var date_time = dateString.split(" ");
+        // Parse the date parts to integers
+        var parts = date_time[0].split("-");
+        var day = parseInt(parts[0], 10);
+        var month = parseInt(parts[1], 10);
+        var year = parseInt(parts[2], 10);
+
+        // Check the ranges of month and year
+        if(year < 1000 || year > 3000 || month == 0 || month > 12)
+            return false;
+
+        var monthLength = [ 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 ];
+
+        // Adjust for leap years
+        if(year % 400 == 0 || (year % 100 != 0 && year % 4 == 0))
+            monthLength[1] = 29;
+
+        // Check the range of the day
+        return day > 0 && day <= monthLength[month - 1];
+    };
+    var $bs_table = $('#tbl_fra')
+    //var $remove = $('#remove')
+    var selections = []
+    $bs_table.on('check.bs.table uncheck.bs.table ' +
+        'check-all.bs.table uncheck-all.bs.table',
+        function () {
+            //$remove.prop('disabled', !$bs_table.bootstrapTable('getSelections').length)
+
+            // save your data, here just save the current page
+            selections = getIdSelections();
+            // push or splice the selections if you want to save all data selections
+            $('#fra_ids').val(selections);
+            jsDump(selections);
+        });
+    function getIdSelections() {
+        return $.map($bs_table.bootstrapTable('getSelections'), function (row) {
+            return row.id
+        })
+    }
+
+    /*$bs_table.on('all.bs.table', function (e, name, args) {
+        console.log(name, args)
+    })*/
+    jQuery(document).ready(function() {
+        $('#fra_ids').val(getIdSelections());
+    });
+    function editExcelByIncident() {
+        $('.editable').attr('contenteditable', 'true');
+        $('.editable').addClass('editing');
+    }
+    var pt_object = {};
+    function FinishPT(id_bs) {
+        //var id_pt = e.target.parents('tr').data('id');//parseInt(e.target.id.match(/\d+/));
+        $("#button_bs_finish_" + id_bs).addClass("disabled");
+
+        var path_url = "{{ path('admin_siv_dashboard_bitacora_scada', { action: 'json', id: '__ID__' })|raw }}";
+
+        path_url= path_url.replace('__ID__', id_bs);
+
+        $.ajax({
+            url : path_url,
+            type: 'GET',
+            success: function(response) {
+                if(response){
+                    pt_object = response;
+                    jsDump(pt_object);
+                    bootbox.dialog({
+                        title: 'Ingrese comentario de finalización del permiso de trabajo.',
+                        size: 'medium',
+                        message: `<div class="stop-propagation">
+            <div class="form-group col-sm-12 stop-propagation">
+
+            <div class="form-group col-sm-6">
+                <label for="frm_finish_reg-fechaInicio">Fecha de Inicio </label>
+                <div class="input-group date col-sm-12" id="frm_finish_reg_dtp_fer_fechaInicio" style="color: #222;">
+                    <input type="text" id="frm_finish_reg-fechaInicio" class="form-control" placeholder="Fecha de término" value="" disabled>
+                    <span class="input-group-addon">
+                        <span class="glyphicon glyphicon-calendar"></span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="form-group col-sm-6">
+                <label for="frm_finish_reg-fechaTermino">Fecha de término </label>
+                <div class="input-group date col-sm-12" id="frm_finish_reg_dtp_fer_FechaTermino" style="color: #222;">
+                    <input type="text" id="frm_finish_reg-fechaTermino" class="form-control" placeholder="Fecha de término" value="">
+                    <span class="input-group-addon">
+                        <span class="glyphicon glyphicon-calendar"></span>
+                    </span>
+                </div>
+            </div>
+
+            <label class="control-label" for="txt_bs_comment">Observaciones Adicionales</label>
+            <textarea class="form-control stop-propagation" id=txt_bs_comment maxlength="255" placeholder="Ingrese comentario de finalización del permiso de trabajo..."></textarea>
+            </div>
+            </div>
+            <div class="btn-group stop-propagation" role=group>
+            <a class="btn icon-btn btn-info waves-effect waves-light pull-right stop-propagation" href=# id=btn_set_bs_comment><span class="glyphicon btn-glyphicon glyphicon-ok img-circle text-info stop-propagation"></span> Aceptar</a></div>
+            <a class="btn icon-btn btn-default waves-effect pull-right stop-propagation" href=# id=btn_cancel_bs_comment><span class="glyphicon btn-glyphicon glyphicon-remove img-circle text-info stop-propagation"></span> Cancelar</a></div>
+            <script>
+            jQuery(document).ready(function() {
+                var now = moment();
+                //$('.selectpicker').selectpicker('render');
+
+                $('#frm_finish_reg-fechaInicio').val(getDateTimeFormat(new Date(pt_object.reg_bs.fechahora_inicio_trabajo),"DD-MM-YYYY HH:mm:ss"));
+
+                var frm_finish_reg_dtp_fer_FechaTermino = $('#frm_finish_reg_dtp_fer_FechaTermino');
+                frm_finish_reg_dtp_fer_FechaTermino.datetimepicker({
+                    useCurrent: false, //Important! See issue #1075
+                    locale: 'es',
+                    format: 'DD-MM-YYYY HH:mm:ss',
+                    /*icons: {
+                        time: 'timeText'
+                    }*/
+
+                });
+                frm_finish_reg_dtp_fer_FechaTermino.data("DateTimePicker").minDate(new Date(pt_object.reg_bs.fechahora_inicio_trabajo));
+                frm_finish_reg_dtp_fer_FechaTermino.data("DateTimePicker").maxDate(now.clone().add(10, 'minutes'));
+                /*frm_finish_reg_dtp_fer_FechaTermino.on("dp.change", function (e) {
+
+                });*/
+                $(".bootbox.modal.fade.in").click(function(e){e.stopPropagation(); });
+                $(".modal-dialog").click(function(e){e.stopPropagation(); });
+                $(".modal-content").click(function(e){e.stopPropagation(); });
+                $(".bootbox-close-button.close").click(function(e){e.stopPropagation();bootbox.hideAll(); });
+                $("#btn_cancel_bs_comment").click(function(e){e.stopPropagation();bootbox.hideAll(); });
+            });
+            <\/script>`
+                    });
+
+                    $('#btn_set_bs_comment').click(function (e) {
+                        e.stopPropagation();
+                        var el_txt_bs_comment = $('#txt_bs_comment');
+                        var txt_bs_comment = el_txt_bs_comment.val();
+
+                        var path_url = "{{ path('admin_siv_dashboard_bitacora_scada') }}";
+
+                        var data = {
+                            action: 'finish',
+                            id: id_bs,
+                            fechahora_fin_trabajo: $("#frm_finish_reg-fechaTermino").val(),
+                            observaciones: txt_bs_comment,
+
+                            //update_by: '1'
+                            token: "{{ csrf_token('finish-bs') }}"
+                        };//fechaTermino
+
+                        if (txt_bs_comment.length > 1) {
+                            $.ajax({
+                                url: path_url,
+                                type: 'POST',
+                                data: data,
+                                dataType: "json",
+                                success: function (response/*, status, jqXHR,html*/) {
+                                    if (response.msg) {
+                                        $.notify(
+                                            response.msg,
+                                            {style: 'bootstrap', className: response.msg_type, position: "top right"}
+                                        );
+                                        $('#btn_close_ajax_edit_popup').trigger('click');
+                                    }
+                                    else {
+                                        $.notify(
+                                            "Ha ocurrido un error al intentar procesar los datos. Reintente la operación.",
+                                            {style: 'bootstrap', className: 'error', position: "top right"}
+                                        );
+                                    }
+                                    getReportSensorData();
+                                }
+                            }).error(function () {
+                                $.notify(
+                                    "Ha ocurrido un error al intentar procesar los datos. Reintente la operación.",
+                                    {style: 'bootstrap', className: 'error', position: "top right"}
+                                );
+
+                            });
+                            bootbox.hideAll();
+
+                        }
+                        else {
+                            $('#txt_bs_comment').notify(
+                                "Este campo es obligatorio.",
+                                {style: 'bootstrap', className: 'error', position: "bottom left"}
+                            );
+                        }
+                    });
+                }
+                else{
+                    $.notify(
+                        "Ha ocurrido un error al intentar procesar los datos. Intente recargar la página.",
+                        {style: 'bootstrap', className: 'error', position: "top right"}
+                    );
+                }
+
+            }}).error(function(){
+            $.notify(
+                "Ha ocurrido un error al intentar procesar los datos. Intente recargar la página.",
+                {style: 'bootstrap', className: 'error', position: "top right"}
+            );
+        });
+    }
+
+    function highlightRegBinnacleScada(id_bs, status) {
+        status = (status==1) ? 0 : 1;
+
+        var path_url = "{{ path('admin_siv_dashboard_bitacora_scada') }}";
+        var data = {
+            action: 'highlight',
+            id: id_bs,
+            highlight: status,
+            token: "{{ csrf_token('highlight-bs') }}"
+        };
+        $.ajax({
+            url: path_url,
+            type: 'POST',
+            data: data,
+            dataType: "json",
+            success: function (response) {
+                if (response.msg) {
+                    $.notify(
+                        response.msg,
+                        {style: 'bootstrap', className: response.msg_type, position: "top right"}
+                    );
+                }
+                else {
+                    $.notify(
+                        "Ha ocurrido un error al intentar procesar los datos. Reintente la operación.",
+                        {style: 'bootstrap', className: 'error', position: "top right"}
+                    );
+                }
+                getReportSensorData();
+            },
+            error: function () {
+                $.notify(
+                    "Ha ocurrido un error al intentar procesar los datos. Reintente la operación.",
+                    {style: 'bootstrap', className: 'error', position: "top right"}
+                );
+            }
+        });
+    }
+
+    function deleteRegBinnacleScada(id_bs) {
+        var path_url = "{{ path('admin_siv_dashboard_bitacora_scada') }}";
+
+        var data = {
+            action: 'delete',
+            id: id_bs,
+            token: "{{ csrf_token('delete-bs') }}"
+        };
+        $.ajax({
+            url: path_url,
+            type: 'POST',
+            data: data,
+            dataType: "json",
+            success: function (response) {
+                if (response.msg) {
+                    $.notify(
+                        response.msg,
+                        {style: 'bootstrap', className: response.msg_type, position: "top right"}
+                    );
+                }
+                else {
+                    $.notify(
+                        "Ha ocurrido un error al intentar procesar los datos. Reintente la operación.",
+                        {style: 'bootstrap', className: 'error', position: "top right"}
+                    );
+                }
+                getReportSensorData();
+            },
+            error: function () {
+                $.notify(
+                    "Ha ocurrido un error al intentar procesar los datos. Reintente la operación.",
+                    {style: 'bootstrap', className: 'error', position: "top right"}
+                );
+            }
+        });
+    }
+
+    function startRegBinnacleScada(id_bs) {
+        var path_url = "{{ path('admin_siv_dashboard_bitacora_scada') }}";
+
+        var data = {
+            action: 'start',
+            id: id_bs,
+            token: "{{ csrf_token('start-bs') }}"
+        };
+        $.ajax({
+            url: path_url,
+            type: 'POST',
+            data: data,
+            dataType: "json",
+            success: function (response) {
+                if (response.msg) {
+                    $.notify(
+                        response.msg,
+                        {style: 'bootstrap', className: response.msg_type, position: "top right"}
+                    );
+                }
+                else {
+                    $.notify(
+                        "Ha ocurrido un error al intentar procesar los datos. Reintente la operación.",
+                        {style: 'bootstrap', className: 'error', position: "top right"}
+                    );
+                }
+                getReportSensorData();
+            },
+            error: function () {
+                $.notify(
+                    "Ha ocurrido un error al intentar procesar los datos. Reintente la operación.",
+                    {style: 'bootstrap', className: 'error', position: "top right"}
+                );
+            }
+        });
+    }
+</script>

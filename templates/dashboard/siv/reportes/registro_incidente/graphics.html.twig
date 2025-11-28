@@ -1,0 +1,236 @@
+{% if renderTo == 'pdf' %}
+{# Código de tracking deshabilitado - usando javascript-delay en lugar de window-status #}
+{% endif %}
+
+{% for key, graphic_group in data_table %}
+    {#{% set tittle = key|slice(2, key|length)|replace({'_': " de "}) %} #}
+    {% for graphic in graphic_group %}
+    <div id="{{ graphic.id }}_wrapper" class="container keeptogether force_row" style="{% if renderTo == 'pdf' %}width: 100%;height: 960px;{% else %}height: {% if graphic.data|length > 12 %}920{% else %}820{% endif %}px;{% endif %}">
+        {% if renderTo == 'pdf' %}
+            <div class="bs-callout bs-callout-info keeptogether force_row" style="margin:0 0 0 0;">
+                <div class="col-xs-4">
+                    <h4>Registro Incidente</h4>
+                </div>
+                <div class="col-xs-4"></div>
+                <div class="col-xs-4"></div>
+                <div class="col-xs-12" style="padding: 0px 5px 0 5px;">
+                    <div class="col-xs-12 pull-left inline-block">
+                        Periodo de consulta desde {{ fechaInicio|date('d-m-Y H:i:s') }} hasta {{ fechaTermino|date('d-m-Y H:i:s') }}<br>
+                        Obra concesionada: Autopista Costanera Norte<br>
+                        Año: {{ "now"|date('Y') }}<span class="pull-right text-right">{{ "now"|date('d-m-Y H:i:s') }}</span>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+        <div id="chart_{{ graphic.id }}" class="col-xs-1{% if renderTo == 'html' %}2{% elseif renderTo == 'pdf' %}2{% endif %}" style="border: 1px solid #0000001f;min-width: 310px; {% if renderTo == 'pdf' %}width: 1345px;height: 700px;{% else %}height: {% if graphic.data|length > 12 %}800{% else %}700{% endif %}px;{% endif %}padding-left: 0px !important;"></div>
+        {% if graphic.type == "bar" %}
+            <script>// Create the chart
+                var chart_{{ graphic.id }} = Highcharts.chart({
+                    chart: {
+                        renderTo: 'chart_{{ graphic.id }}',
+                        type: 'column',
+                        options3d: {
+                            enabled: true,
+                            alpha: {% if graphic.data|length > 13 %}9{% else %}0{% endif %},
+                            beta: 0,
+                            depth: 20,
+                            viewDistance: 25
+                        }
+                    },
+                    title: {
+                        text: '{{ graphic.title }}'
+                    },
+                    subtitle: {
+                        text: '{{ graphic.subtitle }}'
+                    },
+                    xAxis: {
+                        type: 'category',
+                        {% if graphic.data|length > 13 %}
+                        labels: {
+                            rotation: -45,
+                            autorRotation: -45,
+                        },
+                        {% endif %}
+                    },
+                    yAxis: {
+                        allowDecimals: false,
+                        min: 0,
+                        title: {
+                            text: 'Cantidad',
+                            skew3d: true
+                        }
+                    },
+                    legend: {
+                        enabled: false
+                    },
+                    plotOptions: {
+                        series: {
+                            borderWidth: 0,
+                            dataLabels: {
+                                enabled: true,
+                                format: '{point.y}' /*Label superior de serie (barra)  Se quita formato de renderizado "{point.y:.1f}%" */
+                            }
+                        }
+                    },
+
+                    tooltip: {
+                        headerFormat: '<span style="font-size:11px">{series.name}</span><br>',
+                        pointFormat: '<span style="color:{point.color}">{point.name}</span>: <b>{point.y}</b><br/>' /* Se quita formato de renderizado "{point.y:.2f}%" */
+                    },
+
+                    series: [
+                        {
+                            name: "{{ graphic.subject }}",
+                            colorByPoint: true,
+                            data: [
+                                {% for data_bar in graphic.data %}
+                                {
+                                    name: "{{ data_bar.grupo_r }}",
+                                    y: {{ data_bar.cantidad_r }},
+                                    drilldown: "{{ data_bar.grupo_r }}"
+                                },
+                                {% endfor %}
+                            ]
+                        }
+                    ],
+                    drilldown: {
+                        series: [
+                            {% for detail in graphic.drilldown %}
+                            {
+                                name: "{{ detail.id }}",
+                                id: "{{ detail.id }}",
+                                data: [
+                                    {% for item in detail.data %}
+                                    [
+                                        "{{ item.name }}",
+                                        {{ item.value }}
+                                    ],
+                                    {% endfor %}
+                                ]
+                            },
+                            {% endfor %}
+                        ]
+                    }
+                });
+            </script>
+        {% elseif graphic.type == "pie" %}
+                <script>// Create the chart
+                    var chart_{{ graphic.id }} = Highcharts.chart({
+                        chart: {
+                            renderTo: 'chart_{{ graphic.id }}',
+                            type: 'pie',
+                            options3d: {
+                                enabled: true,
+                                alpha: 45,
+                                beta: 0
+                                /*depth: 26,
+                                viewDistance: 25*/
+                            }
+                        },
+                        title: {
+                            text: '{{ graphic.title }}'
+                        },
+                        subtitle: {
+                            text: '{{ graphic.subtitle }}'
+                        },
+                        plotOptions: {
+                            series: {
+                                dataLabels: {
+                                    enabled: true,
+                                    format: '{point.name}: {point.y}'
+                                }
+                            },
+                            pie: {
+                                allowPointSelect: true,
+                                innerSize: 100,
+                                depth: 45,
+                                dataLabels: {
+                                    enabled: true,
+                                    format: '{point.name}'
+                                },
+                                showInLegend: true
+                            }
+                        },
+                        tooltip: {
+                            headerFormat: '<span style="font-size:11px">{series.name}</span><br>',
+                            pointFormat: '<span style="color:{point.color}">{point.name}</span>: Valor {point.y} <b>{point.percentage:.1f}%</b> del total<br/>' /* Se quita formato de renderizado "{point.y:.2f}%" */
+                        },
+                        series: [
+                            {
+                                name: "{{ graphic.subject }}",
+                                colorByPoint: true,
+                                data: [
+                                    {% for data_bar in graphic.data %}
+                                    {
+                                        name: "{{ data_bar.grupo_r }}",
+                                        y: {{ data_bar.cantidad_r }},
+                                        drilldown: "{{ data_bar.grupo_r }}"
+                                    },
+                                    {% endfor %}
+                                ]
+                            }
+                        ],
+                        drilldown: {
+                            series: [
+                                {% for detail in graphic.drilldown %}
+                                {
+                                    name: "{{ detail.id }}",
+                                    id: "{{ detail.id }}",
+                                    data: [
+                                        {% for item in detail.data %}
+                                        [
+                                            "{{ item.name }}",
+                                            {{ item.value }}
+                                        ],
+                                        {% endfor %}
+                                    ]
+                                },
+                                {% endfor %}
+                            ]
+                        }
+                    });
+                </script>
+            {#</div>#}
+        {% endif %}
+        {% if renderTo == 'html' %}
+            <div class="col-xs-12" id="sliders_{{ graphic.id }}" style="bottom: -35px;">
+                <div class="col-xs-4">
+                    <label for="alpha">Alfa</label>
+                    <input id="alpha" type="range" min="0" max="45" value="{% if graphic.data|length > 12 %}15{% else %}0{% endif %}"/>{# <span id="alpha-value_{{ graphic.id }}" class="value"></span>#}
+                </div>
+                <div class="col-xs-4">
+                    <label for="beta">Beta</label>
+                    <input id="beta" type="range" min="-45" max="45" value="15"/>{# <span id="beta-value_{{ graphic.id }}" class="value"></span>#}
+                </div>
+                <div class="col-xs-4 form-group">
+                    <label for="depth">Prof</label>
+                    <input id="depth" type="range" min="20" max="100" value="50"/>{# <span id="depth-value_{{ graphic.id }}" class="value"></span>#}
+                </div>
+            </div>
+            <script>
+                // Activate the sliders
+                $('#sliders_{{ graphic.id }} input').on('input change', function () {
+                    chart_{{ graphic.id }}.options.chart.options3d[this.id] = parseFloat(this.value);
+                    chart_{{ graphic.id }}.redraw(false);
+                });
+            </script>
+        {% elseif renderTo == 'pdf' %}
+        {% endif %}
+        {% if renderTo == 'pdf' %}
+            <div class="col-xs-12 keeptogether force_row clearfix" style="height: 95px;padding-top:2px;">
+                <div class="col-xs-4 pull-left">
+{#                    <img src="https://vs.gvops.cl/images/concessions/HCSQELGZDdo.png" alt="Logo Concesionaria" style="max-height: 65px;">#}
+                    <img src="{{ absolute_url(asset('images/concessions/HCSQELGZDdo.png')) }}" alt="Logo Concesionaria" style="max-height: 65px;">
+                </div>
+                <div class="col-xs-4 center-block text-center">
+                    <p style="margin-top: 20px;">Sociedad Concesionaria Costanera Norte</p>
+                </div>
+                <div class="col-xs-4 pull-right text-right" style="padding: 0;">
+{#                    <img src="https://vs.gvops.cl/images/coordinacion_concesiones_obras_publicas.jpg" alt="Logo MOP" style="max-height: 95px;">#}
+                    <img src="{{ absolute_url(asset('images/coordinacion_concesiones_obras_publicas.jpg')) }}" alt="Logo MOP" style="max-height: 95px;">
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+{% endfor %}

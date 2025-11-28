@@ -1,0 +1,15 @@
+{% if flashMessage is not defined %}
+	<div class="alert alert-success hidden" id="message" role="alert">
+		<div class="container"><span id="user-message"></span></div>
+	</div>
+{% endif %}
+{% for flashMessage in app.session.flashbag.get('mensaje') %}
+	<script>
+		$(document).ready(function(){
+			$.notify(
+					"{{ flashMessage }}",
+					{  style: 'custom', className: 'success', position:"top right" }
+			);
+		});
+	</script>
+{% endfor %}

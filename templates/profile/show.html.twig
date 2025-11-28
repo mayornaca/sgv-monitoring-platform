@@ -1,0 +1,218 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block page_title %}Mi Perfil{% endblock %}
+
+{% block main %}
+    {# Flash Messages #}
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="alert alert-{{ label }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endfor %}
+
+    {# Card 1: Seguridad - Cambio de Contraseña #}
+    <div class="card mb-4">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0"><i class="fas fa-shield-alt me-2"></i>Seguridad</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" action="{{ path('admin_app_profile_show') }}" id="changePasswordForm">
+                <input type="hidden" name="_token" value="{{ csrf_token('profile_password') }}">
+                <input type="hidden" name="action" value="change_password">
+
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label for="currentPassword" class="form-label">Contraseña Actual *</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="currentPassword" name="currentPassword" autocomplete="current-password" required>
+                            <button class="btn btn-outline-secondary" type="button" data-toggle-target="currentPassword">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">Ingresa tu contraseña actual para verificar tu identidad</div>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="newPassword" class="form-label">Nueva Contraseña *</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="newPassword" name="newPassword"
+                                   pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$" autocomplete="new-password" required>
+                            <button class="btn btn-outline-secondary" type="button" data-toggle-target="newPassword">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="confirmPassword" class="form-label">Confirmar Nueva Contraseña *</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" autocomplete="new-password" required>
+                            <button class="btn btn-outline-secondary" type="button" data-toggle-target="confirmPassword">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <button type="button" class="btn btn-info" id="generatePasswordBtn">
+                            <i class="fas fa-magic me-2"></i>Generar Contraseña Segura
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="copyPasswordBtn" style="display: none;">
+                            <i class="fas fa-copy me-2"></i>Copiar Contraseña
+                        </button>
+                        <span id="generatedPasswordDisplay" class="ms-3 text-muted" style="display: none;"></span>
+                    </div>
+                </div>
+
+                <div class="alert alert-light border">
+                    <h6><i class="fas fa-list-check me-2"></i>Requisitos de Contraseña:</h6>
+                    <ul class="mb-0 small">
+                        <li>Mínimo 8 caracteres</li>
+                        <li>Al menos una mayúscula (A-Z)</li>
+                        <li>Al menos una minúscula (a-z)</li>
+                        <li>Al menos un número (0-9)</li>
+                    </ul>
+                </div>
+
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-key me-2"></i>Cambiar Contraseña
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {# Card 2: Preferencias - Idioma (Oculto temporalmente) #}
+    <div class="card" style="display: none;">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-language me-2"></i>Preferencias</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" action="{{ path('admin_app_profile_show') }}" id="changeLocaleForm">
+                <input type="hidden" name="_token" value="{{ csrf_token('profile_locale') }}">
+                <input type="hidden" name="action" value="change_locale">
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <label for="locale" class="form-label">Idioma de la Interfaz</label>
+                        <select class="form-select" id="locale" name="locale" required>
+                            <option value="es" {% if app.user.locale == 'es' %}selected{% endif %}>Español</option>
+                            <option value="en" {% if app.user.locale == 'en' %}selected{% endif %}>English</option>
+                        </select>
+                        <div class="form-text">El idioma se aplicará en tu próxima sesión</div>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Guardar Preferencias
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block body_javascript %}
+    {{ parent() }}
+    <script>
+        // Toggle visibility de contraseñas usando event delegation
+        document.querySelectorAll('[data-toggle-target]').forEach(button => {
+            button.addEventListener('click', function() {
+                const inputId = this.getAttribute('data-toggle-target');
+                const input = document.getElementById(inputId);
+                const icon = this.querySelector('i');
+
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    input.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            });
+        });
+
+        // Generador de contraseñas seguras
+        document.getElementById('generatePasswordBtn').addEventListener('click', function() {
+            const length = 14;
+            const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+            const numbers = '0123456789';
+            const symbols = '!@#$%&*';
+            const allChars = uppercase + lowercase + numbers + symbols;
+
+            let password = '';
+
+            // Asegurar al menos un carácter de cada tipo
+            password += uppercase[Math.floor(Math.random() * uppercase.length)];
+            password += lowercase[Math.floor(Math.random() * lowercase.length)];
+            password += numbers[Math.floor(Math.random() * numbers.length)];
+            password += symbols[Math.floor(Math.random() * symbols.length)];
+
+            // Completar el resto de caracteres
+            for (let i = password.length; i < length; i++) {
+                password += allChars[Math.floor(Math.random() * allChars.length)];
+            }
+
+            // Mezclar caracteres
+            password = password.split('').sort(() => Math.random() - 0.5).join('');
+
+            // Rellenar campos
+            document.getElementById('newPassword').value = password;
+            document.getElementById('confirmPassword').value = password;
+
+            // Mostrar contraseña generada
+            document.getElementById('generatedPasswordDisplay').textContent = 'Contraseña: ' + password;
+            document.getElementById('generatedPasswordDisplay').style.display = 'inline';
+            document.getElementById('copyPasswordBtn').style.display = 'inline-block';
+
+            // Cambiar tipo a texto para mostrar
+            document.getElementById('newPassword').type = 'text';
+            document.getElementById('confirmPassword').type = 'text';
+        });
+
+        // Copiar contraseña al portapapeles
+        document.getElementById('copyPasswordBtn').addEventListener('click', function() {
+            const password = document.getElementById('newPassword').value;
+            const btn = this;
+
+            navigator.clipboard.writeText(password).then(() => {
+                const icon = btn.querySelector('i');
+                icon.classList.remove('fa-copy');
+                icon.classList.add('fa-check');
+                btn.classList.remove('btn-outline-secondary');
+                btn.classList.add('btn-success');
+
+                setTimeout(() => {
+                    icon.classList.remove('fa-check');
+                    icon.classList.add('fa-copy');
+                    btn.classList.remove('btn-success');
+                    btn.classList.add('btn-outline-secondary');
+                }, 2000);
+            });
+        });
+
+        // Validar que las contraseñas coincidan
+        document.getElementById('changePasswordForm').addEventListener('submit', function(e) {
+            const newPass = document.getElementById('newPassword').value;
+            const confirmPass = document.getElementById('confirmPassword').value;
+
+            if (newPass !== confirmPass) {
+                e.preventDefault();
+                alert('Las contraseñas no coinciden');
+            }
+        });
+    </script>
+{% endblock %}

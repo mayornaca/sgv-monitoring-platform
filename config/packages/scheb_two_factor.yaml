@@ -1,0 +1,26 @@
+scheb_two_factor:
+    # Configuración para nuestro sistema de monitoreo
+    email:
+        enabled: true
+        sender_email: 'jnacaratto@gesvial.cl'
+        sender_name: 'SGV'
+        digits: 6
+        template: 'two_factor/email_code.html.twig'
+        
+    totp:
+        enabled: true
+        server_name: 'SGV'
+        issuer: 'GVOps'
+        
+    # Dispositivos confiables - recordar por 30 días
+    trusted_device:
+        enabled: true
+        lifetime: 2592000 # 30 días
+        extend_lifetime: true
+        cookie_name: trusted_device
+        cookie_secure: auto
+        cookie_same_site: lax
+        
+    # Códigos de respaldo
+    backup_codes:
+        enabled: true

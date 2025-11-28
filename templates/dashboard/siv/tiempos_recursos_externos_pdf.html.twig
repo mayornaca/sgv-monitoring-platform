@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Tiempos Recursos Externos - Accidentes</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 8mm 8mm 8mm 8mm;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 9pt;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 6.5pt;
+        }
+
+        thead th {
+            background-color: #ffffff;
+            color: #333;
+            border: 1px solid #ddd;
+            padding: 4px 2px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 7pt;
+        }
+
+        thead th.header-group {
+            background-color: #d9d9d9;
+            font-size: 7pt;
+        }
+
+        tbody td {
+            border: 1px solid #ddd;
+            padding: 3px 2px;
+            font-size: 6pt;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        tbody tr:hover {
+            background-color: #e9ecef;
+        }
+
+        /* Columnas específicas para 17 columnas */
+        .col-incidente { width: 8%; text-align: left; }
+        .col-desc { width: 18%; text-align: left; }
+        .col-eje { width: 10%; text-align: left; }
+        .col-pk { width: 4%; text-align: center; }
+        .col-time { width: 3.5%; text-align: center; font-size: 6pt; }
+
+        .avg-row {
+            background-color: #ffe699 !important;
+            font-weight: bold;
+        }
+
+        .footer {
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 2px solid #ddd;
+            text-align: center;
+            font-size: 7pt;
+            color: #666;
+            page-break-inside: avoid;
+        }
+
+        .footer p {
+            margin: 3px 0;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .font-bold {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    {% set total_registros_header = 0 %}
+    {% for row in data_table %}
+        {% if row.incidente_r != '999999' %}
+            {% set total_registros_header = total_registros_header + 1 %}
+        {% endif %}
+    {% endfor %}
+
+    <!-- Primera sección: Logo + Sociedad Concesionaria -->
+    <div style="height: 95px; overflow: hidden;">
+        <div style="float: left; width: 33.33%; text-align: left;">
+            <img src="{{ absolute_url(asset('images/concessions/HCSQELGZDdo.png')) }}" style="height: 65px; width: 150px;">
+        </div>
+        <div style="float: left; width: 33.33%; text-align: center; padding-top: 15px;">
+            <h3 style="margin: 0; font-size: 12pt;">Sociedad Concesionaria Costanera Norte</h3>
+        </div>
+        <div style="float: left; width: 33.33%;"></div>
+        <div style="clear: both;"></div>
+    </div>
+
+    <!-- Segunda sección: Título + Información del reporte -->
+    <div style="padding: 8px; margin: 0 0 10px 0; border-left: 3px solid #5bc0de;">
+        <div style="padding: 0 5px;">
+            <h4 style="margin: 5px 0; font-size: 11pt;">{{ rpt_title }}</h4>
+        </div>
+        <div style="padding: 0 5px; margin-top: 5px;">
+            Obra concesionada: Autopista Costanera Norte<br>
+            {{ human_params }}
+        </div>
+        <div style="padding: 0 5px; margin-top: 5px; overflow: hidden;">
+            <div style="float: left;">
+                Total: <span style="display: inline-block; background: #5bc0de; color: #fff; padding: 4px 10px; border-radius: 10px; font-weight: bold; vertical-align: middle; line-height: 1;">{{ total_registros_header }}</span>
+            </div>
+            <div style="float: right;">
+                {{ "now"|date('d-m-Y H:i:s') }}
+            </div>
+            <div style="clear: both;"></div>
+        </div>
+    </div>
+
+    <!-- Tabla de datos -->
+    <table>
+        <thead>
+            <tr style="height: 22px;">
+                <th style="text-align: center; height: 44px;" colspan="4" rowspan="2">&nbsp;</th>
+                <th style="text-align: center; height: 22px;" colspan="3">Ambulancia externa</th>
+                <th style="text-align: center; height: 22px;" colspan="3">Bomberos</th>
+                <th style="text-align: center; height: 22px;" colspan="3">Carabineros</th>
+                <th style="text-align: center; height: 22px;" colspan="3">Servicio Médico Legal</th>
+            </tr>
+            <tr style="height: 22px;">
+                <th style="text-align: center; height: 22px;" colspan="3">Tiempos asociados</th>
+                <th style="text-align: center; height: 22px;" colspan="3">Tiempos asociados</th>
+                <th style="text-align: center; height: 22px;" colspan="3">Tiempos asociados</th>
+                <th style="text-align: center; height: 22px;" colspan="3">Tiempos asociados</th>
+            </tr>
+            <tr style="height: 22px;">
+                <th style="text-align: center; height: 22px;"># Incidente</th>
+                <th style="text-align: center; height: 22px;">Tipo</th>
+                <th style="text-align: center; height: 22px;">Eje</th>
+                <th style="text-align: center; height: 22px;">PK</th>
+                <th style="text-align: center; height: 22px;">Desplazamiento</th>
+                <th style="text-align: center; height: 22px;">Respuesta</th>
+                <th style="text-align: center; height: 22px;">Trabajo</th>
+                <th style="text-align: center; height: 22px;">Desplazamiento</th>
+                <th style="text-align: center; height: 22px;">Respuesta</th>
+                <th style="text-align: center; height: 22px;">Trabajo</th>
+                <th style="text-align: center; height: 22px;">Desplazamiento</th>
+                <th style="text-align: center; height: 22px;">Respuesta</th>
+                <th style="text-align: center; height: 22px;">Trabajo</th>
+                <th style="text-align: center; height: 22px;">Desplazamiento</th>
+                <th style="text-align: center; height: 22px;">Respuesta</th>
+                <th style="text-align: center; height: 22px;">Trabajo</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in data_table %}
+                {% if row.incidente_r != '999999' %}
+                <tr style="height: 44px;">
+                    <td style="text-align: center; height: 44px;">{{ row.incidente_r }}</td>
+                    <td style="text-align: center; height: 44px;">{{ row.desc_tipo_evento_r }}</td>
+                    <td style="text-align: center; height: 44px;">{{ row.eje_r }}</td>
+                    <td style="text-align: center; height: 44px;">{{ row.pk_r }}</td>
+                    <td style="text-align: center; height: 44px;">{{ row.a_time_1_a_3_r }}</td>
+                    <td style="text-align: center; height: 44px;">{{ row.a_time_2_a_3_r }}</td>
+                    <td style="text-align: center; height: 44px;">{{ row.a_time_3_a_4_r }}</td>
+                    <td style="text-align: center; height: 44px;">{{ row.b_time_1_a_3_r }}</td>
+                    <td style="text-align: center; height: 44px;">{{ row.b_time_2_a_3_r }}</td>
+                    <td style="text-align: center; height: 44px;">{{ row.b_time_3_a_4_r }}</td>
+                    <td style="text-align: center; height: 44px;">{{ row.c_time_1_a_3_r }}</td>
+                    <td style="text-align: center; height: 44px;">{{ row.c_time_2_a_3_r }}</td>
+                    <td style="text-align: center; height: 44px;">{{ row.c_time_3_a_4_r }}</td>
+                    <td style="text-align: center; height: 44px;">{{ row.s_time_1_a_3_r }}</td>
+                    <td style="text-align: center; height: 44px;">{{ row.s_time_2_a_3_r }}</td>
+                    <td style="text-align: center; height: 44px;">{{ row.s_time_3_a_4_r }}</td>
+                </tr>
+                {% endif %}
+            {% endfor %}
+            {% for row in data_table %}
+                {% if row.incidente_r == '999999' %}
+                <tr style="height: 22px;">
+                    <td style="height: 22px;" colspan="16">&nbsp;</td>
+                </tr>
+                <tr style="height: 22px;">
+                    <th style="text-align: right; height: 22px;" colspan="4">PROMEDIOS:&nbsp; &nbsp;&nbsp;</th>
+                    <td style="text-align: center; height: 22px;">{{ row.a_time_1_a_3_r }}</td>
+                    <td style="text-align: center; height: 22px;">{{ row.a_time_2_a_3_r }}</td>
+                    <td style="text-align: center; height: 22px;">{{ row.a_time_3_a_4_r }}</td>
+                    <td style="text-align: center; height: 22px;">{{ row.b_time_1_a_3_r }}</td>
+                    <td style="text-align: center; height: 22px;">{{ row.b_time_2_a_3_r }}</td>
+                    <td style="text-align: center; height: 22px;">{{ row.b_time_3_a_4_r }}</td>
+                    <td style="text-align: center; height: 22px;">{{ row.c_time_1_a_3_r }}</td>
+                    <td style="text-align: center; height: 22px;">{{ row.c_time_2_a_3_r }}</td>
+                    <td style="text-align: center; height: 22px;">{{ row.c_time_3_a_4_r }}</td>
+                    <td style="text-align: center; height: 22px;">{{ row.s_time_1_a_3_r }}</td>
+                    <td style="text-align: center; height: 22px;">{{ row.s_time_2_a_3_r }}</td>
+                    <td style="text-align: center; height: 22px;">{{ row.s_time_3_a_4_r }}</td>
+                </tr>
+                {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Footer -->
+    <div class="footer">
+        {% set total_registros = 0 %}
+        {% for row in data_table %}
+            {% if row.incidente_r != '999999' %}
+                {% set total_registros = total_registros + 1 %}
+            {% endif %}
+        {% endfor %}
+        <p><strong>Total de registros:</strong> {{ total_registros }}</p>
+        <p>Documento generado el {{ "now"|date("d/m/Y") }} a las {{ "now"|date("H:i:s") }}</p>
+        <p style="font-size: 6pt; color: #999; margin-top: 5px;">
+            Sistema de Gestión Vial - Tiempos de Recursos Externos
+        </p>
+    </div>
+</body>
+</html>

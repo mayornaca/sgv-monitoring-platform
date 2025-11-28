@@ -1,0 +1,83 @@
+/**
+ * EasyAdmin Custom Styles - Sistema de Monitoreo COT/SIV
+ * Estilos globales para todo el sistema
+ */
+
+/* ========================================
+   TÍTULOS - Estilo compacto para todos los títulos del sistema
+   ======================================== */
+
+.content-header-title .title {
+    font-size: 1.25rem !important;  /* ~20px - Más compacto que el default */
+    font-weight: 500 !important;
+    line-height: 1.4 !important;
+    margin: 0 !important;
+}
+
+/* Iconos en títulos - color primario de EasyAdmin */
+.content-header-title .title i,
+.content-header-title .title .fas,
+.content-header-title .title .far {
+    color: var(--color-primary, #5368d5);
+    margin-right: 0.5rem;
+}
+
+/* Responsive: títulos más pequeños en móviles */
+@media (max-width: 768px) {
+    .content-header-title .title {
+        font-size: 1.1rem !important;  /* ~17.6px */
+    }
+}
+
+/* ========================================
+   CONTENT TOP HEADER - Ajustes de padding
+   ======================================== */
+
+.content-top {
+    padding: 0.75rem 1rem;
+}
+
+/* ========================================
+   CONTENT HEADER - Reducir espacio vertical
+   ======================================== */
+
+.content-header {
+    padding: 1rem 0;
+    margin-bottom: 1rem;
+}
+
+.content-header-title {
+    margin-bottom: 0;
+}
+
+/* ========================================
+   COLORES PERSONALIZADOS - Paleta Materialize
+   ======================================== */
+
+:root {
+    /* Colores principales del sistema (Material Design) */
+    --color-primary: #2196F3;           /* Material Blue */
+    --color-success: #4CAF50;           /* Material Green */
+    --color-info: #03A9F4;              /* Material Light Blue */
+    --color-warning: #FF9800;           /* Material Orange */
+    --color-danger: #F44336;            /* Material Red */
+
+    /* Colores de botones */
+    --button-primary-bg: #2196F3;
+    --button-primary-color: #ffffff;
+
+    --button-success-bg: #4CAF50;
+    --button-success-color: #ffffff;
+
+    --button-info-bg: #03A9F4;
+    --button-info-color: #ffffff;
+
+    --button-warning-bg: #FF9800;
+    --button-warning-color: #ffffff;
+
+    --button-danger-bg: #F44336;
+    --button-danger-color: #ffffff;
+
+    /* Colores RGB para efectos */
+    --color-danger-rgb: 244, 67, 54;
+}

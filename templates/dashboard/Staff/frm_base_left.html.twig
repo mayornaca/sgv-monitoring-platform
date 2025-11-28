@@ -1,0 +1,51 @@
+<div class="col-md-12">
+    <div class="panel panel-info">
+        <div class="panel-heading">
+            <h2 class="panel-title">Vehículos Asignados</h2>
+        </div>
+
+        <div class="panel-body">
+            <!-- Inicio tabla  -->
+            <table id="detail-fields-list" class="table" data-prototype="{{ form_widget(form.tbl24ConductoresAsignados.vars.prototype)|e }}">
+                <thead>
+                <tr>
+                    <th>#</th>
+                    <th></th>
+                    <th>Vehículos</th>
+                    <th></th>
+                </tr>
+                </thead>
+
+                <tbody>
+                {% for detailField in form.tbl24ConductoresAsignados %}
+                    <tr class="trow">
+                        <th scope="row" style="width: 10px;">
+                            {{ loop.index }}
+                        </th>
+                        <td style="width: 1px">
+                            <div class="form-group" style="margin:0px !important;">
+                                {{ form_widget(detailField.idPersonal, {'attr': {'class': 'hidden'}} ) }}
+                                <span class="text-danger">{{ form_errors(detailField.idPersonal) }}</span>
+                            </div>
+                        </td>
+                        <td class="col-md-12">
+                            {{ form_widget(detailField.idVehiculo, {'attr': {'class': 'vehiculo_linea selectpicker' , 'data-live-search': 'true' , 'style': 'display:block;'}} ) }}
+                            <span class="text-danger">{{ form_errors(detailField.idVehiculo) }}</span>
+                            {{ form_widget(detailField.regStatus, {'attr': {'class': 'hidden'}} ) }}
+                            {{ form_widget(detailField.createdAt, {'attr': {'class': 'hidden'}} ) }}
+                            {{ form_widget(detailField.createdBy, {'attr': {'class': 'hidden'}} ) }}
+                        </td>
+                        <th style="width: 24px;"><button type="button" class="close" style="font-size: 40px;">×</button></th>
+                    </tr>
+                {% endfor %}
+                </tbody>
+
+            </table>
+            <!-- Fin Tabla  -->
+            <p>
+                <a class="btn btn-info waves-effect waves-light" href="#" id="add-another-detail"><i class="fa fa-plus-square" aria-hidden="true"></i>Asignar nuevo vehículo</a>
+            </p>
+
+        </div>
+    </div>
+</div>

@@ -1,0 +1,11 @@
+controllers:
+    resource:
+        path: ../src/Controller/
+        namespace: App\Controller
+    type: attribute
+
+# Legacy API routes - Backward compatibility
+api_send_whatsapp:
+    path: /send_whatsapp
+    controller: App\Controller\Api\WhatsAppWebhookController::send
+    methods: [GET, POST, PUT]

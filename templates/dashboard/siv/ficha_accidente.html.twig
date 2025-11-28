@@ -1,0 +1,266 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block title %}Ficha Registro Accidente{% endblock %}
+
+{# Sobrescribir content_title para eliminar el H1 que ocupa espacio #}
+{% block content_title %}{% endblock %}
+
+{# Agregar título en el toolbar superior (content_top_header) #}
+{% block content_top_header %}
+    <div class="d-flex align-items-center gap-2">
+        <h5 class="m-0">
+            <i class="fas fa-file-medical" style="color: var(--color-primary, #5368d5);"></i>
+            Ficha Registro Accidente
+        </h5>
+    </div>
+
+    {# Keep the original search, user menu, and settings #}
+    {{ parent() }}
+{% endblock %}
+
+{% block head_stylesheets %}
+    {{ parent() }}
+    <style>
+        .btn-group.stick-top.go-to-graphic.affix {
+            top: 73px;
+            left: 1px;
+            z-index: 1000;
+        }
+        .onoffswitch1 {
+            position: relative; width: 90px;
+            -webkit-user-select:none; -moz-user-select:none; -ms-user-select: none;
+        }
+        .onoffswitch1-checkbox {
+            display: none;
+        }
+        .onoffswitch1-label {
+            display: block; overflow: hidden; cursor: pointer;
+            border: 2px solid #999999; border-radius: 20px;
+        }
+        .onoffswitch1-inner {
+            display: block; width: 200%; margin-left: -100%;
+            transition: margin 0.3s ease-in 0s;
+        }
+        .onoffswitch1-inner:before, .onoffswitch1-inner:after {
+            display: block; float: left; width: 50%; height: 30px; padding: 0; line-height: 30px;
+            font-size: 14px; color: white; font-weight: bold;
+            box-sizing: border-box;
+        }
+        .onoffswitch1-inner:before {
+            content: "ON";
+            padding-left: 10px;
+            background-color: #34A7C1; color: #FFFFFF;
+        }
+        .onoffswitch1-inner:after {
+            content: "OFF";
+            padding-right: 10px;
+            background-color: #EEEEEE; color: #999999;
+            text-align: right;
+        }
+        .onoffswitch1-switch {
+            display: block; width: 18px; margin: 6px;
+            background: #FFFFFF;
+            position: absolute; top: 0; bottom: 0;
+            right: 56px;
+            border: 2px solid #999999; border-radius: 20px;
+            transition: all 0.3s ease-in 0s;
+        }
+        .onoffswitch1-checkbox:checked + .onoffswitch1-label .onoffswitch1-inner {
+            margin-left: 0;
+        }
+        .onoffswitch1-checkbox:checked + .onoffswitch1-label .onoffswitch1-switch {
+            right: 0px;
+        }
+    </style>
+{% endblock %}
+
+{% block page_content %}
+    <div id="main-wrapper" class="container-fluid">
+        <div class="page-header mb-3">
+            <div class="btn-group">
+                <button id="toggle_task_bar" type="button" class="btn btn-secondary" data-bs-toggle="collapse" data-bs-target="#filter-panel">
+                    <i class="fas fa-filter"></i> Filtros & Opciones
+                </button>
+            </div>
+        </div>
+
+        <!-- Inicio form de filtros -->
+        <div class="mb-3" onmouseover="stopTimerToggleTaskBar();">
+            <div id="filter-panel" class="filter-panel collapse show">
+                <div class="card">
+                    <div class="card-body">
+                        <form id="report_params" class="row g-3" action="" method="get">
+                            <input type="hidden" value="1" id="ci" name="ci">
+
+                            <div class="col-sm-2">
+                                <div class="mb-3">
+                                    <label for="fechaInicio" class="form-label">Fecha de inicio</label>
+                                    <div class="input-group">
+                                        <input type="text" id="fechaInicio" name="fechaInicio" class="form-control required" placeholder="Fecha de inicio" value="{{ fechaInicio }}">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-calendar"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="fechaTermino" class="form-label required">Fecha de término</label>
+                                    <div class="input-group">
+                                        <input type="text" id="fechaTermino" name="fechaTermino" class="form-control required" placeholder="Fecha de término" value="{{ fechaTermino }}">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-calendar"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                                <input id="fra_ids" type="text" name="fra_ids" class="d-none" value="{{ fra_ids }}">
+                            </div>
+
+                            <div class="col-sm-2"></div>
+                            <div class="col-sm-2"></div>
+                            <div class="col-sm-2"></div>
+                            <div class="col-sm-1"></div>
+
+                            <div class="col-sm-3">
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <h5>Exportar a PDF</h5>
+                                        <div class="onoffswitch1 mx-auto">
+                                            <input type="checkbox" name="generatePdf" class="onoffswitch1-checkbox" id="generatePdf">
+                                            <label class="onoffswitch1-label" for="generatePdf">
+                                                <span class="onoffswitch1-inner"></span>
+                                                <span class="onoffswitch1-switch"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <h5>Exportar a Excel</h5>
+                                        <div class="onoffswitch1 mx-auto">
+                                            <input type="checkbox" name="generateExcel" class="onoffswitch1-checkbox" id="generateExcel">
+                                            <label class="onoffswitch1-label" for="generateExcel">
+                                                <span class="onoffswitch1-inner"></span>
+                                                <span class="onoffswitch1-switch"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-12 mt-3">
+                                        <h5>Aplicar filtros</h5>
+                                        <button id="btn_submit" type="submit" class="btn btn-warning w-100">
+                                            <i class="fas fa-play-circle"></i> Generar reporte
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Fin form de filtros -->
+
+        <!-- Tabla de resultados -->
+        {% if fichas is defined and fichas|length > 0 %}
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Fecha</th>
+                            <th>Ubicación</th>
+                            <th>Tipo</th>
+                            <th>Vehículos</th>
+                            <th>Víctimas</th>
+                            <th>Recursos</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ficha in fichas %}
+                            <tr>
+                                <td>{{ ficha.id|default('N/A') }}</td>
+                                <td>{{ ficha.fecha|default('')|date('d/m/Y H:i') }}</td>
+                                <td>{{ ficha.ubicacion|default('-') }}</td>
+                                <td>{{ ficha.tipo|default('Sin clasificar') }}</td>
+                                <td>{{ ficha.vehiculos|default(0) }}</td>
+                                <td>{{ ficha.victimas|default(0) }}</td>
+                                <td>{{ ficha.recursos|default('-') }}</td>
+                                <td>
+                                    <span class="badge bg-{{ ficha.estado == 'resuelto' ? 'success' : 'warning' }}">
+                                        {{ ficha.estado|default('pendiente')|upper }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-info" onclick="verFicha('{{ ficha.id }}')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info text-center">
+                <i class="fas fa-info-circle fa-2x mb-3"></i>
+                <h5>No se encontraron fichas de accidente</h5>
+                <p>Ajuste los filtros de búsqueda e intente nuevamente</p>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+    <script>
+        var timer_toggle_task_bar;
+        var stoped = false;
+
+        function stopTimerToggleTaskBar() {
+            if (!stoped) {
+                clearTimeout(timer_toggle_task_bar);
+                stoped = true;
+            }
+        }
+
+        function verFicha(id) {
+            // Abrir modal o redirigir para ver detalle de ficha
+            console.log('Ver ficha:', id);
+        }
+
+        $(document).ready(function() {
+            $('#fechaInicio, #fechaTermino').datepicker({
+                format: 'dd-mm-yyyy',
+                autoclose: true
+            });
+
+            timer_toggle_task_bar = setTimeout(function() {
+                $("#toggle_task_bar").trigger("click");
+            }, 600);
+
+            $("#report_params").submit(function() {
+                if (validaRequeridos()) {
+                    $.notify("Espere un momento mientras se genera el reporte...",
+                        {style: 'custom', className: 'success', position: "bottom right"});
+                    return true;
+                } else {
+                    $.notify("Por favor ingrese los datos requeridos",
+                        {style: 'bootstrap', className: 'warn', position: "bottom right"});
+                    return false;
+                }
+            });
+        });
+
+        function validaRequeridos() {
+            var valido = true;
+            $('.required').each(function() {
+                if ($(this).val() == '') {
+                    valido = false;
+                    $(this).addClass('is-invalid');
+                } else {
+                    $(this).removeClass('is-invalid');
+                }
+            });
+            return valido;
+        }
+    </script>
+{% endblock %}

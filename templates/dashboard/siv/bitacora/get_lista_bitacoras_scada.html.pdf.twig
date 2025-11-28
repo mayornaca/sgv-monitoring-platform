@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Registros de Bitácora SCADA</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            margin: 0;
+            padding: 10px;
+        }
+        h1 {
+            font-size: 18px;
+            margin: 0 0 10px 0;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+        }
+        .header-info {
+            font-size: 10px;
+            margin-bottom: 10px;
+            color: #666;
+        }
+        .message-item {
+            margin-bottom: 15px;
+            margin-left: 30px;
+            position: relative;
+            page-break-inside: avoid;
+        }
+        .message-item:before {
+            background: #ddd;
+            border-radius: 2px;
+            bottom: -15px;
+            content: "";
+            height: 100%;
+            left: -20px;
+            position: absolute;
+            width: 2px;
+        }
+        .message-item:after {
+            background: #fff;
+            border: 2px solid #ccc;
+            border-radius: 50%;
+            content: "";
+            height: 10px;
+            left: -25px;
+            position: absolute;
+            top: 8px;
+            width: 10px;
+        }
+        .message-inner {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            padding: 8px;
+            position: relative;
+        }
+        .message-head {
+            border-bottom: 1px solid #eee;
+            margin-bottom: 5px;
+            padding-bottom: 5px;
+        }
+        .message-head h5 {
+            font-size: 12px;
+            font-weight: bold;
+            margin: 0 0 3px 0;
+            color: #333;
+        }
+        .message-meta {
+            font-size: 9px;
+            color: #777;
+        }
+        .message-meta span {
+            margin-right: 10px;
+        }
+        .message-content {
+            font-size: 10px;
+            line-height: 1.4;
+            color: #333;
+        }
+        .featured_row .message-inner {
+            background-color: #FFF9C4 !important;
+            border-color: #FBC02D;
+        }
+        .tachado {
+            text-decoration: line-through;
+            color: #999;
+        }
+        .badge {
+            background-color: #5368d5;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>
+        Registros de Bitácora SCADA
+        <span class="badge" style="float: right;">
+            Total: {{ data_table|json_decode|length }}
+        </span>
+    </h1>
+
+    <div class="header-info">
+        {% if fechaInicio %}<strong>Desde:</strong> {{ fechaInicio }}{% endif %}
+        {% if fechaTermino %} - <strong>Hasta:</strong> {{ fechaTermino }}{% endif %}
+        <span style="float: right;"><strong>Generado:</strong> {{ 'now'|date('d-m-Y H:i') }}</span>
+    </div>
+
+    <div class="message-list">
+        {% for row in data_table|json_decode %}
+            <div class="message-item {% if row.status == 1 %}featured_row{% endif %}">
+                <div class="message-inner">
+                    <div class="message-head">
+                        <h5>{{ row.created_by_name }}</h5>
+                        <div class="message-meta">
+                            <span><strong>Fecha:</strong> {{ row.created_at }}</span>
+                            <span><strong>ID:</strong> #{{ row.id }}</span>
+                            {% if row.status == 1 %}
+                                <span style="color: #F57C00;"><strong>⭐ DESTACADO</strong></span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="message-content {% if row.reg_status == 0 %}tachado{% endif %}">
+                        {{ row.text }}
+                    </div>
+                    {% if row.reg_status == 0 %}
+                        <div style="font-size: 9px; color: #d32f2f; margin-top: 5px;">
+                            <strong>ELIMINADO</strong>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% else %}
+            <div style="text-align: center; padding: 20px; color: #999;">
+                No se encontraron registros en el período seleccionado.
+            </div>
+        {% endfor %}
+    </div>
+</body>
+</html>

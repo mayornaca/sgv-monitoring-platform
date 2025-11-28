@@ -1,0 +1,1704 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block title %}Lista de Permisos de Trabajo{% endblock %}
+
+{# Sobrescribir content_title para eliminar el H1 que ocupa espacio #}
+{% block content_title %}{% endblock %}
+
+{# Agregar título en el toolbar superior (content_top_header) #}
+{% block content_top_header %}
+    <div class="d-flex align-items-center gap-2">
+        <h5 class="m-0">
+            <i class="fas fa-hard-hat" style="color: var(--color-primary, #5368d5);"></i>
+            Lista de Permisos de Trabajo
+        </h5>
+    </div>
+
+    {# Keep the original search, user menu, and settings #}
+    {{ parent() }}
+{% endblock %}
+
+{% block head_stylesheets %}
+    {{ parent() }}
+    <!-- Bootstrap Table CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-table@1.22.1/dist/bootstrap-table.min.css">
+    <!-- Tempus Dominus 6 CSS (Bootstrap 5 compatible) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@eonasdan/tempus-dominus@6/dist/css/tempus-dominus.min.css">
+    <!-- Bootstrap Select CSS (Bootstrap 5 compatible) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">
+    <!-- Bootstrap-Fileinput v5.5.x CSS (Bootstrap 5 compatible) -->
+    <link href="https://cdn.jsdelivr.net/gh/kartik-v/bootstrap-fileinput@5.5.0/css/fileinput.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.min.css" rel="stylesheet">
+
+    <style>
+        .btn-group.stick-top.go-to-graphic.affix {
+            top: 73px;
+            left: 1px;
+            z-index: 1000;
+        }
+        .bootstrap-table.fullscreen .fixed-table-toolbar {
+            background: #333;
+        }
+        .table>thead>tr>th {
+            vertical-align: middle;
+        }
+        .col9 {
+            background-color: cornsilk;
+        }
+
+        /* Animación de rotación para botón Actualizar */
+        .spin_rotate_icon {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Estilos para campos de validación */
+        .invalid-field {
+            border-color: #dc3545 !important;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+        }
+        .bootstrap-select.invalid-field .dropdown-toggle {
+            border-color: #dc3545 !important;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+        }
+
+        /* Auto-update switch styles */
+        .onoffswitch1 {
+            position: relative;
+            width: 60px;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        .onoffswitch1-checkbox {
+            display: none;
+        }
+        .onoffswitch1-label {
+            display: block;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid #999999;
+            border-radius: 20px;
+        }
+        .onoffswitch1-inner {
+            display: block;
+            width: 200%;
+            margin-left: -100%;
+            transition: margin 0.3s ease-in 0s;
+        }
+        .onoffswitch1-inner:before,
+        .onoffswitch1-inner:after {
+            display: block;
+            float: left;
+            width: 50%;
+            height: 20px;
+            padding: 0;
+            line-height: 20px;
+            font-size: 11px;
+            color: white;
+            font-weight: bold;
+            box-sizing: border-box;
+        }
+        .onoffswitch1-inner:before {
+            content: "ON";
+            padding-left: 10px;
+            background-color: #34A7C1;
+            color: #FFFFFF;
+        }
+        .onoffswitch1-inner:after {
+            content: "OFF";
+            padding-right: 10px;
+            background-color: #EEEEEE;
+            color: #999999;
+            text-align: right;
+        }
+        .onoffswitch1-switch {
+            display: block;
+            width: 15px;
+            margin: 2.5px;
+            background: #FFFFFF;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: 36px;
+            border: 2px solid #999999;
+            border-radius: 20px;
+            transition: all 0.3s ease-in 0s;
+        }
+        .onoffswitch1-checkbox:checked + .onoffswitch1-label .onoffswitch1-inner {
+            margin-left: 0;
+        }
+        .onoffswitch1-checkbox:checked + .onoffswitch1-label .onoffswitch1-switch {
+            right: 0px;
+        }
+    </style>
+{% endblock %}
+
+{% block configured_head_contents %}
+    {{ parent() }}
+{% endblock %}
+
+{% block configured_javascripts %}
+    {{ parent() }}
+    <!-- jQuery (necesario ANTES de Bootstrap y plugins) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- Popper.js (requerido por Tempus Dominus) -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <!-- Bootstrap Table JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.22.1/dist/bootstrap-table.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.22.1/dist/extensions/mobile/bootstrap-table-mobile.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.22.1/dist/locale/bootstrap-table-es-ES.min.js"></script>
+    <!-- Tempus Dominus 6 JS (Bootstrap 5 compatible) -->
+    <script src="https://cdn.jsdelivr.net/npm/@eonasdan/tempus-dominus@6/dist/js/tempus-dominus.min.js"></script>
+    <!-- Bootstrap Select -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/i18n/defaults-es_ES.min.js"></script>
+    <!-- jQuery Validation -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/localization/messages_es.min.js"></script>
+    <!-- Bootstrap Notify -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-notify@3.1.3/bootstrap-notify.min.js"></script>
+    <!-- Bootstrap-Fileinput v5.5.x JS (Bootstrap 5 compatible) -->
+    <script src="https://cdn.jsdelivr.net/gh/kartik-v/bootstrap-fileinput@5.5.0/js/fileinput.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/kartik-v/bootstrap-fileinput@5.5.0/js/locales/es.js"></script>
+    <!-- Bootbox -->
+    <script src="https://cdn.jsdelivr.net/npm/bootbox@6.0.0/dist/bootbox.min.js"></script>
+{% endblock %}
+
+{% block page_content %}
+    <div id="main-wrapper" class="container-fluid">
+        {# dump(data_table|json_decode) #}
+        {{ include('dashboard/siv/permisos_trabajos/contenedor_tabla.html.twig') }}
+        {{ include('dashboard/siv/permisos_trabajos/ajax_edit_popup.html.twig') }}
+    </div>
+
+    {# Bootstrap 5 Toast Container (reemplazo de notify.js) #}
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>
+{% endblock %}
+
+{% block body_javascript %}
+    {{ parent() }}
+    <script>
+        // Variables globales
+        let timer_interval;
+        let regStatusPicker = null;
+        let pickerFechaInicio = null;
+        let pickerFechaTermino = null;
+        const csrfTokenAjaxPt = '{{ csrf_token('ajax-pt') }}';
+
+        /**
+         * Reemplazo de notify.js con Bootstrap 5 Toasts nativos
+         * Compatible con sintaxis: showNotification(message, {className: 'success'})
+         */
+        function showNotification(message, options = {}) {
+            const type = options.className || options.style || 'info';
+            const bgClass = {
+                'success': 'text-bg-success',
+                'error': 'text-bg-danger',
+                'danger': 'text-bg-danger',
+                'warning': 'text-bg-warning',
+                'info': 'text-bg-info'
+            }[type] || 'text-bg-info';
+
+            const toastId = 'toast-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+            const toastHtml = `
+                <div id="${toastId}" class="toast align-items-center ${bgClass} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body">${message}</div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>`;
+
+            const container = document.querySelector('.toast-container');
+            if (container) {
+                container.insertAdjacentHTML('beforeend', toastHtml);
+                const toastElement = document.getElementById(toastId);
+                const toast = new bootstrap.Toast(toastElement, {
+                    autohide: true,
+                    delay: 3000
+                });
+                toast.show();
+                toastElement.addEventListener('hidden.bs.toast', () => {
+                    toastElement.remove();
+                });
+            }
+        }
+
+        /**
+         * Convertir fecha de formato DB a objeto Date
+         * Soporta ambos formatos: dd-MM-yyyy HH:mm:ss y yyyy-MM-dd HH:mm:ss
+         */
+        function parseFechaDB(fechaStr) {
+            if (!fechaStr || fechaStr.trim() === '') return null;
+
+            // Formato 1: "dd-MM-yyyy HH:mm:ss" (17-10-2025 14:30:00) - Tempus Dominus
+            let parts = fechaStr.match(/(\d{2})-(\d{2})-(\d{4}) (\d{2}):(\d{2}):(\d{2})/);
+            if (parts) {
+                const [_, day, month, year, hour, minute, second] = parts;
+                return new Date(year, month - 1, day, hour, minute, second);
+            }
+
+            // Formato 2: "yyyy-MM-dd HH:mm:ss" (2025-10-18 15:13:39) - MySQL/JSON
+            parts = fechaStr.match(/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/);
+            if (parts) {
+                const [_, year, month, day, hour, minute, second] = parts;
+                return new Date(year, month - 1, day, hour, minute, second);
+            }
+
+            console.log('[DEBUG] ⚠️ No se pudo parsear fecha:', fechaStr);
+            return null;
+        }
+
+        /**
+         * Inicializar Tempus Dominus date pickers
+         * Se llama en carga inicial y después de AJAX
+         */
+        function initTempusDominusPT() {
+            // Destruir instancias previas si existen
+            if (pickerFechaInicio) {
+                try {
+                    pickerFechaInicio.dispose();
+                } catch (e) {
+                    console.log('Error disposing pickerFechaInicio:', e);
+                }
+            }
+            if (pickerFechaTermino) {
+                try {
+                    pickerFechaTermino.dispose();
+                } catch (e) {
+                    console.log('Error disposing pickerFechaTermino:', e);
+                }
+            }
+
+            // Configuración común para ambos pickers
+            const tempusDominusOptions = {
+                display: {
+                    icons: {
+                        time: 'fas fa-clock',
+                        date: 'fas fa-calendar',
+                        up: 'fas fa-arrow-up',
+                        down: 'fas fa-arrow-down',
+                        previous: 'fas fa-chevron-left',
+                        next: 'fas fa-chevron-right',
+                        today: 'fas fa-calendar-check',
+                        clear: 'fas fa-trash',
+                        close: 'fas fa-times'
+                    },
+                    components: {
+                        calendar: true,
+                        date: true,
+                        month: true,
+                        year: true,
+                        decades: true,
+                        clock: true,
+                        hours: true,
+                        minutes: true,
+                        seconds: true
+                    }
+                },
+                localization: {
+                    locale: 'es',
+                    format: 'dd-MM-yyyy HH:mm:ss',
+                    hourCycle: 'h23'
+                }
+            };
+
+            // Inicializar pickers - buscamos en la modal (pueden no existir en lista principal)
+            const dtpFechaInicio = document.getElementById('dtp_fer_FechaInicio');
+            const dtpFechaTermino = document.getElementById('dtp_fer_FechaTermino');
+
+            if (dtpFechaInicio) {
+                //console.log('[DEBUG] Inicializando Tempus para dtp_fer_FechaInicio');
+                pickerFechaInicio = new tempusDominus.TempusDominus(dtpFechaInicio, tempusDominusOptions);
+
+                // Setear valor inicial desde DB si existe
+                const inputInicio = document.getElementById('frm_edit_reg-fechaInicio');
+                const valorInicio = inputInicio ? inputInicio.value : null;
+                if (valorInicio) {
+                    const fecha = parseFechaDB(valorInicio);
+                    if (fecha) {
+                        pickerFechaInicio.dates.setValue(new tempusDominus.DateTime(fecha));
+                        console.log('[DEBUG] Fecha inicio seteada desde DB:', valorInicio);
+                    }
+                }
+            } else {
+                // Date picker solo existe en modal de edición, no en página principal
+                // console.log('[DEBUG] No encontrado: dtp_fer_FechaInicio');
+            }
+
+            if (dtpFechaTermino) {
+                console.log('[DEBUG] Inicializando Tempus para dtp_fer_FechaTermino');
+                pickerFechaTermino = new tempusDominus.TempusDominus(dtpFechaTermino, tempusDominusOptions);
+
+                // Setear valor inicial desde DB si existe
+                const inputTermino = document.getElementById('frm_edit_reg-fechaTermino');
+                const valorTermino = inputTermino ? inputTermino.value : null;
+                if (valorTermino) {
+                    const fecha = parseFechaDB(valorTermino);
+                    if (fecha) {
+                        pickerFechaTermino.dates.setValue(new tempusDominus.DateTime(fecha));
+                        console.log('[DEBUG] Fecha término seteada desde DB:', valorTermino);
+                    }
+                }
+            } else {
+                // Date picker solo existe en modal de edición, no en página principal
+                // console.log('[DEBUG] No encontrado: dtp_fer_FechaTermino');
+            }
+        }
+
+        jQuery(document).ready(function() {
+
+            // Bootstrap Table se auto-inicializa con atributos data-* (patrón legacy)
+
+            // Inicializar Tempus Dominus date pickers
+            initTempusDominusPT();
+
+            // Event delegation para toggle de filtros (funciona después de AJAX)
+            $(document).on('click', '#toggle_task_bar', function(e) {
+                e.preventDefault();
+                var filterPanel = $('#filter-panel');
+                if (filterPanel.length) {
+                    filterPanel.collapse('toggle');
+                }
+            });
+
+            // Inicializar Bootstrap Select para multiselect de estados
+            $('#regStatus').selectpicker({
+                actionsBox: true,
+                selectedTextFormat: 'count > 3',
+                selectAllText: 'Todos',
+                deselectAllText: 'Ninguno',
+                noneSelectedText: 'Seleccione estados...'
+            });
+
+            // Configurar restricciones de fecha (solo si los pickers existen)
+            if (pickerFechaInicio && pickerFechaTermino) {
+                pickerFechaInicio.subscribe('change.td', (e) => {
+                    pickerFechaTermino.updateOptions({
+                        restrictions: {
+                            minDate: e.date
+                        }
+                    });
+                });
+
+                pickerFechaTermino.subscribe('change.td', (e) => {
+                    pickerFechaInicio.updateOptions({
+                        restrictions: {
+                            maxDate: e.date
+                        }
+                    });
+                });
+            }
+
+            // Inicializar timer de actualización automática
+            SetPTTimer();
+
+            // Setear fechas desde el servidor (patrón legacy) - solo si existen en lista principal
+            {% if fechaInicio %}
+                $('#fechaInicio').val('{{ fechaInicio }}');
+            {% else %}
+                // Si no viene del servidor, setear día actual
+            const defaultInicio = new Date();
+
+                defaultInicio.setDate(1);
+                defaultInicio.setHours(0, 0, 0, 0);
+                const fechaInicioStr = formatDate(defaultInicio);
+                $('#fechaInicio').val(fechaInicioStr);
+                if (pickerFechaInicio) {
+                    try {
+                        pickerFechaInicio.dates.setValue(new tempusDominus.DateTime(defaultInicio));
+                    } catch(e) {
+                        console.log('Error setting pickerFechaInicio date:', e);
+                    }
+                }
+            {% endif %}
+
+            {% if fechaTermino %}
+                $('#fechaTermino').val('{{ fechaTermino }}');
+            {% endif %}
+
+            // Setear estados seleccionados
+            {% if regStatus %}
+                $('#regStatus').selectpicker('val', [{% for status in regStatus %}'{{ status }}',{% endfor %}]);
+            {% endif %}
+
+            // Setear auto-update
+            {% if autoUpdate %}
+                $('#actualizacionAutomatica').prop('checked', true);
+            {% else %}
+                $('#actualizacionAutomatica').prop('checked', false);
+            {% endif %}
+
+            // Event listener para cambios en el intervalo
+            const timerInput = document.getElementById('timer-range-ajax-update');
+            if (timerInput) {
+                timerInput.addEventListener('change', function() {
+                    clearInterval(timer_interval);
+                    SetPTTimer();
+                });
+            }
+
+            // Validación de formulario
+            $("#report_params").submit(function() {
+                if(validaRequeridos()){
+                    showNotification(
+                        "Espere un momento mientras se genera el reporte...",
+                        {  style: 'custom', className: 'success', position:"bottom right" }
+                    );
+                    return true;
+                } else {
+                    showNotification(
+                        "Por favor ingrese los datos requeridos, verifique la información e intente nuevamente.",
+                        {  style: 'bootstrap', className: 'warn', position:"bottom right" }
+                    );
+                    return false;
+                }
+            });
+        });
+
+        /********************
+         * Timer de ejecución periódica para actualización automática
+         * ******************/
+        function SetPTTimer(){
+            const timerInput = document.getElementById('timer-range-ajax-update');
+            if (!timerInput) return;
+
+            const interval = timerInput.value * 1000;
+
+            timer_interval = setInterval(function () {
+                const autoUpdate = document.getElementById('actualizacionAutomatica');
+                if(autoUpdate && autoUpdate.checked) {
+                    getPTData();
+                }
+            }, interval);
+        }
+
+        /********************
+         * Actualizar tabla de permisos via AJAX (patrón legacy)
+         * ******************/
+        var toolbarIsToggle = false;
+        var tableIsFullscreen = false;
+
+        function getPTData() {
+            // Capturar estado actual del UI (patrón legacy)
+            toolbarIsToggle = $('#filter-panel').hasClass('show');
+            tableIsFullscreen = $('#tbl_pt').closest('div.bootstrap-table').hasClass('fullscreen');
+
+            // Agregar animación de rotación al botón
+            $('.rotate_ajax_icon').addClass('spin_rotate_icon');
+
+            var data = {
+                action: 'ajax',
+                toolbarIsToggle: toolbarIsToggle,
+                tableIsFullscreen: tableIsFullscreen,
+                fechaInicio: $('#fechaInicio').val(),
+                fechaTermino: $('#fechaTermino').val(),
+                filasPorPagina: $('#ccbRowsPerPage').val(),
+                regStatus: $('#regStatus').val(),
+                searchTxt: $('#searchTxt').val(),
+                token: csrfTokenAjaxPt,
+                search: $('.search input').val(),
+                autoUpdate: $('#actualizacionAutomatica').is(":checked"),
+                autoUpdateInterval: $('#timer-range-ajax-update').val()
+            };
+
+            $.ajax({
+                url: "{{ path('admin_siv_dashboard_lista_permisos_trabajos') }}",
+                type: "POST",
+                data: data,
+                async: true,
+                success: function (html) {
+                    if (html) {
+                        if ($(html).find('#pt_table_container').length > 0) {
+                            // Reemplazar contenedor completo (patrón legacy línea 183)
+                            // replaceWith() ejecuta automáticamente los scripts inline
+                            $('#pt_table_container').replaceWith($(html).find('#pt_table_container'));
+
+                            // Reinicializar Tempus Dominus date pickers
+                            initTempusDominusPT();
+
+                            // Restaurar estado del panel de filtros si estaba abierto
+                            if(toolbarIsToggle){
+                                $('#filter-panel').collapse('show');
+                            }
+
+                            // Restaurar estado fullscreen si estaba activo (patrón legacy línea 184)
+                            if(tableIsFullscreen){
+                                // Usar método oficial de Bootstrap Table para toggle fullscreen
+                                $('#tbl_pt').bootstrapTable('toggleFullscreen');
+                            }
+                            else{
+                                $('.fixed-table-container').css("height", '100%');
+                            }
+
+                            // Re-renderizar selectpickers (patrón legacy línea 199)
+                            $('.selectpicker').selectpicker('render');
+
+                            // Remover animación de rotación del botón
+                            $('.rotate_ajax_icon').removeClass('spin_rotate_icon');
+                        }
+                        else {
+                            showNotification(
+                                "Ha ocurrido un error al intentar procesar los datos. Intente recargar la página.",
+                                {style: 'bootstrap', className: 'error', position: "top right"}
+                            );
+                            $('.rotate_ajax_icon').removeClass('spin_rotate_icon');
+                        }
+                    }
+                    else {
+                        showNotification(
+                            "Ha ocurrido un error al intentar procesar los datos. Intente recargar la página.",
+                            {style: 'bootstrap', className: 'error', position: "top right"}
+                        );
+                        $('.rotate_ajax_icon').removeClass('spin_rotate_icon');
+                    }
+                },
+                error: function () {
+                    showNotification(
+                        "Ha ocurrido un error al intentar procesar los datos. Intente recargar la página.",
+                        {style: 'bootstrap', className: 'error', position: "top right"}
+                    );
+                    $('.rotate_ajax_icon').removeClass('spin_rotate_icon');
+                }
+            });
+        }
+
+        /********************
+         * Alias para crear permiso (llamado desde botón en toolbar)
+         * ******************/
+        function addRegPT() {
+            showModalAddPT();
+        }
+
+        /********************
+         * Guardar permiso (crear o actualizar)
+         * ******************/
+        function savePermiso() {
+            // Validar campos requeridos
+            if (!validaRequeridosIniciales()) {
+                showNotification("Complete los campos requeridos", {
+                    style: 'bootstrap',
+                    className: 'warn',
+                    position: "top right"
+                });
+                return false;
+            }
+
+            const form = document.getElementById('frm_edit_permiso');
+            if (!form) {
+                console.error('Form no encontrado: frm_edit_permiso');
+                return false;
+            }
+
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData);
+
+            // Show loading state
+            const saveBtn = event.target;
+            const originalText = saveBtn.innerHTML;
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+
+            fetch('{{ path("admin_siv_dashboard_set_pt") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(r => r.json())
+            .then(response => {
+                showNotification(response.msg || 'Operación completada', {
+                    style: 'bootstrap',
+                    className: response.msg_type || 'info',
+                    position: "top right"
+                });
+
+                if (response.msg_type === 'success') {
+                    closeModalPT();
+                    getPTData();  // Recargar tabla
+                }
+            })
+            .catch(error => {
+                console.error('Error al guardar:', error);
+                showNotification('Error al guardar el permiso', {
+                    style: 'bootstrap',
+                    className: 'error',
+                    position: "top right"
+                });
+            })
+            .finally(() => {
+                // Restore button state
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = originalText;
+                }
+            });
+        }
+
+        /********************
+         * Validar campos requeridos en formulario modal
+         * ******************/
+        function validaRequeridosIniciales() {
+            var valido = true;
+            $('.requerido_inicial').each(function() {
+                var $this = $(this);
+                if (!$this.val() || $this.val().trim() === '') {
+                    $this.addClass('is-invalid');
+                    valido = false;
+                } else {
+                    $this.removeClass('is-invalid');
+                }
+            });
+            return valido;
+        }
+
+        /********************
+         * Modal para crear nuevo permiso (Bootstrap 5 Pattern)
+         * ******************/
+        function showModalAddPT() {
+            const path = '{{ path("admin_siv_dashboard_get_pt", { action: "add" })|raw }}';
+
+            $.ajax({
+                url: path,
+                type: 'GET',
+                success: function(html) {
+                    if (html) {
+                        console.log('[DEBUG] Formulario cargado via AJAX');
+                        // Actualizar título del modal
+                        $('#modalPermisoTrabajoTitle').text('');
+
+                        // Usar .replaceWith() para que ejecute scripts inline (patrón legacy)
+                        if($(html).find('#ajax_edit_popup_container_render').length > 0) {
+                            $('#ajax_edit_popup_container_render').replaceWith(
+                                $(html).find('#ajax_edit_popup_container_render')
+                            );
+                            console.log('[DEBUG] HTML insertado con .replaceWith()');
+                        } else {
+                            console.error('[DEBUG] No se encontró #ajax_edit_popup_container_render en el HTML');
+                        }
+
+                        // Mostrar modal usando Bootstrap 5 API
+                        var modalElement = document.getElementById('ajax_edit_popup');
+                        var bsModal = new bootstrap.Modal(modalElement);
+                        bsModal.show();
+
+                        console.log('[DEBUG] Modal mostrado');
+
+                        // Reinicializar selectpickers si existen
+                        if (typeof $.fn.selectpicker !== 'undefined') {
+                            $('.selectpicker').selectpicker('render');
+                            console.log('[DEBUG] Selectpickers renderizados');
+                        }
+
+                        // Inicializar Tempus Dominus DESPUÉS de insertar el HTML
+                        initTempusDominusPT();
+                        console.log('[DEBUG] Tempus Dominus inicializado');
+
+                        // ✅ Cargar archivos adjuntos en la tabla
+                        if (typeof loadAttachedFileObjArr === 'function') {
+                            loadAttachedFileObjArr();
+                            console.log('[DEBUG] Archivos adjuntos cargados');
+                        }
+                    } else {
+                        showNotification('Error al cargar el formulario', {
+                            style: 'bootstrap',
+                            className: 'error',
+                            position: "top right"
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error al cargar formulario:', status, error);
+                    showNotification('Error al cargar el formulario', {
+                        style: 'bootstrap',
+                        className: 'error',
+                        position: "top right"
+                    });
+                }
+            });
+        }
+
+        /********************
+         * Modal para ver detalles de permiso
+         * ******************/
+        function viewPT(id) {
+            const modal = document.getElementById('modalPermisoTrabajo');
+            if (!modal) return;
+
+            const bsModal = new bootstrap.Modal(modal);
+            const modalTitle = document.getElementById('modalPermisoTrabajoTitle');
+            const modalBody = document.getElementById('modalPermisoTrabajoBody');
+
+            if (modalTitle) modalTitle.textContent = 'Ver Permiso de Trabajo #' + id;
+            if (modalBody) {
+                modalBody.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Cargando...</span></div></div>';
+
+                fetch('{{ path("admin_siv_dashboard_get_pt") }}?action=view&id=' + id)
+                    .then(r => r.text())
+                    .then(html => modalBody.innerHTML = html)
+                    .catch(e => {
+                        modalBody.innerHTML = '<div class="alert alert-danger">Error al cargar detalles</div>';
+                        console.error('Error en viewPT:', e);
+                    });
+            }
+            bsModal.show();
+        }
+
+        /********************
+         * Modal para editar permiso (Bootstrap 5 Pattern)
+         * ******************/
+        function editPT(id) {
+            var path_url = "{{ path('admin_siv_dashboard_get_pt', { action: 'edit', id: '__ID__' })|raw }}";
+            path_url = path_url.replace('__ID__', id);
+
+            $.ajax({
+                url: path_url,
+                type: 'GET',
+                success: function(html) {
+                    if (html) {
+                        console.log('[DEBUG] Formulario editar cargado via AJAX para ID:', id);
+                        // Actualizar título del modal
+                        $('#modalPermisoTrabajoTitle').text('Editar Permiso de Trabajo #' + id);
+
+                        // Usar .replaceWith() para que ejecute scripts inline (patrón legacy)
+                        if($(html).find('#ajax_edit_popup_container_render').length > 0) {
+                            $('#ajax_edit_popup_container_render').replaceWith(
+                                $(html).find('#ajax_edit_popup_container_render')
+                            );
+                            console.log('[DEBUG] HTML insertado con .replaceWith()');
+                        } else {
+                            console.error('[DEBUG] No se encontró #ajax_edit_popup_container_render en el HTML');
+                        }
+
+                        // Mostrar modal usando Bootstrap 5 API
+                        var modalElement = document.getElementById('ajax_edit_popup');
+                        var bsModal = new bootstrap.Modal(modalElement);
+                        bsModal.show();
+
+                        console.log('[DEBUG] Modal mostrado');
+
+                        // Reinicializar selectpickers si existen
+                        if (typeof $.fn.selectpicker !== 'undefined') {
+                            $('.selectpicker').selectpicker('render');
+                            console.log('[DEBUG] Selectpickers renderizados');
+                        }
+
+                        // Inicializar Tempus Dominus DESPUÉS de insertar el HTML
+                        initTempusDominusPT();
+                        console.log('[DEBUG] Tempus Dominus inicializado');
+
+                        // ✅ Cargar archivos adjuntos en la tabla
+                        if (typeof loadAttachedFileObjArr === 'function') {
+                            loadAttachedFileObjArr();
+                            console.log('[DEBUG] Archivos adjuntos cargados');
+                        }
+                    } else {
+                        showNotification('Error al cargar el formulario', {
+                            style: 'bootstrap',
+                            className: 'error',
+                            position: "top right"
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error al cargar formulario:', status, error);
+                    showNotification('Error al cargar el formulario', {
+                        style: 'bootstrap',
+                        className: 'error',
+                        position: "top right"
+                    });
+                }
+            });
+        }
+
+        /********************
+         * Eliminar permiso
+         * ******************/
+        function deletePT(id) {
+            if(confirm('¿Está seguro de eliminar este permiso de trabajo?')) {
+                $.ajax({
+                    url: '{{ path("admin_siv_dashboard_set_pt") }}',
+                    type: 'POST',
+                    data: {
+                        action: 'delete',
+                        id: id,
+                        token: '{{ csrf_token("delete-pt") }}'
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        console.log('[DEBUG] ✅ Delete response:', data);
+                        if(data.success) {
+                            showNotification(
+                                data.msg || 'Permiso eliminado correctamente',
+                                {style: 'bootstrap', className: 'success', position: "top right"}
+                            );
+                            getPTData();
+                        } else {
+                            showNotification(
+                                'Error al eliminar: ' + (data.msg || data.message || 'Error desconocido'),
+                                {style: 'bootstrap', className: 'error', position: "top right"}
+                            );
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('[DEBUG] ❌ Delete error:', {status, error});
+                        showNotification(
+                            'Error al eliminar permiso',
+                            {style: 'bootstrap', className: 'error', position: "top right"}
+                        );
+                    }
+                });
+            }
+        }
+
+        /********************
+         * Descargar PDF de la lista de permisos
+         * ******************/
+        function downloadPtListPDF() {
+            const form = document.getElementById('report_params');
+            const formData = new FormData(form);
+            const params = new URLSearchParams(formData);
+            params.append('action', 'pdf');
+
+            const url = '{{ path("admin_siv_dashboard_lista_permisos_trabajos") }}?' + params.toString();
+            window.open(url, '_blank');
+        }
+
+        /********************
+         * Validación de campos requeridos
+         * ******************/
+        function validaRequeridos() {
+            const fechaInicio = document.getElementById('fechaInicio');
+            const fechaTermino = document.getElementById('fechaTermino');
+
+            if (!fechaInicio || !fechaInicio.value) {
+                showNotification(
+                    "Debe ingresar fecha de inicio",
+                    {style: 'bootstrap', className: 'warn', position: "top right"}
+                );
+                return false;
+            }
+
+            if (!fechaTermino || !fechaTermino.value) {
+                showNotification(
+                    "Debe ingresar fecha de término",
+                    {style: 'bootstrap', className: 'warn', position: "top right"}
+                );
+                return false;
+            }
+
+            return true;
+        }
+
+        // Helper para formatear fechas
+        function formatDate(date) {
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
+            return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+        }
+
+        /**
+         * =====================================================
+         * FUNCIONES DEL FORMULARIO PERMISOS DE TRABAJO
+         * Migradas desde edit.html.twig para AJAX dinámico
+         * =====================================================
+         */
+
+        // Event delegation para botones del formulario (cargado dinámicamente)
+        $(document).on('click', '#frm_edit_reg_save', function() {
+            console.log('[DEBUG] Botón Guardar clickeado');
+            saveRegPt();
+            return true;
+        });
+
+        $(document).on('click', '#btn_close_edit_popup', function() {
+            console.log('[DEBUG] Botón Cerrar clickeado');
+            closeAjaxFrmEditPopup();
+        });
+
+        /**
+         * Validación de campos requeridos iniciales
+         * @returns {boolean} true si todos los campos requeridos están completos
+         */
+        function validaRequeridosIniciales() {
+            console.log('[DEBUG] Iniciando validaRequeridosIniciales()');
+            var countValidos = 0;
+            var countRequeridos = 0;
+            var camposInvalidos = [];
+
+            $('.requerido_inicial').each(function(index, value) {
+                var $this = $(this);
+                var fieldId = $this.attr('id') || $this.attr('name') || 'campo_sin_id';
+                var fieldLabel = $this.closest('.form-group, .mb-3').find('label').text() || fieldId;
+
+                // No contar elementos que son .bootstrap-select (son wrappers)
+                if(!$this.hasClass("bootstrap-select")) {
+                    countRequeridos++;
+                }
+
+                // Validar si el campo está vacío
+                if($this.val().length == 0 && !$this.hasClass("bootstrap-select")) {
+                    // Marcar como inválido
+                    if($this.hasClass("selectpicker")) {
+                        $this.closest('.bootstrap-select').addClass("invalid-field");
+                    } else {
+                        $this.addClass("invalid-field");
+                    }
+                    camposInvalidos.push(fieldLabel + ' (id: ' + fieldId + ')');
+                    console.warn('[DEBUG] ❌ Campo vacío:', fieldLabel, '| ID:', fieldId);
+                } else {
+                    // Marcar como válido
+                    if(!$this.hasClass("bootstrap-select")) {
+                        countValidos++;
+                        if($this.hasClass("selectpicker")) {
+                            $this.closest('.bootstrap-select').removeClass("invalid-field");
+                        } else {
+                            $this.removeClass("invalid-field");
+                        }
+                    }
+                }
+            });
+
+            console.log('[DEBUG] Validación: ' + countValidos + ' de ' + countRequeridos + ' campos válidos');
+            if(camposInvalidos.length > 0) {
+                console.error('[DEBUG] ❌ Campos faltantes:', camposInvalidos);
+            }
+
+            if(countValidos == countRequeridos) {
+                console.log('[DEBUG] ✅ Todos los campos requeridos están completos');
+                return true;
+            } else {
+                console.log('[DEBUG] ❌ Faltan campos requeridos: ' + (countRequeridos - countValidos));
+                return false;
+            }
+        }
+
+        /**
+         * Validación de fechas (inicio y término)
+         * @returns {boolean} true si las fechas son válidas
+         */
+        function validaFechas() {
+            console.log('[DEBUG] Validando fechas...');
+
+            if(!!$("#frm_edit_reg-fechaTermino").val()){
+                if(!!$("#frm_edit_reg-fechaInicio").val()){
+                    console.log('[DEBUG] ✅ Fechas válidas');
+                    return true;
+                } else {
+                    console.log('[DEBUG] ❌ Fecha de término sin fecha de inicio');
+                    showNotification("No puede ingresar fecha de finalización sin una fecha de inicio.",
+                        {style: 'bootstrap', className: 'error', position: "top right"});
+                    return false;
+                }
+            }
+            console.log('[DEBUG] ✅ Validación de fechas OK (sin fecha término)');
+            return true;
+        }
+
+        /**
+         * Guardar Permiso de Trabajo
+         * IMPORTANTE: Usa action='update' porque el registro ya existe (creado en GET add)
+         */
+        function saveRegPt() {
+            console.log('[DEBUG] ========== Iniciando saveRegPt() ==========');
+
+            if(validaRequeridosIniciales() && validaFechas()){
+                console.log('[DEBUG] ✅ Validaciones pasadas, preparando datos...');
+
+                var data = {
+                    action: 'update',  // ← SIEMPRE 'update' (registro ya existe desde GET add)
+                    id: $("#frm_edit_reg-id").val(),
+                    titulo: $("#frm_edit_reg-titulo").val(),
+                    descripcion_trabajo: $("#frm_edit_reg-descripcion_trabajo").val(),
+                    id_ubicacion: $("#frm_edit_reg-id_ubicacion").val(),
+                    concesionaria: '22',
+                    fechahora_inicio_trabajo: $("#frm_edit_reg-fechaInicio").val(),
+                    fechahora_fin_trabajo: $("#frm_edit_reg-fechaTermino").val(),
+                    id_empresa_solicitante: $("#frm_edit_reg-id_empresa_solicitante").val(),
+                    id_lider_trabajo_solicitante: $("#frm_edit_reg-id_lider_trabajo_solicitante").val(),
+                    id_autorizador: $("#frm_edit_reg-id_autorizador").val(),
+                    observaciones: $("#frm_edit_reg-observaciones").val(),  // ← Texto plano (patrón legacy línea 703)
+                    attached_files: $("#frm_edit_reg_attached_files").val() || '',
+                    token: "{{ csrf_token('update-pt') }}"  // ← Token para 'update'
+                };
+
+                console.log('[DEBUG] Datos a enviar:', data);
+                console.log('[DEBUG] URL destino: {{ path('admin_siv_dashboard_set_pt') }}');
+
+                $.ajax({
+                    url: "{{ path('admin_siv_dashboard_set_pt') }}",
+                    type: 'POST',
+                    data: data,
+                    dataType: "json",
+                    success: function(response) {
+                        console.log('[DEBUG] ✅ AJAX Success:', response);
+                        if(response.msg){
+                            // Limpiar textarea de nueva observación
+                            $("#frm_edit_reg-observaciones").val('');
+                            console.log('[DEBUG] ✅ Textarea de observaciones limpiado');
+
+                            showNotification(response.msg,
+                                {style: 'bootstrap', className: response.msg_type, position: "top right"});
+                            closeAjaxFrmEditPopup();
+                            getPTData();  // Recargar tabla
+                        }
+                    },
+                    error: function(xhr, status, error){
+                        console.error('[DEBUG] ❌ AJAX Error:', {status, error, response: xhr.responseText});
+                        showNotification("Ha ocurrido un error al intentar procesar los datos.",
+                            {style: 'bootstrap', className: 'error', position: "top right"});
+                    }
+                });
+            } else {
+                console.log('[DEBUG] ❌ Validaciones fallidas');
+                showNotification("Complete los campos requeridos",
+                    {style: 'bootstrap', className: 'warn', position: "top right"});
+            }
+            return false;
+        }
+
+        /**
+         * Cerrar modal de edición/creación de permiso
+         */
+        function closeAjaxFrmEditPopup() {
+            console.log('[DEBUG] Cerrando modal...');
+            var modalElement = document.getElementById('ajax_edit_popup');
+            if(modalElement) {
+                var bsModal = bootstrap.Modal.getInstance(modalElement);
+                if(bsModal) {
+                    bsModal.hide();
+                }
+            }
+        }
+
+        /**
+         * =====================================================
+         * FUNCIONES DE ARCHIVOS ADJUNTOS
+         * Patrón Legacy: OtPerm/edit.html.twig líneas 335-467
+         * =====================================================
+         */
+
+        /**
+         * Cargar lista de archivos adjuntos en la tabla
+         */
+        function loadAttachedFileObjArr() {
+            var $tbl_attached_files = $('#tbl_attached_files');
+            var $frm_edit_reg_attached_files = $("#frm_edit_reg_attached_files");
+
+            if(!!$frm_edit_reg_attached_files.val()){
+                var attachedFileObjArr = JSON.parse($frm_edit_reg_attached_files.val());
+                console.log('[DEBUG] Cargando archivos adjuntos:', attachedFileObjArr);
+                $tbl_attached_files.bootstrapTable('destroy');
+                $tbl_attached_files.bootstrapTable({data: attachedFileObjArr});
+                $tbl_attached_files.bootstrapTable('refresh');
+            }
+        }
+
+        /**
+         * Obtener archivos seleccionados en la tabla
+         */
+        function getAttachedFilesSelections() {
+            return $('#tbl_attached_files').bootstrapTable('getSelections');
+        }
+
+        /**
+         * Eliminar archivos seleccionados
+         */
+        function deleteAttachmentFile() {
+            var attachedFilesToRemove = getAttachedFilesSelections();
+
+            if(attachedFilesToRemove.length === 0) {
+                showNotification("Seleccione al menos un archivo para eliminar", {
+                    style: 'bootstrap', className: 'warn', position: "top right"
+                });
+                return false;
+            }
+
+            if(!confirm('¿Está seguro de eliminar ' + attachedFilesToRemove.length + ' archivo(s)?')) {
+                return false;
+            }
+
+            console.log('[DEBUG] Eliminando archivos:', attachedFilesToRemove);
+
+            $.ajax({
+                url: "{{ path('admin_siv_dashboard_set_pt') }}",
+                type: 'POST',
+                data: {
+                    action: 'delete-uploaded-file',
+                    id: $("#frm_edit_reg-id").val(),
+                    attachedFilesToRemove: attachedFilesToRemove,
+                    token: "{{ csrf_token('delete-uploaded-files') }}"
+                },
+                dataType: "json",
+                success: function(response) {
+                    console.log('[DEBUG] ✅ Delete files response:', response);
+                    if(response.msg){
+                        showNotification(response.msg, {
+                            style: 'bootstrap',
+                            className: response.msg_type,
+                            position: "top right"
+                        });
+
+                        if(response.resultRemoveAllFiles){
+                            // Actualizar JSON de archivos
+                            var $frm_edit_reg_attached_files = $("#frm_edit_reg_attached_files");
+                            var attachedFileObjArr = JSON.parse($frm_edit_reg_attached_files.val() || '[]');
+
+                            // Remover archivos del array
+                            for(var i = 0; i < attachedFilesToRemove.length; i++){
+                                var idx = attachedFileObjArr.findIndex(f => f.file_id === attachedFilesToRemove[i].file_id);
+                                if(idx > -1) {
+                                    attachedFileObjArr.splice(idx, 1);
+                                }
+                            }
+
+                            $frm_edit_reg_attached_files.val(JSON.stringify(attachedFileObjArr));
+                            loadAttachedFileObjArr();
+                        }
+                    }
+                },
+                error: function(){
+                    showNotification("Ha ocurrido un error al intentar eliminar los archivos.", {
+                        style: 'bootstrap', className: 'error', position: "top right"
+                    });
+                }
+            });
+        }
+
+        /**
+         * Descargar archivos seleccionados como ZIP
+         * Patrón legacy: OtPerm/edit.html.twig línea 255
+         */
+        function downloadAttachedFiles() {
+            var attachedFiles = getAttachedFilesSelections();
+
+            if(attachedFiles.length === 0) {
+                showNotification("Seleccione al menos un archivo para descargar", {
+                    style: 'bootstrap',
+                    className: 'warn',
+                    position: "top right"
+                });
+                return false;
+            }
+
+            console.log('[DEBUG] Descargando archivos:', attachedFiles);
+
+            // Usar XMLHttpRequest para descargar archivo binario (ZIP)
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (xhttp.readyState === 4 && xhttp.status === 200) {
+                    // Crear link temporal para descarga
+                    var a = document.createElement('a');
+                    a.href = window.URL.createObjectURL(xhttp.response);
+                    a.download = "archivos_permisos_trabajo.zip";
+                    a.style.display = 'none';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+
+                    showNotification('Descarga iniciada correctamente', {
+                        style: 'bootstrap',
+                        className: 'success',
+                        position: "top right"
+                    });
+                } else if (xhttp.readyState === 4) {
+                    showNotification('Error al descargar archivos', {
+                        style: 'bootstrap',
+                        className: 'error',
+                        position: "top right"
+                    });
+                }
+            };
+
+            // Preparar datos para POST
+            var formData = new FormData();
+            attachedFiles.forEach(function(file, index) {
+                formData.append('attached_files[' + index + '][file_id]', file.file_id);
+                formData.append('attached_files[' + index + '][path]', file.path);
+                formData.append('attached_files[' + index + '][file_name_original]', file.file_name_original);
+            });
+
+            xhttp.open("POST", '{{ path('siv_permisos_trabajos_download_files') }}');
+            xhttp.responseType = 'blob'; // Importante: tipo blob para archivos binarios
+            xhttp.send(formData);
+        }
+
+        /**
+         * =====================================================
+         * FUNCIONES DE BOTONES DE ACCIÓN EN TABLA
+         * Patrón Legacy: OtPerm/get_lista_permisos_trabajos.html.twig
+         * =====================================================
+         */
+
+        /**
+         * Iniciar Permiso de Trabajo
+         * Marca started_at = NOW(), estado pasa automáticamente de 0 → 2
+         * Legacy: get_lista_permisos_trabajos.html.twig (no existe función, solo botón)
+         */
+        function startPT(id) {
+            if(!confirm('¿Está seguro de iniciar este permiso de trabajo?')) {
+                return false;
+            }
+
+            console.log('[DEBUG] Iniciando permiso ID:', id);
+
+            $.ajax({
+                url: "{{ path('admin_siv_dashboard_set_pt') }}",
+                type: 'POST',
+                data: {
+                    action: 'start',
+                    id: id,
+                    token: "{{ csrf_token('start-pt') }}"
+                },
+                dataType: "json",
+                success: function(response) {
+                    console.log('[DEBUG] ✅ Start response:', response);
+                    if(response.msg){
+                        showNotification(response.msg, {
+                            style: 'bootstrap',
+                            className: response.msg_type,
+                            position: "top right"
+                        });
+                        getPTData();  // Recargar tabla
+                    }
+                },
+                error: function(xhr, status, error){
+                    console.error('[DEBUG] ❌ Start error:', {status, error});
+                    showNotification("Error al iniciar el permiso de trabajo", {
+                        style: 'bootstrap',
+                        className: 'error',
+                        position: "top right"
+                    });
+                }
+            });
+        }
+
+        /**
+         * Finalizar Permiso de Trabajo
+         * Marca finished_at = NOW(), status = 2, estado pasa automáticamente a 5
+         * Legacy: get_lista_permisos_trabajos.html.twig (no existe función, solo botón)
+         */
+        function finishPT(id) {
+            const observaciones = prompt('Ingrese observaciones de cierre (opcional):');
+
+            if(observaciones === null) {
+                return false;  // Usuario canceló
+            }
+
+            console.log('[DEBUG] Finalizando permiso ID:', id);
+
+            $.ajax({
+                url: "{{ path('admin_siv_dashboard_set_pt') }}",
+                type: 'POST',
+                data: {
+                    action: 'finish',
+                    id: id,
+                    observaciones: observaciones,
+                    fechahora_fin_trabajo: '',  // SP usa current_timestamp()
+                    token: "{{ csrf_token('finish-pt') }}"
+                },
+                dataType: "json",
+                success: function(response) {
+                    console.log('[DEBUG] ✅ Finish response:', response);
+                    if(response.msg){
+                        showNotification(response.msg, {
+                            style: 'bootstrap',
+                            className: response.msg_type,
+                            position: "top right"
+                        });
+                        getPTData();  // Recargar tabla
+                    }
+                },
+                error: function(xhr, status, error){
+                    console.error('[DEBUG] ❌ Finish error:', {status, error});
+                    showNotification("Error al finalizar el permiso de trabajo", {
+                        style: 'bootstrap',
+                        className: 'error',
+                        position: "top right"
+                    });
+                }
+            });
+        }
+
+        /**
+         * Descargar PDF del Permiso de Trabajo
+         * Legacy: tabla_permisos_trabajos.html.twig línea 341
+         */
+        function downloadPT(id) {
+            console.log('[DEBUG] Descargando PDF permiso ID:', id);
+
+            const url = "{{ path('admin_siv_dashboard_get_pt', {
+                action: 'pdf',
+                id: '__ID__',
+                token: csrf_token('pdf-pt')
+            })|raw }}".replace('__ID__', id);
+
+            // XMLHttpRequest con responseType blob (patrón legacy)
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (xhttp.readyState === 4 && xhttp.status === 200) {
+                    // Crear link temporal para descarga
+                    var a = document.createElement('a');
+                    a.href = window.URL.createObjectURL(xhttp.response);
+                    a.download = "Permiso_de_Trabajo_" + id + ".pdf";
+                    a.style.display = 'none';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+
+                    showNotification('PDF descargado correctamente', {
+                        style: 'bootstrap',
+                        className: 'success',
+                        position: 'top right'
+                    });
+                } else if (xhttp.readyState === 4) {
+                    showNotification('Error al descargar PDF', {
+                        style: 'bootstrap',
+                        className: 'error',
+                        position: 'top right'
+                    });
+                }
+            };
+
+            xhttp.open("GET", url);
+            xhttp.responseType = 'blob';  // Importante: tipo blob para PDF
+            xhttp.send();
+        }
+
+        // Exportar funciones globales
+        window.getPTData = getPTData;
+        window.showModalAddPT = showModalAddPT;
+        window.viewPT = viewPT;
+        window.editPT = editPT;
+        window.deletePT = deletePT;
+        window.startPT = startPT;
+        window.finishPT = finishPT;
+        window.downloadPT = downloadPT;
+        window.loadAttachedFileObjArr = loadAttachedFileObjArr;
+        window.deleteAttachmentFile = deleteAttachmentFile;
+
+        /**
+         * =====================================================
+         * EVENT DELEGATION HANDLERS
+         * Pattern: Event delegation for dynamically loaded content
+         * =====================================================
+         */
+
+        // Event delegation: Botón Guardar
+        $(document).on('click', '#frm_edit_reg_save', function(e) {
+            e.preventDefault();
+            console.log('[DEBUG] Botón Guardar clickeado (event delegation)');
+            saveRegPt();
+        });
+
+        // Event delegation: Botón Cerrar
+        $(document).on('click', '#btn_close_edit_popup', function(e) {
+            e.preventDefault();
+            console.log('[DEBUG] Botón Cerrar clickeado (event delegation)');
+            closeAjaxFrmEditPopup();
+        });
+
+        // Event delegation: Botón Cargar Archivos (Bootstrap Table)
+        $(document).on('click', '#btn_load_files', function(e) {
+            e.preventDefault();
+            console.log('[DEBUG] Botón Cargar Archivos clickeado');
+            loadAttachedFileObjArr();
+        });
+
+        // Event delegation: Botón Eliminar Archivos (Bootstrap Table)
+        $(document).on('click', '#btn_delete_selected_files', function(e) {
+            e.preventDefault();
+            console.log('[DEBUG] Botón Eliminar Archivos clickeado');
+            deleteAttachmentFile();
+        });
+
+        // Event delegation: Botón Adjuntar Archivos (cambiar pestaña + abrir modal)
+        $(document).on('click', '#btn_adjuntar_archivos', function(e) {
+            e.preventDefault();
+            console.log('[DEBUG] Cambiando a pestaña Archivos y abriendo modal');
+
+            // 1. Cambiar a pestaña "Archivos"
+            var tabTrigger = new bootstrap.Tab(document.querySelector('#tab-archivos'));
+            tabTrigger.show();
+
+            // 2. LUEGO abrir modal (delay para transición de tab)
+            setTimeout(function() {
+                var uploadModal = new bootstrap.Modal(document.getElementById('modal_upload_files'));
+                uploadModal.show();
+            }, 200);
+        });
+
+        // Event delegation: Botón Ver Archivos (auto-switch a pestaña)
+        $(document).on('click', '#btn_ver_archivos', function(e) {
+            e.preventDefault();
+            console.log('[DEBUG] Botón Ver Archivos clickeado - Cambiando a pestaña');
+
+            // Cambiar a pestaña "Archivos" (Bootstrap 5)
+            var tabTrigger = new bootstrap.Tab(document.querySelector('#tab-archivos'));
+            tabTrigger.show();
+
+            // Scroll suave hacia la tabla
+            setTimeout(function() {
+                var attachedTable = document.getElementById('tbl_attached_files');
+                if (attachedTable) {
+                    attachedTable.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 300);
+        });
+
+        /**
+         * =====================================================
+         * FUNCIONES DE "AGREGAR NUEVO" (CREATE NEW ENTITIES)
+         * Patrón Legacy: OtPerm/edit.html.twig líneas 648-939
+         * =====================================================
+         */
+
+        /**
+         * Agregar nueva Empresa Solicitante
+         * TODO: Implementar modal AJAX cuando el endpoint exista en SivController
+         * Legacy: OtPermController línea 712 (action='add-supplier')
+         */
+        /**
+         * Agregar Proveedor/Empresa Solicitante - Popup AJAX
+         */
+        function addCompany() {
+            console.log('[DEBUG] Cargando formulario AJAX de proveedor/empresa');
+
+            var selTarget = 'frm_edit_reg-id_empresa_solicitante';
+            var pathUrl = "{{ path('siv_permisos_trabajos_get_form') }}" +
+                          "?action=ajax_frm_add_supplier&selTarget=" + selTarget;
+
+            $.ajax({
+                url: pathUrl,
+                type: 'GET',
+                success: function(html) {
+                    if ($(html).find('#ajax_frm_add').length > 0) {
+                        $('#ajax_frm_add').replaceWith($(html).find('#ajax_frm_add'));
+                        showAjaxFrmPopup("Ingrese los datos de la empresa solicitante");
+                    } else {
+                        showNotification("No se pudo cargar el formulario", {
+                            style: 'bootstrap', className: 'error', position: "top right"
+                        });
+                    }
+                },
+                error: function() {
+                    showNotification("Error al cargar el formulario de empresa", {
+                        style: 'bootstrap', className: 'error', position: "top right"
+                    });
+                }
+            });
+        }
+
+        /**
+         * Agregar nueva Ubicación
+         * TODO: Implementar modal AJAX cuando el endpoint exista en SivController
+         * Legacy: OtPermController línea 1239 (action='ajax_frm_add_location')
+         */
+        /**
+         * Agregar Ubicación - Popup AJAX
+         */
+        function addLocation() {
+            console.log('[DEBUG] Cargando formulario AJAX de ubicación');
+
+            var selTarget = 'frm_edit_reg-id_ubicacion';
+            var pathUrl = "{{ path('siv_permisos_trabajos_get_form') }}" +
+                          "?action=ajax_frm_add_location&selTarget=" + selTarget;
+
+            $.ajax({
+                url: pathUrl,
+                type: 'GET',
+                success: function(html) {
+                    if ($(html).find('#ajax_frm_add').length > 0) {
+                        $('#ajax_frm_add').replaceWith($(html).find('#ajax_frm_add'));
+                        showAjaxFrmPopup("Ingrese los datos de la ubicación");
+                    } else {
+                        showNotification("No se pudo cargar el formulario", {
+                            style: 'bootstrap', className: 'error', position: "top right"
+                        });
+                    }
+                },
+                error: function() {
+                    showNotification("Error al cargar el formulario de ubicación", {
+                        style: 'bootstrap', className: 'error', position: "top right"
+                    });
+                }
+            });
+        }
+
+        /**
+         * Agregar Personal Interno o Externo
+         * TODO: Implementar modal AJAX cuando el endpoint exista en SivController
+         * Legacy: OtPermController líneas 1198, 1225 (ajax_frm_add_internal/external_staff)
+         */
+        function internalExternalStaff() {
+            console.log('[DEBUG] Seleccionar tipo de personal');
+            // Usar bootbox para preguntar tipo de personal
+            if(typeof bootbox !== 'undefined') {
+                var dialogBox =bootbox.dialog({
+                    title: '¿Qué tipo de personal desea crear?',
+                    message: "<p>Haga clic en el tipo de personal que desea crear.</p>",
+                    closeButton: false,
+                    buttons: {
+                        externo: {
+                            label: "Externo",
+                            className: 'btn-default',
+                            callback: function(){
+                                addExternalStaff();
+                            }
+                        },
+                        interno: {
+                            label: "Interno",
+                            className: 'btn-default',
+                            callback: function(){
+                                addInternalStaff('frm_edit_reg-id_lider_trabajo_solicitante');
+                            }
+                        },
+                        cancel: {
+                            label: "Cancelar",
+                            className: 'btn-default',
+                            callback: function(){
+                                //console.log('[DEBUG] Acción cancelada por el usuario');.
+                                $('#ajax_edit_popup').modal('show');
+                            }
+                        }
+                    }
+                }).init(function(){
+                    console.log('[DEBUG] Seleccionar tipo de personal');
+                    //Ocultar modal principal al abrir bootbox
+                    $('#ajax_edit_popup').modal('hide');
+                });
+            } else {
+                // Si bootbox no está disponible, usar alert
+                var tipo = confirm('¿Desea crear personal INTERNO? (Cancelar = Externo)');
+                if(tipo) {
+                    addInternalStaff();
+
+                } else {
+                    addExternalStaff();
+                }
+
+            }
+
+            // Blocked aria-hidden on an element because its descendant retained focus. The focus must not be hidden from assistive technology users. Avoid using aria-hidden on a focused element or its ancestor. Consider using the inert attribute instead, which will also prevent focus. For more details, see the aria-hidden section of the WAI-ARIA specification at https://w3c.github.io/aria/#aria-hidden.
+            //     Element with focus: <button.bootbox-close-button close btn-close>
+            //     Ancestor with aria-hidden: <button.bootbox-close-button close btn-close> <button type=​"button" class=​"bootbox-close-button close btn-close" aria-hidden=​"true" aria-label=​"Close">​</button>​
+
+            // Intento de manejar el cierre del bootbox:
+
+            // $('.bootbox-close-button').on('.bootbox-close-button', function(){
+            //     console.log('[DEBUG] Bootbox cerrado');
+            //     //Mostrar modal principal al cerrar bootbox
+            //     $('#ajax_edit_popup').modal('show');
+            // });
+
+            // Implemen
+        }
+
+        /**
+         * Agregar Personal Interno - Popup AJAX
+         * @param {string} targetSelect - ID del select destino (opcional)
+         */
+        function addInternalStaff(targetSelect) {
+            console.log('[DEBUG] Cargando formulario AJAX de personal interno');
+
+            var selTarget = targetSelect || 'frm_edit_reg-id_lider_trabajo_solicitante';
+            var pathUrl = "{{ path('siv_permisos_trabajos_get_form') }}" +
+                          "?action=ajax_frm_add_internal_staff&selTarget=" + selTarget;
+
+            $.ajax({
+                url: pathUrl,
+                type: 'GET',
+                success: function(html) {
+                    if ($(html).find('#ajax_frm_add').length > 0) {
+                        $('#ajax_frm_add').replaceWith($(html).find('#ajax_frm_add'));
+                        showAjaxFrmPopup("Ingrese los datos del personal interno");
+                    } else {
+                        showNotification("No se pudo cargar el formulario", {
+                            style: 'bootstrap', className: 'error', position: "top right"
+                        });
+                    }
+                },
+                error: function() {
+                    showNotification("Error al cargar el formulario de personal interno", {
+                        style: 'bootstrap', className: 'error', position: "top right"
+                    });
+                }
+            });
+        }
+
+        /**
+         * Agregar Personal Externo - Popup AJAX
+         */
+        function addExternalStaff() {
+            console.log('[DEBUG] Cargando formulario AJAX de personal externo');
+
+            var selTarget = 'frm_edit_reg-id_lider_trabajo_solicitante';
+            var pathUrl = "{{ path('siv_permisos_trabajos_get_form') }}" +
+                          "?action=ajax_frm_add_external_staff&selTarget=" + selTarget;
+
+            $.ajax({
+                url: pathUrl,
+                type: 'GET',
+                success: function(html) {
+                    if ($(html).find('#ajax_frm_add').length > 0) {
+                        $('#ajax_frm_add').replaceWith($(html).find('#ajax_frm_add'));
+                        showAjaxFrmPopup("Ingrese los datos del personal externo");
+                    } else {
+                        showNotification("No se pudo cargar el formulario", {
+                            style: 'bootstrap', className: 'error', position: "top right"
+                        });
+                    }
+                },
+                error: function() {
+                    showNotification("Error al cargar el formulario de personal externo", {
+                        style: 'bootstrap', className: 'error', position: "top right"
+                    });
+                }
+            });
+        }
+
+        // Exportar funciones "Add New"
+        window.addCompany = addCompany;
+        window.addLocation = addLocation;
+        window.internalExternalStaff = internalExternalStaff;
+        window.addInternalStaff = addInternalStaff;
+        window.addExternalStaff = addExternalStaff;
+
+        // Event delegation: Botones "Agregar Nuevo"
+        $(document).on('click', '#addCompany', function(e) {
+            e.preventDefault();
+            console.log('[DEBUG] Botón Agregar Empresa clickeado');
+            addCompany();
+        });
+
+        $(document).on('click', '#addLocation', function(e) {
+            e.preventDefault();
+            console.log('[DEBUG] Botón Agregar Ubicación clickeado');
+            addLocation();
+        });
+
+        $(document).on('click', '#addInternalExternalStaff', function(e) {
+            e.preventDefault();
+            console.log('[DEBUG] Botón Agregar Responsable clickeado');
+            internalExternalStaff();
+        });
+
+        $(document).on('click', '#addStaffAutorizador', function(e) {
+            e.preventDefault();
+            console.log('[DEBUG] Botón Agregar Autorizador clickeado');
+            addInternalStaff('frm_edit_reg-id_autorizador');  // Pasar el target correcto
+        });
+        window.downloadPtListPDF = downloadPtListPDF;
+        window.formatDate = formatDate;
+        window.validaRequeridosIniciales = validaRequeridosIniciales;
+        window.validaFechas = validaFechas;
+        window.saveRegPt = saveRegPt;
+        window.closeAjaxFrmEditPopup = closeAjaxFrmEditPopup;
+    </script>
+{% endblock %}

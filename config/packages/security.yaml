@@ -1,0 +1,273 @@
+
+security:
+    # https://symfony.com/doc/current/security.html#registering-the-user-hashing-passwords
+    password_hashers:
+        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
+    
+    # Sistema de permisos granulares por menú individual
+    # Cada rol tiene permisos específicos sin herencia jerárquica
+    role_hierarchy:
+        # Super Admin - Acceso total (hereda TODOS los permisos)
+        ROLE_SUPER_ADMIN:
+            - ROLE_ADMIN
+            - ROLE_VIEW_DEVICE_LIST
+            - ROLE_VIEW_GALIBOS
+            - ROLE_VIEW_SOS_REPORT
+            - ROLE_VIEW_SOS_MONITOR
+            - ROLE_VIEW_SPIRE_MONITOR
+            - ROLE_VIEW_SPIRE_HISTORY
+            - ROLE_VIEW_INCIDENT_REPORTS
+            - ROLE_VIEW_PHONE_REPORTS
+            - ROLE_VIEW_WORK_PERMITS
+            - ROLE_VIEW_SCADA_LOG
+            - ROLE_VIEW_VS_SPIRE_HISTORY
+            - ROLE_VIEW_VS_MONITOR
+            - ROLE_VIEW_SIV_REPORTS
+            - ROLE_ALLOWED_TO_SWITCH
+
+        # Admin COT - 4 menús específicos
+        ROLE_ADMIN_COT:
+            - ROLE_ADMIN
+            - ROLE_VIEW_DEVICE_LIST          # lista de dispositivos
+            - ROLE_VIEW_GALIBOS              # galibos
+            - ROLE_VIEW_SOS_MONITOR          # monitor sensores sos
+            - ROLE_VIEW_SOS_REPORT           # Reporte sensores sos
+            - ROLE_VIEW_INCIDENT_REPORTS     # Reporte incidentes
+            - ROLE_VIEW_PHONE_REPORTS        # Reportes Citofonia
+            - ROLE_VIEW_SIV_REPORTS
+            - ROLE_VIEW_WORK_PERMITS         # Permisos de trabajo
+            - ROLE_VIEW_SCADA_LOG            # bitacora
+
+        # Supervisor COT - 8 menús específicos
+        ROLE_SU_COT:
+            - ROLE_ADMIN
+            - ROLE_VIEW_DEVICE_LIST          # lista de dispositivos
+            - ROLE_VIEW_GALIBOS              # galibos
+            - ROLE_VIEW_SOS_REPORT           # Reporte sensores sos
+            - ROLE_VIEW_SOS_MONITOR          # monitor sensores sos
+            - ROLE_VIEW_INCIDENT_REPORTS     # Reportes Incidentes
+            - ROLE_VIEW_PHONE_REPORTS        # Reportes Citofonia
+            - ROLE_VIEW_WORK_PERMITS         # Permisos de trabajo
+            - ROLE_VIEW_SCADA_LOG            # bitacora
+            - ROLE_VIEW_SIV_REPORTS
+
+        # Operador COT - 6 menús específicos
+        ROLE_OPERATOR_COT:
+            - ROLE_ADMIN
+            - ROLE_VIEW_DEVICE_LIST          # lista de dispositivos
+            - ROLE_VIEW_GALIBOS              # galibos
+            - ROLE_VIEW_SOS_REPORT           # Reporte sensores sos
+            - ROLE_VIEW_SOS_MONITOR          # monitor sensores sos
+            - ROLE_VIEW_SPIRE_MONITOR        # monitor espiras
+            - ROLE_VIEW_SPIRE_HISTORY        # historial espiras
+
+
+        # Monitor Gerencia - 4 menús específicos
+        ROLE_MONITOR_GERENCIA:
+            - ROLE_ADMIN
+            - ROLE_VIEW_SPIRE_MONITOR        # monitor espiras
+            - ROLE_VIEW_SPIRE_HISTORY        # historial espiras
+            - ROLE_VIEW_VS_SPIRE_HISTORY     # historial espiras vs
+            - ROLE_VIEW_VS_MONITOR           # monitor espiras vs
+#            - ROLE_VIEW_INCIDENT_REPORTS     # Reportes incidentes
+#            - ROLE_VIEW_PHONE_REPORTS        # Reportes Citofonia
+
+        # Monitor Gerencia Reportes - Solo acceso a reportes de incidentes
+        ROLE_MONITOR_GERENCIA_REPORTES:
+            - ROLE_ADMIN
+            - ROLE_VIEW_INCIDENT_REPORTS     # Reportes incidentes
+            - ROLE_VIEW_SIV_REPORTS
+
+        # Operador SCADA - 5 menús específicos
+        ROLE_OPERATOR_SCADA:
+            - ROLE_ADMIN
+            - ROLE_VIEW_WORK_PERMITS         # Permisos de trabajo
+            - ROLE_VIEW_SCADA_LOG            # bitacora
+            - ROLE_VIEW_DEVICE_LIST          # lista de dispositivos
+            - ROLE_VIEW_GALIBOS              # galibos
+            - ROLE_VIEW_SOS_REPORT           # Reporte sensores sos
+            - ROLE_VIEW_SOS_MONITOR          # monitor sensores sos
+
+        # Usuario VS - 2 menús específicos
+        ROLE_USUARIO_VS:
+            - ROLE_ADMIN
+            - ROLE_VIEW_VS_SPIRE_HISTORY     # historial espiras vs
+            - ROLE_VIEW_VS_MONITOR           # monitor espiras vs
+
+        # Admin general del sistema
+        ROLE_ADMIN:
+            - ROLE_USER
+
+        # Inspector Fiscal (sin cambios en matriz)
+        ROLE_FISCAL_INSPECTOR:
+            - ROLE_USER
+            - ROLE_VIEW_DEVICE_LIST
+            - ROLE_VIEW_GALIBOS
+            - ROLE_VIEW_SOS_REPORT
+        
+        # Operador de Pórtico
+        ROLE_OPERATOR_PORTICO:
+            - ROLE_ADMIN
+            - ROLE_VIEW_PORTICO
+            - ROLE_MANAGE_PORTICO
+        
+        # Operador de Incidentes
+        ROLE_OPERATOR_INCIDENTS:
+            - ROLE_ADMIN
+            - ROLE_CREATE_INCIDENTS
+            - ROLE_UPDATE_INCIDENTS
+            - ROLE_VIEW_INCIDENTS
+        
+        # Usuario básico
+        ROLE_USER:
+            - ROLE_VIEW_DASHBOARD
+            - ROLE_VIEW_PROFILE
+    
+    # https://symfony.com/doc/current/security.html#loading-the-user-the-user-provider
+    providers:
+        app_user_provider:
+            entity:
+                class: App\Entity\User
+                property: email
+        # used to reload user from session & other features (e.g. switch_user)
+    
+    firewalls:
+        dev:
+            pattern: ^/(css|images|js)/
+            security: false
+
+        # Public API endpoints (no authentication required)
+        api_public_webhooks:
+            pattern: ^/api/(whatsapp/webhook|v1/prometheus/webhook|cot/spire_general_alert)
+            stateless: true
+            security: false
+
+        # Grafana proxy - no authentication (handled by Apache/Virtualmin)
+        grafana_proxy:
+            pattern: ^/grafana
+            security: false
+
+        # Prometheus proxy - no authentication (handled by infrastructure)
+        prometheus_proxy:
+            pattern: ^/prometheus
+            security: false
+
+        # Alertmanager proxy - no authentication (handled by infrastructure)
+        alertmanager_proxy:
+            pattern: ^/alertmanager
+            security: false
+
+        # OAuth2 token endpoint - stateless, no auth required
+        oauth2_token:
+            pattern: ^/token$
+            stateless: true
+            security: false
+
+        # OAuth2 userinfo endpoint - protected by OAuth2 token
+        oauth2_userinfo:
+            pattern: ^/api/userinfo
+            stateless: true
+            oauth2: true
+
+        api:
+            pattern: ^/api
+            stateless: true
+            jwt: ~
+
+        main:
+            lazy: true
+            provider: app_user_provider
+            
+            form_login:
+                login_path: app_login
+                check_path: app_login
+                enable_csrf: true
+                username_parameter: _username
+                password_parameter: _password
+                default_target_path: admin
+                success_handler: App\Security\Handler\AjaxAuthenticationSuccessHandler
+                failure_handler: App\Security\Handler\AjaxAuthenticationFailureHandler
+            
+            logout:
+                path: app_logout
+                target: app_login
+            
+            remember_me:
+                secret: '%kernel.secret%'
+                lifetime: 604800 # 1 week
+                path: /
+
+            # 2FA configuration - DESHABILITADO TEMPORALMENTE (causaba lentitud de 10+ segundos)
+            # TODO: Implementar correctamente con scheb/2fa-bundle cuando sea necesario
+            # two_factor:
+            #     auth_form_path: 2fa_login
+            #     check_path: 2fa_login_check
+
+    # Estrategia de votación unanime para permisos granulares (EasyAdmin 2024 best practice)
+    access_decision_manager:
+        strategy: unanimous
+        allow_if_all_abstain: false
+
+    # Easy way to control access for large sections of your site
+    access_control:
+        # Profiler and Web Debug Toolbar - Solo para usuarios autenticados
+        - { path: ^/_profiler, roles: IS_AUTHENTICATED_FULLY }
+        - { path: ^/_wdt, roles: IS_AUTHENTICATED_FULLY }
+
+        - { path: ^/login, roles: PUBLIC_ACCESS }
+        - { path: ^/logout, roles: PUBLIC_ACCESS }
+        - { path: ^/reset-password, roles: PUBLIC_ACCESS }
+        - { path: ^/register, roles: PUBLIC_ACCESS }
+        - { path: ^/privacidad, roles: PUBLIC_ACCESS }
+        - { path: ^/api/login, roles: PUBLIC_ACCESS }
+
+        # OAuth2 endpoints
+        - { path: ^/authorize, roles: IS_AUTHENTICATED_REMEMBERED }
+        - { path: ^/token, roles: PUBLIC_ACCESS }
+        - { path: ^/api/userinfo, roles: IS_AUTHENTICATED_FULLY }
+
+        # Legacy API endpoints - Public access for backward compatibility
+        # TODO: Add proper authentication (HMAC signatures) after validating functionality
+        - { path: ^/send_whatsapp, roles: PUBLIC_ACCESS }
+        - { path: ^/api/whatsapp/send, roles: PUBLIC_ACCESS }
+        - { path: ^/api/whatsapp/webhook, roles: PUBLIC_ACCESS }
+
+        # Prometheus webhook - Public access for Prometheus server
+        - { path: ^/api/v1/prometheus/webhook, roles: PUBLIC_ACCESS }
+
+        # COT Spire Alert - Public access (requires Bearer token in controller)
+        - { path: ^/api/cot/spire_general_alert, roles: PUBLIC_ACCESS }
+
+        - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
+
+        # Módulos específicos de monitoreo
+        - { path: ^/admin/users, roles: ROLE_ADMIN }
+        - { path: ^/admin, roles: ROLE_ADMIN }
+
+        # Endpoints de cronjobs COT (validación por token en controller)
+        - { path: ^/cot/ssam, roles: PUBLIC_ACCESS }
+        - { path: ^/cot/nssam_vs, roles: PUBLIC_ACCESS }
+        - { path: ^/cot/csam, roles: PUBLIC_ACCESS }
+
+        # Módulos COT - Protección base (controles granulares en controladores)
+        - { path: ^/cot, roles: ROLE_OPERATOR_COT }
+
+        # Módulos administrativos (seguridad manejada por atributos en controladores)
+        - { path: ^/suppliers, roles: ROLE_ADMIN }
+
+        # NOTA: Los permisos granulares están implementados mediante:
+        # 1. Atributos #[IsGranted()] en acciones de controladores
+        # 2. setPermission() en items de menú del Dashboard
+        # Las reglas path-based sirven como capa base de seguridad
+
+        # Área general (requiere autenticación)
+        - { path: ^/, roles: ROLE_USER }
+
+when@test:
+    security:
+        password_hashers:
+            Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
+                algorithm: auto
+                cost: 4 # Lowest possible value for bcrypt
+                time_cost: 3 # Lowest possible value for argon
+                memory_cost: 10 # Lowest possible value for argon

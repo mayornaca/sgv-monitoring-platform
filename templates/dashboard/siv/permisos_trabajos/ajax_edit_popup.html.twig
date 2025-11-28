@@ -1,0 +1,106 @@
+{# Modal container para Permisos de Trabajo - Bootstrap 5 Pattern #}
+<style>
+    .well {
+        min-height: 9px;
+        padding: 4px;
+    }
+    .vertical_form_overflow{
+        /*overflow: auto;*/
+        /*max-height: 722px;*/
+    }
+    .vertical_form{
+        width:37%;
+        margin:auto;
+        padding: 0px 5px 5px 5px;
+        min-width: 533px;
+    }
+    @media(max-width:767px){
+        .vertical_form{
+            min-width: 360px;
+        }
+        .vertical_form_overflow{
+            /*max-height: 500px;*/
+        }
+    }
+</style>
+
+<!-- Bootstrap 5 Modal para Crear/Editar Permiso de Trabajo -->
+<div class="modal fade" id="ajax_edit_popup" tabindex="-1" aria-labelledby="modalPermisoTrabajoTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalPermisoTrabajoTitle">Permiso de Trabajo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="ajax_edit_popup_container_render">
+                <!-- Contenido cargado via AJAX -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap 5 Modal para formularios AJAX (Personal, Empresa, etc) -->
+<div class="modal fade" id="ajax_frm_popup" tabindex="-1" aria-labelledby="ajax_frm_popup_title" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="ajax_frm_popup_title">Formulario</h5>
+{#                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>#}
+            </div>
+            <div class="modal-body">
+                <div id="ajax_frm_add" class="form-group stop-propagation">
+                    <!-- Contenido cargado via AJAX -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    /**
+     * Cerrar modal de Permiso de Trabajo usando Bootstrap 5 API
+     */
+    function closeAjaxFrmEditPopup() {
+        var modalElement = document.getElementById('ajax_edit_popup');
+        if (modalElement) {
+            var bsModal = bootstrap.Modal.getInstance(modalElement);
+            if (bsModal) {
+                bsModal.hide();
+            }
+        }
+    }
+
+    /**
+     * Abrir modal pequeño para formularios AJAX
+     */
+    function showAjaxFrmPopup(title) {
+        document.getElementById('ajax_frm_popup_title').textContent = title;
+        var modal = new bootstrap.Modal(document.getElementById('ajax_frm_popup'));
+        // Cerrar modal actual si está abierto
+        $('#ajax_edit_popup').modal('hide');
+        modal.show();
+    }
+
+    /**
+     * Cerrar modal pequeño de formularios AJAX
+     */
+    function closeAjaxFrmPopup() {
+        var modalElement = document.getElementById('ajax_frm_popup');
+        if (modalElement) {
+            var bsModal = bootstrap.Modal.getInstance(modalElement);
+            if (bsModal) {
+                bsModal.hide();
+            } else {
+                var newModal = new bootstrap.Modal(modalElement);
+                newModal.hide();
+            }
+        }
+        // Abrir nuevamente el modal de Permiso de Trabajo
+        $('#ajax_edit_popup').modal('show');
+    }
+
+    // Exportar funciones globalmente
+    window.closeAjaxFrmEditPopup = closeAjaxFrmEditPopup;
+    window.showAjaxFrmPopup = showAjaxFrmPopup;
+    window.closeAjaxFrmPopup = closeAjaxFrmPopup;
+</script>

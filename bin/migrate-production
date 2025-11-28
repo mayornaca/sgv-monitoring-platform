@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# Script para ejecutar migraciones en producción
+# Uso: ./bin/migrate-production
+
+set -e
+
+PROJECT_DIR="/www/wwwroot/vs.gvops.cl"
+cd "$PROJECT_DIR"
+
+echo "========================================="
+echo "  Migraciones de Base de Datos - PRODUCCIÓN"
+echo "========================================="
+echo ""
+
+# Verificar migraciones pendientes
+echo "Verificando migraciones pendientes..."
+PENDING=$(php bin/console doctrine:migrations:status --no-ansi 2>&1 | grep -i "new migrations" || echo "")
+
+if [ -z "$PENDING" ]; then
+    echo "✓ No hay migraciones pendientes"
+    exit 0
+fi
+
+echo "$PENDING"
+echo ""
+
+# Ejecutar migraciones
+echo "Ejecutando migraciones..."
+php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
+
+echo ""
+echo "✓ Migraciones ejecutadas exitosamente"
+echo ""
+
+# Mostrar estado final
+echo "Estado final de migraciones:"
+php bin/console doctrine:migrations:status --no-ansi
+
+echo ""
+echo "========================================="
+echo "  ✓ Proceso completado"
+echo "========================================="

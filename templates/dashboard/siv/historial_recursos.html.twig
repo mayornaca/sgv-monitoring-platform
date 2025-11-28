@@ -1,0 +1,429 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block title %}Historial de Recursos CN{% endblock %}
+
+{# Sobrescribir content_title para eliminar el H1 que ocupa espacio #}
+{% block content_title %}{% endblock %}
+
+{# Agregar título en el toolbar superior (content_top_header) #}
+{% block content_top_header %}
+    <div class="d-flex align-items-center gap-2">
+        <h5 class="m-0">
+            <i class="fas fa-history" style="color: var(--color-primary, #5368d5);"></i>
+            Historial de Recursos CN
+        </h5>
+    </div>
+
+    {# Keep the original search, user menu, and settings #}
+    {{ parent() }}
+{% endblock %}
+
+{% block head_stylesheets %}
+    {{ parent() }}
+    <!-- Tempus Dominus 6 CSS (Bootstrap 5 compatible) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@eonasdan/tempus-dominus@6/dist/css/tempus-dominus.min.css">
+    <!-- Bootstrap Select CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">
+    <style>
+        #timeline1 {
+            min-height: 400px;
+        }
+
+        #timeline1 svg {
+            /*max-width: 100%;*/
+        }
+
+        .y-tick {
+            stroke: black;
+            fill: none;
+            stroke-width: 1px;
+        }
+
+        .line-separator, .x-axis {
+            stroke: #777;
+            fill: none;
+            stroke-width: 1px;
+        }
+
+        .drop-line:last-child .line-separator {
+            display: none;
+        }
+
+        text {
+            stroke: none;
+            fill: black;
+        }
+
+        .legend{
+            display: none;
+        }
+
+        #timeline1 div {
+            position: fixed;
+            padding: 10px;
+            margin: 0 0 0 0;
+            left: 76px;
+            right: auto;
+            bottom: 10px;
+            background-color: rgba(255, 255, 255, 0.86);
+        }
+
+        .filter-card {
+            margin-bottom: 20px;
+        }
+    </style>
+{% endblock %}
+
+{% block page_content %}
+    <div class="container-fluid">
+        <!-- Panel de Filtros Colapsable (como legacy) -->
+        <div class="card filter-card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="fas fa-filter"></i> Filtros & Opciones
+                    <button type="button" class="btn btn-sm btn-secondary float-end" data-bs-toggle="collapse" data-bs-target="#filter-panel">
+                        <i class="fas fa-chevron-down"></i> Mostrar/Ocultar
+                    </button>
+                </h5>
+            </div>
+            <div id="filter-panel" class="collapse show">
+                <div class="card-body">
+                    <form id="report_params" action="" method="get">
+                        <input type="hidden" value="1" id="ci" name="ci">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="fechaInicio" class="form-label">Fecha de inicio</label>
+                                    <div class="input-group" id="dtpFechaInicio">
+                                        <input type="text" id="fechaInicio" name="fechaInicio"
+                                               class="form-control" placeholder="DD-MM-YYYY HH:mm:ss"
+                                               value="{{ fechaInicio }}">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-calendar"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="fechaTermino" class="form-label">Fecha de término</label>
+                                    <div class="input-group" id="dtpFechaTermino">
+                                        <input type="text" id="fechaTermino" name="fechaTermino"
+                                               class="form-control" placeholder="DD-MM-YYYY HH:mm:ss"
+                                               value="{{ fechaTermino }}">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-calendar"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="ccbItemsSelected" class="form-label">Recurso</label>
+                                    <select class="selectpicker form-control" id="ccbItemsSelected" name="itemsSelected[]"
+                                            multiple data-selected-text-format="count > 6" data-actions-box="true"
+                                            data-live-search="true" data-select-all-text="Todos" data-deselect-all-text="Ninguno">
+                                        {% for item in all_items %}
+                                            <option value="{{ item.codigo_recurso }}"
+                                                {% if itemsSelected is empty or item.codigo_recurso in itemsSelected %}selected{% endif %}>
+                                                {{ item.descripcion }} {{ item.codigo_recurso }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="mb-3">
+                                    <label class="form-label">Aplicar filtros</label>
+                                    <button id="btn_submit" type="submit" class="btn btn-warning w-100">
+                                        <i class="fas fa-play-circle"></i> Generar reporte
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de Navegación y Leyenda (SIEMPRE VISIBLES) -->
+        <div class="mb-3">
+            <div class="btn-group">
+                <button id="btn-prev-day" type="button" class="btn btn-primary">
+                    <i class="fas fa-backward"></i> -1 Día
+                </button>
+                <button id="btn-prev" type="button" class="btn btn-info">
+                    <i class="fas fa-backward"></i> -1 Hora
+                </button>
+                <button id="btn-next" type="button" class="btn btn-info">
+                    +1 Hora <i class="fas fa-forward"></i>
+                </button>
+                <button id="btn-next-day" type="button" class="btn btn-primary">
+                    +1 Día <i class="fas fa-forward"></i>
+                </button>
+            </div>
+            <div class="float-end" style="padding-right: 150px;">
+                <div style="height: 18px;width: 18px;background-color: grey;display: inline-block;"></div> Receso
+                <div style="height: 18px;width: 18px;background-color: green;display: inline-block;"></div> Disponible
+                <div style="height: 18px;width: 18px;background-color: red;display: inline-block;"></div> Asignado
+                <div style="height: 18px;width: 18px;background-color: orange;display: inline-block;"></div> Reparación
+            </div>
+        </div>
+
+        <!-- Timeline (SIEMPRE VISIBLE - como legacy) -->
+        <div id="timeline1"></div>
+    </div>
+{% endblock %}
+
+{% block body_javascript %}
+    {{ parent() }}
+    <!-- Scripts adicionales necesarios -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <!-- Popper.js (requerido por Tempus Dominus) -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <!-- Tempus Dominus 6 JS (Bootstrap 5 compatible) -->
+    <script src="https://cdn.jsdelivr.net/npm/@eonasdan/tempus-dominus@6/dist/js/tempus-dominus.min.js"></script>
+    <!-- Bootstrap Select JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/i18n/defaults-es_ES.min.js"></script>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <!-- TimelinesChart Legacy (compatible con el sistema) -->
+    <script src="{{ asset('js/timelines-chart-legacy.js') }}"></script>
+
+    <script>
+        // Parseo SIMPLE como legacy (línea 216 del legacy)
+        var data = JSON.parse('{{ arr_reg_items|raw }}');
+
+        // Inicializar chart EXACTO como legacy (líneas 217-227 del legacy)
+        var myChart = TimelinesChart()(document.getElementById('timeline1'))
+            .timeFormat('%d-%m-%Y %H:%M:%S')
+            .zQualitative(true)
+            .maxLineHeight(20)
+            .leftMargin(120)
+            .rightMargin(180)
+            .bottomMargin(150)
+            .enableOverview(true)
+            .enableAnimations(false)
+            .zColorScale(d3.scaleOrdinal()
+                .domain(["REC", "DIS", "OCC", "MAN"])
+                .range(["grey", "green", "red", "orange"])
+            );
+
+        // REC: RECESO (grey)
+        // DIS: DISPONIBLE (green)
+        // OCC: ASIGNADO (red)
+        // MAN: REPARACIÓN (orange)
+
+        async function renderGraphic(data) {
+            //console.log('renderizando:',data);
+            var sensors_count = 0;
+
+            for (var prop in data) {
+                if (data[prop].hasOwnProperty('d')){
+                    sensors_count += Object.keys(data[prop].d).length;
+                }
+            }
+            var maxHeight = 640;
+            if((sensors_count * 25) > 640 ){
+                maxHeight = sensors_count*25;
+            }
+
+            myChart.maxHeight(maxHeight);
+            console.log('renderizando')
+            await refreshGraphic(data,showLoad(),hideCotAjaxLoader());
+            console.log('fin renderizado')
+        }
+
+        function refreshGraphic(data,showLoader,hideLoader) {
+            return new Promise((resolve,reject)=>{
+                //here our function should be implemented
+                showLoader;
+                console.log("Refreshing Chart");
+                myChart.data(data).refresh();
+                hideLoader;
+                resolve();
+            });
+        }
+
+        function showLoad(){
+            console.log('Loading chart...');
+        }
+
+        function hideCotAjaxLoader(){
+            console.log('Chart loaded');
+        }
+
+        document.getElementById("btn_submit").addEventListener("click", function () {
+            location.reload();
+        });
+
+        function getSpiresHistory() {
+            var params = {
+                fechaInicio:$('#fechaInicio').val(),
+                fechaTermino:$('#fechaTermino').val(),
+                itemsSelected:$('#ccbItemsSelected').val()
+            };
+            $.ajax({
+                url: '{{ path('admin_siv_dashboard_historial_recursos') }}',
+                type: "GET",
+                data: params,
+                async: true,
+                cache: false,
+                success: function (response) {
+                    if (response.arr_reg_items && response.arr_reg_items.length > 0) {
+                        //console.log(response.arr_reg_items)
+                        data = JSON.parse(response.arr_reg_items);
+                        renderGraphic(data);
+                    }
+                    else {
+                        console.log("No se encontró información.");
+                    }
+                }
+            });
+        }
+
+        $('#btn-prev').click(function () {
+            var fechaInicio_val = $('#fechaInicio').val();
+            fechaInicio_val = moment(fechaInicio_val, 'DD-MM-YYYY HH:mm:ss', true).add(-1,'hour').format('DD-MM-YYYY HH:mm:ss');
+            $('#fechaInicio').val(fechaInicio_val);
+            var fechaTermino_val = $('#fechaTermino').val();
+            fechaTermino_val = moment(fechaTermino_val, 'DD-MM-YYYY HH:mm:ss', true).add(-1,'hour').format('DD-MM-YYYY HH:mm:ss');
+            $('#fechaTermino').val(fechaTermino_val);
+            getSpiresHistory()
+        });
+
+        $('#btn-next').click(function () {
+            var fechaInicio_val = $('#fechaInicio').val();
+            fechaInicio_val = moment(fechaInicio_val, 'DD-MM-YYYY HH:mm:ss', true).add(1,'hour').format('DD-MM-YYYY HH:mm:ss');
+            $('#fechaInicio').val(fechaInicio_val);
+            var fechaTermino_val = $('#fechaTermino').val();
+            fechaTermino_val = moment(fechaTermino_val, 'DD-MM-YYYY HH:mm:ss', true).add(1,'hour').format('DD-MM-YYYY HH:mm:ss');
+            $('#fechaTermino').val(fechaTermino_val);
+            getSpiresHistory()
+        });
+
+        $('#btn-prev-day').click(function () {
+            var fechaInicio_val = $('#fechaInicio').val();
+            var dt_ini = moment(fechaInicio_val, 'DD-MM-YYYY HH:mm:ss', true);
+            var fechaTermino_val = $('#fechaTermino').val();
+            var dt_end = moment(fechaTermino_val, 'DD-MM-YYYY HH:mm:ss', true);
+
+            if(dt_end.diff(dt_ini,'days') >= 1 && dt_end.diff(dt_ini,'days') <= 4){
+                fechaTermino_val = dt_end.add(-1,'day').format('DD-MM-YYYY HH:mm:ss');
+            }
+
+            fechaInicio_val = dt_ini.add(-1,'day').format('DD-MM-YYYY HH:mm:ss');
+            $('#fechaInicio').val(fechaInicio_val);
+            $('#fechaTermino').val(fechaTermino_val);
+            getSpiresHistory()
+        });
+
+        $('#btn-next-day').click(function () {
+            var fechaInicio_val = $('#fechaInicio').val();
+            var dt_ini = moment(fechaInicio_val, 'DD-MM-YYYY HH:mm:ss', true);
+            var fechaTermino_val = $('#fechaTermino').val();
+            var dt_end = moment(fechaTermino_val, 'DD-MM-YYYY HH:mm:ss', true);
+
+            if(dt_end.diff(dt_ini,'days') >= 1 && dt_end.diff(dt_ini,'days') <= 4){
+                fechaInicio_val = dt_ini.add(1,'day').format('DD-MM-YYYY HH:mm:ss');
+            }
+
+            fechaTermino_val = dt_end.add(1,'day').format('DD-MM-YYYY HH:mm:ss');
+            $('#fechaInicio').val(fechaInicio_val);
+            $('#fechaTermino').val(fechaTermino_val);
+            getSpiresHistory()
+        });
+
+        jQuery(document).ready(function() {
+            //console.log('init no abreviado');
+            renderGraphic(data);
+
+            // Colapsar sidebar DESPUÉS del renderizado inicial (no bloquea)
+            setTimeout(function() {
+                const body = document.body;
+                body.classList.add('ea-sidebar-width-compact');
+                localStorage.setItem('ea-sidebar-state', 'hidden');
+            }, 5);
+
+            // Inicializar Bootstrap Select
+            $('.selectpicker').selectpicker();
+
+            {% if fechaInicio %}
+            var fechaInicio = '{{ fechaInicio }}';
+            $('#fechaInicio').val(fechaInicio);
+            {% endif %}
+
+            {% if fechaTermino %}
+            var fechaTermino = '{{ fechaTermino }}';
+            $('#fechaTermino').val(fechaTermino);
+            {% endif %}
+        });
+
+        // Inicializar Tempus Dominus 6 (Bootstrap 5 compatible)
+        var dtpFechaInicio = $("#dtpFechaInicio");
+        var dtpFechaTermino = $("#dtpFechaTermino");
+        $(function () {
+            //console.log('init abreviado');
+            const tempusDominus = window.tempusDominus;
+            if (tempusDominus) {
+                const options = {
+                    display: {
+                        components: {
+                            calendar: true,
+                            date: true,
+                            month: true,
+                            year: true,
+                            decades: true,
+                            clock: true,
+                            hours: true,
+                            minutes: true,
+                            seconds: true
+                        }
+                    },
+                    localization: {
+                        locale: 'es',
+                        format: 'dd-MM-yyyy HH:mm:ss'
+                    },
+                    useCurrent: false
+                };
+
+                let pickerInicio = new tempusDominus.TempusDominus(document.getElementById('dtpFechaInicio'), options);
+                let pickerTermino = new tempusDominus.TempusDominus(document.getElementById('dtpFechaTermino'), options);
+
+                // Validación de rango de fechas (máximo 2 días)
+                document.getElementById('dtpFechaInicio').addEventListener('change.td', function (e) {
+                    var a = moment($('#fechaInicio').val(), 'DD-MM-YYYY HH:mm:ss', true);
+                    var b = moment($('#fechaTermino').val(), 'DD-MM-YYYY HH:mm:ss', true);
+                    if(a.isValid() && b.isValid() && b.diff(a, 'days')>2){
+                        pickerTermino.dates.setValue(a.clone().endOf("day").toDate());
+                        alert("Seleccione un rango de fechas igual o menor a dos días.");
+                    }
+                    else{
+                        pickerTermino.updateOptions({
+                            restrictions: {
+                                minDate: a.toDate()
+                            }
+                        });
+                    }
+                });
+
+                document.getElementById('dtpFechaTermino').addEventListener('change.td', function (e) {
+                    var a = moment($('#fechaInicio').val(), 'DD-MM-YYYY HH:mm:ss', true);
+                    var b = moment($('#fechaTermino').val(), 'DD-MM-YYYY HH:mm:ss', true);
+                    if(a.isValid() && b.isValid() && b.diff(a, 'days')>2){
+                        alert("Seleccione un rango de fechas igual o menor a dos días.");
+                        return false;
+                    }
+                    else{
+                        pickerInicio.updateOptions({
+                            restrictions: {
+                                maxDate: b.toDate()
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    </script>
+{% endblock %}

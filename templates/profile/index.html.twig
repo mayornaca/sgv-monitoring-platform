@@ -1,0 +1,177 @@
+{% extends 'base_dashboard.html.twig' %}
+
+{% block title %}Mi Perfil - SGV{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}
+
+{% block body %}
+<!-- Navbar similar a EasyAdmin -->
+<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/admin">
+            <img src="/assets/images/logo.png" alt="Logo" style="height: 35px;">
+        </a>
+        <div class="ms-auto d-flex align-items-center">
+            <div class="dropdown">
+                <button class="btn btn-link text-decoration-none dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-user-circle fa-lg"></i>
+                    <span class="ms-2">{{ app.user.userIdentifier }}</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                    <li><a class="dropdown-item" href="/profile"><i class="fas fa-user me-2"></i> Mi Perfil</a></li>
+                    <li><a class="dropdown-item" href="/admin"><i class="fas fa-tachometer-alt me-2"></i> Panel Admin</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt me-2"></i> Cerrar sesión</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
+<!-- Contenido -->
+<div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Mi Perfil</h1>
+        <p class="text-gray-600 mt-2">Gestiona tu información personal y configuración de seguridad</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Menú lateral -->
+        <div class="lg:col-span-1">
+            <nav class="bg-white rounded-lg shadow p-6">
+                <ul class="space-y-2">
+                    <li>
+                        <a href="{{ path('app_user_profile') }}" 
+                           class="flex items-center px-3 py-2 text-gray-700 bg-blue-50 border-r-2 border-blue-500 rounded-lg">
+                            <svg class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            Información Personal
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ path('app_user_2fa') }}" 
+                           class="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">
+                            <svg class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                            Autenticación de Dos Factores
+                            {% if user.twoFactorEnabled %}
+                                <span class="ml-auto bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded">Activo</span>
+                            {% endif %}
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+
+        <!-- Contenido principal -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-6">Información Personal</h2>
+                
+                <!-- Información del usuario -->
+                <div class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Nombre</label>
+                            <div class="bg-gray-50 px-3 py-2 rounded-lg text-gray-900">
+                                {{ user.firstName ?? 'No especificado' }}
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Apellido</label>
+                            <div class="bg-gray-50 px-3 py-2 rounded-lg text-gray-900">
+                                {{ user.lastName ?? 'No especificado' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                        <div class="bg-gray-50 px-3 py-2 rounded-lg text-gray-900">
+                            {{ user.email }}
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Nombre de Usuario</label>
+                        <div class="bg-gray-50 px-3 py-2 rounded-lg text-gray-900">
+                            {{ user.username }}
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Rol</label>
+                        <div class="bg-gray-50 px-3 py-2 rounded-lg">
+                            {% if 'ROLE_ADMIN' in user.roles %}
+                                <span class="bg-red-100 text-red-800 text-sm font-medium px-2 py-1 rounded">Administrador</span>
+                            {% elseif 'ROLE_MODERATOR' in user.roles %}
+                                <span class="bg-yellow-100 text-yellow-800 text-sm font-medium px-2 py-1 rounded">Moderador</span>
+                            {% else %}
+                                <span class="bg-blue-100 text-blue-800 text-sm font-medium px-2 py-1 rounded">Usuario</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estadísticas de cuenta -->
+                <div class="mt-8 pt-6 border-t border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Estadísticas de Cuenta</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <div class="text-sm font-medium text-blue-600">Miembro desde</div>
+                            <div class="text-lg font-semibold text-blue-900">
+                                {{ user.createdAt|date('d/m/Y') }}
+                            </div>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-lg">
+                            <div class="text-sm font-medium text-green-600">Último acceso</div>
+                            <div class="text-lg font-semibold text-green-900">
+                                {{ user.lastLogin ? user.lastLogin|date('d/m/Y H:i') : 'Nunca' }}
+                            </div>
+                        </div>
+                        <div class="bg-purple-50 p-4 rounded-lg">
+                            <div class="text-sm font-medium text-purple-600">Total de inicios</div>
+                            <div class="text-lg font-semibold text-purple-900">
+                                {{ user.loginCount ?? 0 }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estado de seguridad -->
+                <div class="mt-8 pt-6 border-t border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Estado de Seguridad</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div class="flex items-center">
+                                <svg class="h-5 w-5 mr-3 {% if user.twoFactorEnabled %}text-green-500{% else %}text-gray-400{% endif %}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                                <div>
+                                    <div class="font-medium text-gray-900">Autenticación de Dos Factores</div>
+                                    <div class="text-sm text-gray-600">
+                                        {% if user.twoFactorEnabled %}
+                                            Método activo: {{ user.preferred2faMethod|upper }}
+                                        {% else %}
+                                            Aumenta la seguridad de tu cuenta
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <a href="{{ path('app_user_2fa') }}" 
+                               class="btn {% if user.twoFactorEnabled %}btn-outline{% else %}btn-primary{% endif %} btn-sm">
+                                {% if user.twoFactorEnabled %}Gestionar{% else %}Configurar{% endif %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

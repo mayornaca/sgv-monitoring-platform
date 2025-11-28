@@ -1,0 +1,659 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block title %}Historial de Espiras VS - COT {% endblock %}
+
+{% block content_top_header %}
+    <div class="d-flex align-items-center gap-2">
+        <h5 class="m-0">
+            <i class="fas fa-history" style="color: var(--color-primary, #5368d5);"></i>
+            Historial de Espiras VS (Vespucio Sur)
+        </h5>
+    </div>
+
+    {{ parent() }}
+{% endblock %}
+
+{% block head_stylesheets %}
+    {{ parent() }}
+    <!-- Tempus Dominus 6 CSS (Bootstrap 5 compatible) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@eonasdan/tempus-dominus@6/dist/css/tempus-dominus.min.css">
+    <!-- Bootstrap Select CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">
+    <style>
+        #timeline1 {
+            min-height: 400px;
+            background: white;
+        }
+
+        #timeline1 svg {
+            max-width: 100%;
+        }
+
+        .filter-card {
+            margin-bottom: 20px;
+        }
+
+        .form-check {
+            margin-bottom: 10px;
+        }
+
+        /* Timeline styles */
+        .y-tick {
+            stroke: black;
+            fill: none;
+            stroke-width: 1px;
+        }
+
+        .line-separator, .x-axis {
+            stroke: #777;
+            fill: none;
+            stroke-width: 1px;
+        }
+
+        .drop-line:last-child .line-separator {
+            display: none;
+        }
+
+        text {
+            stroke: none;
+            fill: black;
+        }
+
+        .legend {
+            display: none;
+        }
+
+        #timeline1 div {
+            position: sticky;
+            bottom: 0px;
+            background-color: rgb(239 239 239 / 91%);
+        }
+
+        .chart-zoom-selection, .brusher .brush .selection {
+            stroke: blue;
+            stroke-opacity: 0.8;
+            fill: blue;
+            fill-opacity: 0.5;
+            shape-rendering: crispedges;
+        }
+    </style>
+{% endblock %}
+
+{% block head_javascript %}
+    {{ parent() }}
+{% endblock %}
+
+{% block main %}
+    <!-- Panel de Filtros -->
+    <div class="card filter-card">
+        <div class="card-header">
+            <h5 class="card-title">
+                <i class="fas fa-filter"></i> Filtros & Opciones - Vespucio Sur
+                <button type="button" class="btn btn-sm btn-secondary float-end" data-bs-toggle="collapse" data-bs-target="#filter-panel">
+                    <i class="fas fa-chevron-down"></i> Mostrar/Ocultar
+                </button>
+            </h5>
+        </div>
+        <div id="filter-panel" class="collapse show">
+            <div class="card-body">
+                <form id="report_params" action="{{ path('admin_spire_history_vs_min') }}" method="get">
+                    <input type="hidden" value="1" id="ci" name="ci">
+
+                    <div class="row">
+                        <!-- Fecha de Inicio -->
+                        <div class="col-md-2">
+                            <div class="mb-3">
+                                <label for="fechaInicio" class="form-label">Fecha de inicio</label>
+                                <div class="input-group" id="dtpFechaInicio">
+                                    <input type="text" id="fechaInicio" name="fechaInicio"
+                                           class="form-control" placeholder="DD-MM-YYYY HH:mm:ss"
+                                           value="{{ fechaInicio }}">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-calendar"></i>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Fecha de Término -->
+                        <div class="col-md-2">
+                            <div class="mb-3">
+                                <label for="fechaTermino" class="form-label">Fecha de término</label>
+                                <div class="input-group" id="dtpFechaTermino">
+                                    <input type="text" id="fechaTermino" name="fechaTermino"
+                                           class="form-control" placeholder="DD-MM-YYYY HH:mm:ss"
+                                           value="{{ fechaTermino }}">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-calendar"></i>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Selección de Espiras -->
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="spires" class="form-label">Espiras</label>
+                                <select id="spires" name="spires[]"
+                                        class="selectpicker form-control"
+                                        multiple
+                                        data-selected-text-format="count > 4"
+                                        data-actions-box="true"
+                                        data-live-search="true"
+                                        data-select-all-text="Todas"
+                                        data-deselect-all-text="Ninguna">
+                                    {% for spire in all_spires %}
+                                        <option value="{{ spire.id }}"
+                                            {% if sel_spires is empty or (sel_spires and spire.id in sel_spires) %}selected{% endif %}>
+                                            {{ spire.nombre }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Todos los checkboxes juntos -->
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Opciones de filtrado</label>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="onlyZeros" name="onlyZeros"
+                                                   {% if onlyZeros %}checked{% endif %}>
+                                            <label class="form-check-label" for="onlyZeros">
+                                                Solo ceros
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="onlyEmpty" name="onlyEmpty"
+                                                   {% if onlyEmpty %}checked{% endif %}>
+                                            <label class="form-check-label" for="onlyEmpty">
+                                                Solo lagunas
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="onlyExpresas" name="onlyExpresas"
+                                                   {% if onlyExpresas %}checked{% endif %}>
+                                            <label class="form-check-label" for="onlyExpresas">
+                                                Solo Expresas
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="onlyEntradasSalidas" name="onlyEntradasSalidas"
+                                                   {% if onlyEntradasSalidas %}checked{% endif %}>
+                                            <label class="form-check-label" for="onlyEntradasSalidas">
+                                                Solo Entradas/Salidas
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-check d-none">
+                                    <input class="form-check-input" type="checkbox" id="generatePdf" name="generatePdf">
+                                    <label class="form-check-label" for="generatePdf">
+                                        Generar PDF
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Segunda fila: Botones de acción -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-search"></i> Consultar
+                            </button>
+                            <button type="reset" class="btn btn-secondary">
+                                <i class="fas fa-undo"></i> Limpiar
+                            </button>
+
+                            <!-- Botones de navegación temporal -->
+                            <div class="btn-group ms-3" role="group">
+                                <button type="button" id="btn-prev-day" class="btn btn-outline-primary">
+                                    <i class="fas fa-fast-backward"></i> -1 Día
+                                </button>
+                                <button type="button" id="btn-prev" class="btn btn-outline-info">
+                                    <i class="fas fa-backward"></i> -1 Hora
+                                </button>
+                                <button type="button" id="btn-next" class="btn btn-outline-info">
+                                    <i class="fas fa-forward"></i> +1 Hora
+                                </button>
+                                <button type="button" id="btn-next-day" class="btn btn-outline-primary">
+                                    <i class="fas fa-fast-forward"></i> +1 Día
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Área de visualización del Timeline -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title">
+                <!-- Leyenda de colores -->
+                <div class="float-end">
+                    <span class="badge" style="background-color: #329832; color: white;">OK</span>
+                    <span class="badge" style="background-color: #fdfd31; color: black;">Sin Datos</span>
+                    <span class="badge" style="background-color: #fe2525; color: white;">KO</span>
+                </div>
+            </h5>
+            {% if return_file_name_pdf %}
+                <div class="alert alert-success mt-2">
+                    <i class="fas fa-file-pdf"></i> PDF generado: {{ return_file_name_pdf }}
+                </div>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <div id="timeline1">
+                {# Chart siempre renderiza - incluso vacío #}
+            </div>
+        </div>
+    </div>
+
+    <!-- Información adicional -->
+    <div class="card mt-3 d-none">
+        <div class="card-header">
+            <h5 class="card-title">
+                <i class="fas fa-info-circle"></i> Información
+            </h5>
+        </div>
+        <div class="card-body">
+            <ul>
+                <li><strong>Rango máximo:</strong> El sistema limita las consultas a un máximo de 2 días.</li>
+                <li><strong>Actualización:</strong> Los datos se actualizan cada minuto desde los dispositivos en campo.</li>
+                <li><strong>Espiras VS:</strong> Dispositivos de detección vehicular instalados en Vespucio Sur.</li>
+                <li><strong>Filtros mutuamente excluyentes:</strong> Solo Expresas y Solo Entradas/Salidas no pueden activarse simultáneamente.</li>
+            </ul>
+        </div>
+    </div>
+{% endblock %}
+
+{% block body_javascript %}
+    {{ parent() }}
+
+    <!-- Scripts adicionales necesarios -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <!-- Popper.js (requerido por Tempus Dominus) -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <!-- Tempus Dominus 6 JS (Bootstrap 5 compatible) -->
+    <script src="https://cdn.jsdelivr.net/npm/@eonasdan/tempus-dominus@6/dist/js/tempus-dominus.min.js"></script>
+    <!-- Bootstrap Select JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/i18n/defaults-es_ES.min.js"></script>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <!-- TimelinesChart Original Legacy -->
+    <script src="{{ asset('js/timelines-chart-legacy.js') }}"></script>
+
+    <script>
+        // Inicializar datos
+        {% if arr_reg_spires is defined and arr_reg_spires is not empty %}
+        var data = {{ arr_reg_spires|json_encode|raw }};
+        {% else %}
+        var data = [];
+        {% endif %}
+
+        console.log('=== DATOS RAW VS ===');
+        console.log('Total groups:', data.length);
+        if (data.length > 0) {
+            console.log('First group:', JSON.stringify(data[0], null, 2));
+        }
+
+        // Calcular ancho real del contenedor
+        var containerWidth = document.getElementById('timeline1').offsetWidth ||
+                             document.getElementById('timeline1').clientWidth ||
+                             1200;
+
+        // Crear chart con configuración legacy
+        var myChart = TimelinesChart()(document.getElementById('timeline1'))
+            .timeFormat('%d-%m-%Y %H:%M:%S')
+            .zQualitative(true)
+            .maxLineHeight(18)
+            .leftMargin(160)
+            .rightMargin(160)
+            .bottomMargin(30)
+            .enableOverview(true)
+            .enableAnimations(false)
+            .width(containerWidth)
+            .zColorScale(d3.scaleLinear()
+                .domain([-2, -1, 0, 1])
+                .range(["black", "red", "yellow", "green"]));
+
+        jQuery(document).ready(function() {
+            // Renderizar inmediatamente
+           setTimeout(function() {
+               renderGraphic(data);
+           },10);
+
+            // Colapsar sidebar
+            setTimeout(function() {
+                const body = document.body;
+                // body.classList.add('ea-sidebar-width-compact');
+                // localStorage.setItem('ea-sidebar-state', 'hidden');
+            }, 5);
+
+            // Inicializar Bootstrap Select
+            $('.selectpicker').selectpicker();
+
+            // Listener para ajustar ancho del chart
+            var resizeTimeout;
+            window.addEventListener('resize', function() {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(function() {
+                    var containerWidth = document.getElementById('timeline1').offsetWidth || 1200;
+                    console.log('Window resized - nuevo ancho:', containerWidth);
+                    myChart.width(containerWidth).refresh();
+                }, 250);
+            });
+
+            // Inicializar estado de checkboxes
+            {% if onlyZeros %}
+            $('#onlyZeros').prop('checked', true);
+            {% else %}
+            $('#onlyZeros').prop('checked', false);
+            {% endif %}
+
+            {% if onlyEmpty %}
+            $('#onlyEmpty').prop('checked', true);
+            {% else %}
+            $('#onlyEmpty').prop('checked', false);
+            {% endif %}
+
+            {% if onlyExpresas %}
+            $('#onlyExpresas').prop('checked', true);
+            {% else %}
+            $('#onlyExpresas').prop('checked', false);
+            {% endif %}
+
+            {% if onlyEntradasSalidas %}
+            $('#onlyEntradasSalidas').prop('checked', true);
+            {% else %}
+            $('#onlyEntradasSalidas').prop('checked', false);
+            {% endif %}
+        });
+
+        // Lógica de exclusión mutua entre checkboxes específicos VS
+        $('#onlyExpresas').on('change', function() {
+            if($('#onlyExpresas').prop('checked') && $('#onlyEntradasSalidas').prop('checked')){
+                $('#onlyEntradasSalidas').prop('checked', false);
+            }
+        });
+
+        $('#onlyEntradasSalidas').on('change', function() {
+            if($('#onlyExpresas').prop('checked') && $('#onlyEntradasSalidas').prop('checked')){
+                $('#onlyExpresas').prop('checked', false);
+            }
+        });
+
+        function renderGraphic(data) {
+            console.log('=== renderGraphic() VS ===');
+            console.log('Data recibida:', data ? data.length : 0, 'grupos');
+
+            // Contar sensores
+            var sensors_count = 0;
+            for (var prop in data) {
+                if (data[prop].hasOwnProperty('d')) {
+                    sensors_count += data[prop].d.length;
+                }
+            }
+
+            console.log('sensors_count:', sensors_count);
+
+            // Calcular altura dinámica
+            var maxHeight = 640;
+            if ((sensors_count * 25) > 640) {
+                maxHeight = sensors_count * 25;
+            }
+
+            console.log('maxHeight calculado:', maxHeight);
+
+            // Recalcular ancho del contenedor
+            var containerWidth = document.getElementById('timeline1').offsetWidth || 1200;
+            console.log('containerWidth actualizado:', containerWidth);
+
+            // Pasar datos directamente
+            myChart.maxHeight(maxHeight)
+                   .width(containerWidth);
+            myChart.data(data).refresh();
+
+            console.log('Chart refrescado:', data.length, 'grupos,', sensors_count, 'sensores');
+        }
+
+        function getSpiresHistory() {
+            var params = {
+                fechaInicio: document.getElementById('fechaInicio').value,
+                fechaTermino: document.getElementById('fechaTermino').value,
+                onlyZeros: document.getElementById('onlyZeros').checked ? 'on' : 'off',
+                onlyEmpty: document.getElementById('onlyEmpty').checked ? 'on' : 'off',
+                onlyExpresas: document.getElementById('onlyExpresas').checked ? 'on' : 'off',
+                onlyEntradasSalidas: document.getElementById('onlyEntradasSalidas').checked ? 'on' : 'off',
+                _t: new Date().getTime()
+            };
+
+            // Obtener espiras seleccionadas
+            var selectedSpires = $('#spires').val();
+            if (selectedSpires && selectedSpires.length > 0) {
+                params.spires = selectedSpires;
+            }
+
+            // Convertir params a string
+            var queryString = new URLSearchParams(params).toString();
+
+            fetch('{{ path('admin_spire_history_vs_min') }}?' + queryString, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(response => {
+                console.log('=== AJAX RESPONSE VS ===');
+                console.log('response:', response);
+
+                if (response.arr_reg_spires && response.arr_reg_spires.length > 0) {
+                    console.log('Total groups (AJAX):', response.arr_reg_spires.length);
+                    renderGraphic(response.arr_reg_spires);
+                } else {
+                    console.log('No hay datos en respuesta AJAX');
+                    renderGraphic([]);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                let errorMessage = 'Error al obtener los datos';
+
+                if (error.toString().includes('definer')) {
+                    errorMessage = 'Error de configuración en la base de datos. Por favor contacte al administrador.';
+                } else {
+                    errorMessage = 'Error al obtener los datos: ' + error;
+                }
+
+                document.getElementById('timeline1').innerHTML = '<div class="alert alert-danger">' + errorMessage + '</div>';
+            });
+        }
+
+        // Botones de navegación temporal - HORA
+        $('#btn-prev').click(function () {
+            var fechaInicio_val = $('#fechaInicio').val();
+            console.log('Navegando -1 hora desde:', fechaInicio_val);
+
+            fechaInicio_val = moment(fechaInicio_val, 'DD-MM-YYYY HH:mm:ss', true).add(-1, 'hour').format('DD-MM-YYYY HH:mm:ss');
+            $('#fechaInicio').val(fechaInicio_val);
+
+            var fechaTermino_val = $('#fechaTermino').val();
+            fechaTermino_val = moment(fechaTermino_val, 'DD-MM-YYYY HH:mm:ss', true).add(-1, 'hour').format('DD-MM-YYYY HH:mm:ss');
+            $('#fechaTermino').val(fechaTermino_val);
+
+            getSpiresHistory();
+        });
+
+        $('#btn-next').click(function () {
+            var fechaInicio_val = $('#fechaInicio').val();
+            console.log('Navegando +1 hora desde:', fechaInicio_val);
+
+            fechaInicio_val = moment(fechaInicio_val, 'DD-MM-YYYY HH:mm:ss', true).add(1, 'hour').format('DD-MM-YYYY HH:mm:ss');
+            $('#fechaInicio').val(fechaInicio_val);
+
+            var fechaTermino_val = $('#fechaTermino').val();
+            fechaTermino_val = moment(fechaTermino_val, 'DD-MM-YYYY HH:mm:ss', true).add(1, 'hour').format('DD-MM-YYYY HH:mm:ss');
+            $('#fechaTermino').val(fechaTermino_val);
+
+            getSpiresHistory();
+        });
+
+        // Botones de navegación temporal - DÍA
+        $('#btn-prev-day').click(function () {
+            var fechaInicio_val = $('#fechaInicio').val();
+            var dt_ini = moment(fechaInicio_val, 'DD-MM-YYYY HH:mm:ss', true);
+            var fechaTermino_val = $('#fechaTermino').val();
+            var dt_end = moment(fechaTermino_val, 'DD-MM-YYYY HH:mm:ss', true);
+
+            console.log('Navegando -1 día desde:', fechaInicio_val);
+
+            // Calcular duración del rango actual
+            var diffHours = dt_end.diff(dt_ini, 'hours');
+            var diffMinutes = dt_end.diff(dt_ini, 'minutes') % 60;
+            var diffSeconds = dt_end.diff(dt_ini, 'seconds') % 60;
+
+            // Restar 1 día a ambas fechas
+            fechaInicio_val = dt_ini.add(-1, 'day').format('DD-MM-YYYY HH:mm:ss');
+            $('#fechaInicio').val(fechaInicio_val);
+
+            fechaTermino_val = dt_end.add(-1, 'day').format('DD-MM-YYYY HH:mm:ss');
+            $('#fechaTermino').val(fechaTermino_val);
+
+            getSpiresHistory();
+        });
+
+        $('#btn-next-day').click(function () {
+            var fechaInicio_val = $('#fechaInicio').val();
+            var dt_ini = moment(fechaInicio_val, 'DD-MM-YYYY HH:mm:ss', true);
+            var fechaTermino_val = $('#fechaTermino').val();
+            var dt_end = moment(fechaTermino_val, 'DD-MM-YYYY HH:mm:ss', true);
+
+            console.log('Navegando +1 día desde:', fechaInicio_val);
+
+            // Calcular duración del rango actual
+            var diffHours = dt_end.diff(dt_ini, 'hours');
+            var diffMinutes = dt_end.diff(dt_ini, 'minutes') % 60;
+            var diffSeconds = dt_end.diff(dt_ini, 'seconds') % 60;
+
+            // Sumar 1 día a ambas fechas
+            fechaInicio_val = dt_ini.add(1, 'day').format('DD-MM-YYYY HH:mm:ss');
+            $('#fechaInicio').val(fechaInicio_val);
+
+            fechaTermino_val = dt_end.add(1, 'day').format('DD-MM-YYYY HH:mm:ss');
+            $('#fechaTermino').val(fechaTermino_val);
+
+            getSpiresHistory();
+        });
+
+        // Inicializar Tempus Dominus 6
+        $(function () {
+            console.log('Inicializando Tempus Dominus 6 - VS');
+
+            const tempusDominus = window.tempusDominus;
+            if (tempusDominus) {
+                const options = {
+                    display: {
+                        components: {
+                            calendar: true,
+                            date: true,
+                            month: true,
+                            year: true,
+                            decades: true,
+                            clock: true,
+                            hours: true,
+                            minutes: true,
+                            seconds: true
+                        }
+                    },
+                    localization: {
+                        locale: 'es',
+                        format: 'dd-MM-yyyy HH:mm:ss'
+                    },
+                    useCurrent: false
+                };
+
+                let pickerInicio, pickerTermino;
+                if (document.getElementById('dtpFechaInicio')) {
+                    pickerInicio = new tempusDominus.TempusDominus(document.getElementById('dtpFechaInicio'), options);
+                }
+
+                if (document.getElementById('dtpFechaTermino')) {
+                    pickerTermino = new tempusDominus.TempusDominus(document.getElementById('dtpFechaTermino'), options);
+                }
+
+                // Validar rango de fechas (máximo 2 días)
+                if (pickerInicio && pickerTermino) {
+                    document.getElementById('dtpFechaInicio').addEventListener('change.td', function (e) {
+                        const fechaInicio = moment($('#fechaInicio').val(), 'DD-MM-YYYY HH:mm:ss', true);
+                        const fechaTermino = moment($('#fechaTermino').val(), 'DD-MM-YYYY HH:mm:ss', true);
+
+                        if (fechaInicio.isValid() && fechaTermino.isValid()) {
+                            const diff = fechaTermino.diff(fechaInicio, 'days');
+
+                            if (diff > 2) {
+                                const newFechaTermino = fechaInicio.clone().endOf('day');
+                                $('#fechaTermino').val(newFechaTermino.format('DD-MM-YYYY HH:mm:ss'));
+                                pickerTermino.dates.setValue(newFechaTermino.toDate());
+                                showAlert('Seleccione un rango de fechas igual o menor a dos días.', 'warning');
+                            }
+
+                            pickerTermino.updateOptions({
+                                restrictions: {
+                                    minDate: fechaInicio.toDate()
+                                }
+                            });
+                        }
+                    });
+
+                    document.getElementById('dtpFechaTermino').addEventListener('change.td', function (e) {
+                        const fechaInicio = moment($('#fechaInicio').val(), 'DD-MM-YYYY HH:mm:ss', true);
+                        const fechaTermino = moment($('#fechaTermino').val(), 'DD-MM-YYYY HH:mm:ss', true);
+
+                        if (fechaInicio.isValid() && fechaTermino.isValid()) {
+                            const diff = fechaTermino.diff(fechaInicio, 'days');
+
+                            if (diff > 2) {
+                                showAlert('Seleccione un rango de fechas igual o menor a dos días.', 'warning');
+                                return false;
+                            }
+
+                            pickerInicio.updateOptions({
+                                restrictions: {
+                                    maxDate: fechaTermino.toDate()
+                                }
+                            });
+                        }
+                    });
+                }
+
+                console.log('Tempus Dominus 6 inicializado correctamente - VS');
+            } else {
+                console.error('Tempus Dominus no está disponible');
+            }
+        });
+
+        function showAlert(message, type) {
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3"
+                     role="alert" style="z-index: 9999; min-width: 400px;">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            $('body').append(alertHtml);
+
+            setTimeout(function() {
+                $('.alert').alert('close');
+            }, 3000);
+        }
+    </script>
+{% endblock %}

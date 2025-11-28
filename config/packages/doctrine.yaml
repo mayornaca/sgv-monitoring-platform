@@ -1,0 +1,108 @@
+doctrine:
+    dbal:
+        default_connection: default
+        connections:
+            default:
+                url: '%env(resolve:DATABASE_URL)%'
+                mapping_types:
+                    enum: string
+                schema_filter: ~^(?!tbl_)~  # Removed vi_ exclusion to allow views
+                profiling_collect_backtrace: '%kernel.debug%'
+                use_savepoints: true
+            sistek:
+                url: '%env(resolve:DATABASE_SISTEK_URL)%'
+                mapping_types:
+                    enum: string
+                profiling_collect_backtrace: '%kernel.debug%'
+                use_savepoints: true
+            siv:
+                host: '%env(DATABASE_SIV_HOST)%'
+                port: '%env(DATABASE_SIV_PORT)%'
+                dbname: '%env(DATABASE_SIV_NAME)%'
+                user: '%env(DATABASE_SIV_USER)%'
+                password: '%env(DATABASE_SIV_PASSWORD)%'
+                driver: 'pdo_pgsql'
+                charset: utf8
+                profiling_collect_backtrace: '%kernel.debug%'
+                use_savepoints: true
+            siv_vs:
+                host: '%env(DATABASE_SIV_VS_HOST)%'
+                port: '%env(DATABASE_SIV_VS_PORT)%'
+                dbname: '%env(DATABASE_SIV_VS_NAME)%'
+                user: '%env(DATABASE_SIV_VS_USER)%'
+                password: '%env(DATABASE_SIV_VS_PASSWORD)%'
+                driver: 'pdo_pgsql'
+                charset: utf8
+                profiling_collect_backtrace: '%kernel.debug%'
+                use_savepoints: true
+            dev:
+                url: '%env(resolve:DATABASE_DEV_URL)%'
+                mapping_types:
+                    enum: string
+                profiling_collect_backtrace: '%kernel.debug%'
+                use_savepoints: true
+            db_espiras_vs:
+                url: '%env(resolve:DATABASE_ESPIRAS_VS_URL)%'
+                driver: 'pdo_pgsql'
+                charset: utf8
+                profiling_collect_backtrace: '%kernel.debug%'
+                use_savepoints: true
+            db_adq_espiras_vs:
+                url: '%env(resolve:DATABASE_ADQ_ESPIRAS_URL)%'
+                driver: 'pdo_pgsql'
+                charset: utf8
+                profiling_collect_backtrace: '%kernel.debug%'
+                use_savepoints: true
+
+    orm:
+        default_entity_manager: default
+        auto_generate_proxy_classes: true
+        enable_lazy_ghost_objects: true
+        entity_managers:
+            default:
+                connection: default
+                naming_strategy: doctrine.orm.naming_strategy.underscore_number_aware
+                mappings:
+                    App:
+                        is_bundle: false
+                        type: attribute
+                        dir: '%kernel.project_dir%/src/Entity'
+                        prefix: 'App\Entity'
+                        alias: App
+
+            siv:
+                connection: siv  # Use PostgreSQL connection
+                naming_strategy: doctrine.orm.naming_strategy.underscore_number_aware
+                mappings:
+                    Dashboard:
+                        is_bundle: false
+                        type: attribute
+                        dir: '%kernel.project_dir%/src/Entity/Dashboard'
+                        prefix: 'App\Entity\Dashboard'
+                        alias: Dashboard
+
+when@test:
+    doctrine:
+        dbal:
+            # "TEST_TOKEN" is typically set by ParaTest
+            dbname_suffix: '_test%env(default::TEST_TOKEN)%'
+
+when@prod:
+    doctrine:
+        orm:
+            auto_generate_proxy_classes: false
+            proxy_dir: '%kernel.build_dir%/doctrine/orm/Proxies'
+            query_cache_driver:
+                type: pool
+                pool: doctrine.system_cache_pool
+            result_cache_driver:
+                type: pool
+                pool: doctrine.result_cache_pool
+
+    framework:
+        cache:
+            pools:
+                doctrine.result_cache_pool:
+                    adapter: cache.app
+                doctrine.system_cache_pool:
+                    adapter: cache.system

@@ -1,0 +1,96 @@
+{% extends 'layout.html.twig' %}
+{% block title %}{% trans %}New Supplier{% endtrans %}{% endblock %}
+{% block body %}
+	{{ parent() }}
+	<div id="main-wrapper" class="main container" style="width: 760px;">
+		<div class="row well">
+			<div class="col-md-12">
+				<div class="page-header">
+					<h2>{% trans %}New Supplier{% endtrans %}</h2>
+					<!-- i MENU DE OPCIONES -->
+					<button id="toggle_task_bar" type="button" class="btn btn-default waves-effect" data-toggle="collapse" data-target="#filter-panel" style="position: absolute;">
+						<i class="fa fa-sliders" aria-hidden="true"></i>Opciones
+					</button>
+					<!-- f MENU DE OPCIONES -->
+				</div>
+				<div class="page-header">
+				{{ form_start(form, {'attr': {'novalidate': 'novalidate', 'role' : 'form'}}) }}
+				<!-- i PANEL DEL MENU DE OPCIONES -->
+				<div class="row" style="margin-bottom: -29px;">
+					<div id="filter-panel" class="collapse filter-panel">
+						<div class="panel panel-default">
+							<div class="panel-body well">
+								<div  id="toolbar1" class="enterleave" >
+
+									<a class="btn btn-info waves-effect waves-light" href="{{ path('sgv_suppliers_index') }}" id="back-to-list">
+										<i class="fa fa-arrow-left" aria-hidden="true"></i>Volver a la lista
+									</a>
+
+									<a>
+										<button type="submit" id="frm_suppliers_save" name="frm_suppliers[save]" class="btn btn-success waves-effect waves-light">
+											<i class="fa fa-floppy-o" aria-hidden="true"></i>Guardar proveedor
+										</button>
+									</a>
+
+									<a href="{{ path('sgv_suppliers_add' )}}" class="btn btn-primary waves-effect waves-light">
+										<i class="fa fa-plus-circle" aria-hidden="true"></i> Crear nuevo proveedor
+									</a>
+
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<hr>
+				<!-- f PANEL DEL MENU DE OPCIONES -->
+				<h4 class="text-danger">{{ form_errors(form) }}</h4>
+
+				<fieldset>
+					<div class="form-group">
+						{{ form_label(form.razonSocial,'Razón Social') }}
+						{{ form_widget(form.razonSocial, {'attr': {'class': 'form-control', 'placeholder' : 'Razón Social'}}) }}
+						<span class="text-danger">{{ form_errors(form.razonSocial) }}</span>
+					</div>
+
+					<div class="form-group">
+						{{ form_label(form.rutProveedor,'RUT del proveedor') }}
+						{{ form_widget(form.rutProveedor, {'attr': {'class': 'form-control', 'placeholder' : 'RUT del proveedor'}}) }}
+						<span class="text-danger">{{ form_errors(form.rutProveedor) }}</span>
+					</div>
+					<div class="form-group">
+						{{ form_label(form.direccionProveedor,'Dirección del proveedor') }}
+						{{ form_widget(form.direccionProveedor, {'attr': {'class': 'form-control', 'placeholder' : 'Dirección del proveedor'}}) }}
+						<span class="text-danger">{{ form_errors(form.direccionProveedor) }}</span>
+					</div>
+					<div class="form-group">
+						{{ form_label(form.nombreContacto,'Nombre del contacto') }}
+						{{ form_widget(form.nombreContacto, {'attr': {'class': 'form-control', 'placeholder' : 'Nombre del contacto'}}) }}
+						<span class="text-danger">{{ form_errors(form.nombreContacto) }}</span>
+					</div>
+					<div class="form-group">
+						{{ form_label(form.correoElecContacto,'Correo electrónico de contacto') }}
+						<div class="input-group">
+							<span class="input-group-addon" id="basic-addon1">@</span>
+							{{ form_widget(form.correoElecContacto, {'attr': {'class': 'form-control', 'placeholder' : 'Ejemplo: juan.perez@dominio.cl','aria-describedby':'basic-addon1'}}) }}
+							<span class="text-danger">{{ form_errors(form.correoElecContacto) }}</span>
+						</div>
+					</div>
+				</fieldset>
+
+
+
+				{{ form_end(form) }}
+				</div>
+			</div>
+		</div>
+	</div>
+	<script>
+		jQuery(document).ready(function() {
+			$('.paginationRow').css("display" , "none");
+			//trigger_toggle_task_bar
+			var trigger_toggle_task_bar = d3.timeout(function () {
+				$("#toggle_task_bar").trigger("click");
+			}, 1000);
+		});
+	</script>
+{% endblock %}

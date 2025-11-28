@@ -1,0 +1,409 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+{% block title %}Bitácora SCADA{% endblock %}
+
+{# Sobrescribir content_title para eliminar el H1 que ocupa espacio #}
+{% block content_title %}{% endblock %}
+
+{# Agregar título en el toolbar superior (content_top_header) #}
+{% block content_top_header %}
+    <div class="d-flex align-items-center gap-2">
+        <h5 class="m-0">
+            <i class="fas fa-book" style="color: var(--color-primary, #5368d5);"></i>
+            Bitácora SCADA
+        </h5>
+    </div>
+
+    {# Keep the original search, user menu, and settings #}
+    {{ parent() }}
+{% endblock %}
+
+{% block head_stylesheets %}
+    {{ parent() }}
+    <!-- Bootstrap Table CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-table@1.22.1/dist/bootstrap-table.min.css">
+    <!-- Tempus Dominus 6 CSS (Bootstrap 5 compatible) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@eonasdan/tempus-dominus@6/dist/css/tempus-dominus.min.css">
+    <!-- Bootstrap Select CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">
+    <style>
+        .btn-group.stick-top.go-to-graphic.affix {
+            top: 73px;
+            left: 1px;
+            z-index: 1000;
+        }
+        .bootstrap-table.fullscreen .fixed-table-toolbar {
+            background: #333;
+        }
+        .bg-white{
+            background-color: rgba(255, 255, 255, 0.02) !important;
+        }
+        .table>thead>tr>th {
+            vertical-align: middle;
+        }
+        .col9{
+            background-color: cornsilk;
+        }
+    </style>
+{% endblock %}
+
+{# TODO: Implementar help_menu si es necesario en EasyAdmin 4 #}
+{# {% block help_menu %}
+    {{ parent() }}
+    <li><a href="#" onclick="ayudaPermisosTrabajos();">Ayuda General</a></li>
+    <li><a href="#" onclick="">Creación</a></li>
+    <li><a href="#" onclick="">Edición</a></li>
+    <li><a href="#" onclick="">Descargar Comprobante</a></li>
+{% endblock %} #}
+
+{% block configured_head_contents %}
+    {{ parent() }}
+    <!-- jQuery (necesario ANTES de Bootstrap y plugins) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <!-- Popper.js (requerido por Tempus Dominus) -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <!-- Tempus Dominus 6 JS (Bootstrap 5 compatible) -->
+    <script src="https://cdn.jsdelivr.net/npm/@eonasdan/tempus-dominus@6/dist/js/tempus-dominus.min.js"></script>
+    <!-- Bootstrap Table JS (debe cargar ANTES de que se renderice la tabla) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.22.1/dist/bootstrap-table.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.22.1/dist/locale/bootstrap-table-es-ES.min.js"></script>
+    <!-- Bootstrap Select (debe cargar ANTES de que se renderice la tabla) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/i18n/defaults-es_ES.min.js"></script>
+    <!-- jQuery Validation -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/localization/messages_es.min.js"></script>
+    <!-- Bootstrap Notify -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-notify@3.1.3/bootstrap-notify.min.js"></script>
+    <!-- Bootbox -->
+    <script src="https://cdn.jsdelivr.net/npm/bootbox@6.0.0/dist/bootbox.min.js"></script>
+{% endblock %}
+
+{% block page_content %}
+    <div id="main-wrapper" class="container-fluid">
+        {# dump(data_table|json_decode) #}
+        {{ include('dashboard/siv/bitacora/contenedor_tabla.html.twig') }}
+        {{ include('dashboard/siv/bitacora/ajax_edit_popup.html.twig') }}
+    </div>
+
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <!-- Plugins ya cargados en configured_head_contents para que estén disponibles cuando se renderiza la tabla -->
+{% endblock %}
+
+{% block body_javascript %}
+    {{ parent() }}
+    <script>
+        jQuery(document).ready(function() {
+            /*
+             ANTES DE ENVIAR EL FORMULARIO VERIFICO QUE LA INFORMACIÓN SEA INTEGRA Y COHERENTE
+             */
+            $("#report_params").submit(function() {
+                if(validaRequeridos()){
+                    $.notify(
+                        "Espere un momento mientras se genera el reporte...",
+                        {  style: 'custom', className: 'success', position:"bottom right" }
+                    );
+                    return true;
+                }
+                else
+                {
+                    $.notify(
+                        "Por favor ingrese los datos requeridos, verifique la información e intente nuevamente.",
+                        {  style: 'bootstrap', className: 'warn', position:"bottom right" }
+                    );
+                    return false;
+                }
+            });
+            SetPTTimer()
+        });
+        /********************
+         * Timer de ejecución periodica para actualización automática
+         * ******************/
+        var omit_refresh_on_focus = 0;
+        var cot_devices_timer_interval;
+        function SetPTTimer(){
+            var interval = $('#timer-range-ajax-update').val() * 1000;
+            //console.log('nuevo intervalo ' + interval + ' ' +  new Date() );
+
+            cot_devices_timer_interval = setInterval(function () {
+                // Defensive check for jsDump
+                if(typeof jsDump === 'function') {
+                    jsDump('ejecutando intervalo tour is ended? ' + (typeof tourPermisosTrabajos !== 'undefined' ? tourPermisosTrabajos.ended() : 'true') + ' ' +  new Date() );
+                }
+
+                // Defensive check for tourPermisosTrabajos
+                var tourEnded = (typeof tourPermisosTrabajos !== 'undefined') ? tourPermisosTrabajos.ended() : true;
+
+                if($('#actualizacionAutomatica').is(":checked") && tourEnded) {
+                    /***
+                     * Funciones a ejecutar en intervalos de tiempo
+                     */
+
+                    if(omit_refresh_on_focus >= 3){
+                        omit_refresh_on_focus = 0;
+                       $("#toggle_task_bar").trigger('click');
+                        $.notify(
+                            "Se omitió la actualización de datos durante tres ciclos, mientras seleccionaba filtros",
+                            {style: 'bootstrap', className: 'warn', position: "top right"}
+                        );
+                        $.notify(
+                            "Actualizando ahora...",
+                            {style: 'bootstrap', className: 'success', position: "top right"}
+                        );
+                    }
+
+                    if(isFilterPanelIsFocused() === false){
+                        getBinacleScadaData();
+                    }
+                    else {
+                        omit_refresh_on_focus++;
+                        if(typeof jsDump === 'function') {
+                            jsDump('hay un control enfocado');
+                        }
+                    }
+
+                }
+                /***
+                 * Funciones a ejecutar siempre
+                 */
+
+            },interval);
+        }
+
+        function isFilterPanelIsFocused() {
+            var result = false;
+            $(".filter_panel_control").each(function () {
+                if($(this).hasClass("selectpicker")){
+                    if($(this).closest('.bootstrap-select').hasClass("open")){
+                        result = true;
+                    }
+                }
+                if($(this).is(":focus")){
+                    result = true;
+                }
+            });
+            return result;
+        }
+
+        var toolbarIsToggle = $('#filter-panel').hasClass('in');
+        var tableIsFullscreen = $('#tbl_pt').closest('div.bootstrap-table').hasClass('fullscreen');
+
+
+        function getBinacleScadaData() {
+            //clearInterval(cot_devices_timer_interval);
+            toolbarIsToggle = $('#filter-panel').hasClass('in');
+            tableIsFullscreen = $('#tbl_bitacora_scada').closest('div.bootstrap-table').hasClass('fullscreen');
+            var data = {
+                action:'ajax',
+                toolbarIsToggle: toolbarIsToggle,
+                tableIsFullscreen: tableIsFullscreen,
+                fechaInicio: $('#fechaInicio').val(),
+                fechaTermino: $('#fechaTermino').val(),
+                filasPorPagina: $('#ccbRowsPerPage').val(),
+                regStatus: $('#regStatus').val(),
+                searchTxt: $('#searchTxt').val(),
+                token: "{{ csrf_token('ajax-bs') }}",
+                search: $('.search input').val(),
+                autoUpdate: $('#actualizacionAutomatica').is(":checked"),
+                autoUpdateInterval: $('#timer-range-ajax-update').val(),
+            };
+
+            $.ajax({
+                url: "{{ path('admin_siv_dashboard_lista_bitacora_scada') }}",
+                type: "POST",
+                data: data,
+                async: true,
+                success: function (html) {
+                    if (html) {
+                        if ($(html).find('#pt_table_container').length > 0) {
+                            $('#pt_table_container').replaceWith($(html).find('#pt_table_container'));
+                            if(tableIsFullscreen){
+                                $('#pt_table_container').find('button[name="fullscreen"]').trigger('click');
+                                setHeight(); //.bootstrapTable('toggleFullscreen');
+                            }
+                            else{
+                                $('.fixed-table-container').css("height", '100%');
+                            }
+                            //$('#pt_table_container').find('button[name="fullscreen"]').trigger('click');
+
+                            // Aplicar pageSize del select a la nueva tabla después de AJAX
+                            var currentPageSize = $('#ccbRowsPerPage').val();
+                            var $newTable = $('#tbl_bitacora_scada');
+                            if (currentPageSize === 'All') {
+                                $newTable.bootstrapTable('refreshOptions', { pagination: false });
+                            } else {
+                                $newTable.bootstrapTable('refreshOptions', {
+                                    pagination: true,
+                                    pageSize: parseInt(currentPageSize)
+                                });
+                            }
+
+                            // Reposicionar #subToolbar después del AJAX
+                            setTimeout(function() {
+                                var $subToolbar = $('#subToolbar');
+                                var $fixedTableToolbar = $('.fixed-table-toolbar');
+                                if ($subToolbar.length && $fixedTableToolbar.length) {
+                                    $subToolbar.detach();
+                                    $fixedTableToolbar.after($subToolbar);
+                                }
+                            }, 100);
+                        }
+                        else {
+                            $.notify(
+                                "pt_table_container Ha ocurrido un error al intentar procesar los datos. Intente recargar la página.",
+                                {style: 'bootstrap', className: 'error', position: "top right"}
+                            );
+                        }
+                        $('.selectpicker').selectpicker('render');
+                    }
+                    else {
+                        $.notify(
+                            "HTML Ha ocurrido un error al intentar procesar los datos. Intente recargar la página.",
+                            {style: 'bootstrap', className: 'error', position: "top right"}
+                        );
+                    }
+
+                },
+                error: function () {
+                    $.notify(
+                        "Error Ha ocurrido un error al intentar procesar los datos. Intente recargar la página.",
+                        {style: 'bootstrap', className: 'error', position: "top right"}
+                    );
+                }
+            });
+        }
+        /**********************
+         * Se Añade Handler Responsive de redimención de la ventana y sus elementos
+         ***********************/
+        $( window ).resize(function() {
+            setHeight();
+        });
+        function setHeight() {
+            // Returns height of browser viewport
+            var height = $(window).height();
+            if(typeof jsDump === 'function') {
+                jsDump(height);
+            }
+            $('.fixed-table-container').css("height", (height - 56) + 'px');
+        }
+//
+        function param(object)
+        {
+            var parameters = [];
+            for (var property in object) {
+                if (object.hasOwnProperty(property)) {
+                    parameters.push(encodeURI(property + '=' + object[property]));
+                }
+            }
+
+            return parameters.join('&');
+        }
+        function downloadPtList() {
+            var path_url = "{{ path('admin_siv_dashboard_lista_bitacora_scada')}}",
+                fechaInicio= $('#fechaInicio').val(),
+                fechaTermino = $('#fechaTermino').val(),
+                regStatus = $('#regStatus').val();
+
+            var params = {
+                action:'pdf',
+                fechaInicio: $('#fechaInicio').val(),
+                fechaTermino: $('#fechaTermino').val(),
+                searchTxt: $('#searchTxt').val(),
+                regStatus: $('#regStatus').val(),
+                token: '{{ csrf_token('pdf-list') }}'
+            };
+
+            path_url = path_url + '?'+ $.param(params);
+            //console.log(path_url);
+            // Data to get
+            {#  //https://stackoverflow.com/questions/16086162/handle-file-download-from-ajax-post  #}
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function () {
+                var a;
+                if (xhttp.readyState === 4 && xhttp.status === 200) {
+                    a = document.createElement('a');
+                    a.href = window.URL.createObjectURL(xhttp.response);
+                    a.download = "Lista de registros de bitacora.pdf";
+                    a.style.display = 'none';
+                    document.body.appendChild(a);
+                    a.click();
+                }
+            };
+            xhttp.onerror = function () {
+                $.notify(
+                    "Ha ocurrido un error al intentar descargar el archivo.",
+                    {  style: 'bootstrap', className: 'error', position:"top right" }
+                );
+            };
+            xhttp.open("GET", path_url);
+            xhttp.setRequestHeader("Content-Type", "application/json");
+            xhttp.responseType = 'blob';
+            xhttp.send();
+        }
+
+        /**
+         * Función para abrir el modal de creación de registro (Bootstrap 5)
+         */
+        function addRegBinnacleScada() {
+            var path_url = "{{ path('admin_siv_dashboard_bitacora_scada') }}";
+            var data = {
+                action: 'add'
+            };
+
+            $.ajax({
+                url: path_url,
+                type: 'GET',
+                data: data,
+                success: function(html) {
+                    if (html) {
+                        // Cargar el HTML en el contenedor del modal
+                        $('#ajax_edit_popup_container_render').html(html);
+
+                        // Mostrar modal usando Bootstrap 5 API
+                        var modalElement = document.getElementById('ajax_edit_popup');
+                        var bsModal = new bootstrap.Modal(modalElement);
+                        bsModal.show();
+
+                        // Inicializar controles si es necesario
+                        if (typeof $.fn.selectpicker !== 'undefined') {
+                            $('.selectpicker').selectpicker('render');
+                        }
+                    } else {
+                        $.notify(
+                            "Ha ocurrido un error al cargar el formulario.",
+                            {style: 'bootstrap', className: 'error', position: "top right"}
+                        );
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $.notify(
+                        "Ha ocurrido un error al cargar el formulario: " + error,
+                        {style: 'bootstrap', className: 'error', position: "top right"}
+                    );
+                }
+            });
+        }
+
+        /**
+         * Función para validar campos requeridos iniciales (clase .requerido_inicial)
+         */
+        function validaRequeridosIniciales() {
+            var valido = true;
+            $('.requerido_inicial').each(function() {
+                if ($(this).val() == '') {
+                    valido = false;
+                    $(this).addClass('is-invalid');
+                    $(this).closest('.form-group').find('.text-danger').text('Este campo es requerido');
+                } else {
+                    $(this).removeClass('is-invalid');
+                    $(this).closest('.form-group').find('.text-danger').text('');
+                }
+            });
+            return valido;
+        }
+    </script>
+    {# TODO: Implementar tutorial de ayuda si es necesario #}
+    {# <script src="{{ asset('public/tutorials/ayuda_permisos_trabajos.js') }}"></script> #}
+{% endblock %}

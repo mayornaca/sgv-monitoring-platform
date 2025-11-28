@@ -1,0 +1,366 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block page_title %}Reportes sensores SOS{% endblock %}
+
+{# Sobrescribir content_title para eliminar el H1 que ocupa espacio #}
+{% block content_title %}{% endblock %}
+
+{# Agregar título en el toolbar superior (content_top_header) #}
+{% block content_top_header %}
+    <div class="d-flex align-items-center gap-2">
+        <h2 class="m-0" style="font-size: 1.25rem; font-weight: 500;">
+            <i class="fas fa-file-alt" style="color: var(--color-primary, #5368d5);"></i>
+            Reportes sensores SOS
+        </h2>
+    </div>
+
+    {# Keep the original search, user menu, and settings #}
+    {{ parent() }}
+{% endblock %}
+
+{% block head_stylesheets %}
+    {{ parent() }}
+    <!-- Bootstrap Table CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-table@1.22.1/dist/bootstrap-table.min.css">
+    <!-- Tempus Dominus 6 CSS (Bootstrap 5 compatible) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@eonasdan/tempus-dominus@6/dist/css/tempus-dominus.min.css">
+    <style>
+        .btn-group.stick-top.go-to-graphic.affix {
+            top: 73px;
+            left: 1px;
+            z-index: 1000;
+        }
+        .bootstrap-table.fullscreen .fixed-table-toolbar {
+            background: #333;
+        }
+        .bg-white{
+            background-color: rgba(255, 255, 255, 0.02) !important;
+        }
+        .table>thead>tr>th {
+            vertical-align: middle;
+        }
+        .col9{
+            background-color: cornsilk;
+        }
+    </style>
+{% endblock %}
+
+{% block configured_head_contents %}
+    {{ parent() }}
+    <!-- jQuery (necesario ANTES de Bootstrap y plugins) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+
+    <!-- D3.js (para d3.timeout) -->
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+
+    <!-- Popper.js (requerido por Tempus Dominus) -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+
+    <!-- Tempus Dominus 6 JS (Bootstrap 5 compatible) -->
+    <script src="https://cdn.jsdelivr.net/npm/@eonasdan/tempus-dominus@6/dist/js/tempus-dominus.min.js"></script>
+
+    <!-- Bootstrap Notify -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-notify@3.1.3/bootstrap-notify.min.js"></script>
+
+    <!-- jQuery Validation -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/localization/messages_es.min.js"></script>
+
+    <!-- Bootbox (para confirmaciones) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootbox@6.0.0/dist/bootbox.min.js"></script>
+
+    <!-- TWBS Pagination -->
+    <script src="{{ asset('josecebe-twbs-pagination/jquery.twbsPagination.min.js') }}"></script>
+
+    <!-- Bootstrap Table JS (debe cargar ANTES de que se renderice la tabla) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.22.1/dist/bootstrap-table.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.22.1/dist/locale/bootstrap-table-es-ES.min.js"></script>
+
+    <!-- Bootstrap Select -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/i18n/defaults-es_ES.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">
+
+    <!-- jQuery asRange Plugin (para slider de intervalo) -->
+    <script src="{{ asset('js/jquery-asRange.js') }}"></script>
+    <link rel="stylesheet" href="{{ asset('css/asRange.css') }}">
+    <!-- Report Loader -->
+    <script src="{{ asset('js/report-loader.js') }}"></script>
+{% endblock %}
+
+{% block page_content %}
+<div id="main-wrapper" class="container-fluid">
+    <div>
+        {{ include('dashboard/cot/sensors_alarms/report/contenedor_tabla.html.twig') }}
+    </div>
+</div>
+{% endblock %}
+
+{% block body_javascript %}
+    {{ parent() }}
+<script>
+    jQuery(document).ready(function() {
+        // Initialize Tempus Dominus 6 date pickers
+        const tempusDominus = window.tempusDominus;
+        if (tempusDominus) {
+            const dateOptions = {
+                useCurrent: false, // No sobrescribir el valor del input
+                display: {
+                    components: {
+                        calendar: true,
+                        date: true,
+                        month: true,
+                        year: true,
+                        decades: true,
+                        clock: true,
+                        hours: true,
+                        minutes: true,
+                        seconds: true
+                    },
+                    icons: {
+                        time: 'fas fa-clock',
+                        date: 'fas fa-calendar',
+                        up: 'fas fa-arrow-up',
+                        down: 'fas fa-arrow-down',
+                        previous: 'fas fa-chevron-left',
+                        next: 'fas fa-chevron-right',
+                        today: 'fas fa-calendar-check',
+                        clear: 'fas fa-trash',
+                        close: 'fas fa-times'
+                    }
+                },
+                localization: {
+                    locale: 'es',
+                    format: 'dd-MM-yyyy HH:mm:ss',
+                    hourCycle: 'h23'
+                }
+            };
+
+            // Initialize pickers on the INPUT GROUP containers
+            const pickerInicio = new tempusDominus.TempusDominus(document.getElementById('dtpFechaInicio'), dateOptions);
+            const pickerTermino = new tempusDominus.TempusDominus(document.getElementById('dtpFechaTermino'), dateOptions);
+
+            // Forzar la lectura de los valores del input (si existen)
+            const fechaInicioVal = $('#fechaInicio').val();
+            const fechaTerminoVal = $('#fechaTermino').val();
+
+            if (fechaInicioVal) {
+                pickerInicio.dates.setFromInput(fechaInicioVal);
+            }
+            if (fechaTerminoVal) {
+                pickerTermino.dates.setFromInput(fechaTerminoVal);
+            }
+        }
+
+        /*
+         ANTES DE ENVIAR EL FORMULARIO VERIFICO QUE LA INFORMACIÓN SEA INTEGRA Y COHERENTE
+         */
+        $("#report_params").submit(function() {
+            ReportLoader.show('#btn-refresh', 'Generando...');
+        });
+        SetPTTimer()
+    });
+    /********************
+     * Timer de ejecución periodica para ...
+     * ******************/
+    var omit_refresh_on_focus = 0;
+    var cot_devices_timer_interval;
+    function SetPTTimer(){
+        var interval = $('#timer-range-ajax-update').val() * 1000;
+        //console.log('nuevo intervalo ' + interval + ' ' +  new Date() );
+
+        cot_devices_timer_interval = setInterval(function () {
+            if($('#actualizacionAutomatica').is(":checked")) {
+                /***
+                 * Funciones a ejecutar en intervalos de tiempo
+                 */
+
+                if(omit_refresh_on_focus >= 3){
+                    omit_refresh_on_focus = 0;
+                   $("#toggle_task_bar").trigger('click');
+                    $.notify(
+                        "Se omitió la actualización de datos durante tres ciclos, mientras seleccionaba filtros",
+                        {style: 'bootstrap', className: 'warn', position: "top right"}
+                    );
+                    $.notify(
+                        "Actualizando ahora...",
+                        {style: 'bootstrap', className: 'success', position: "top right"}
+                    );
+                }
+
+                if(isFilterPanelIsFocused() === false){
+                    getReportSensorData();
+                }
+                else {
+                    omit_refresh_on_focus++;
+                    jsDump('hay un control enfocado')
+                }
+
+            }
+            /***
+             * Funciones a ejecutar siempre
+             */
+
+        },interval);
+    }
+
+    function isFilterPanelIsFocused() {
+        var result = false;
+        $(".filter_panel_control").each(function () {
+            if($(this).hasClass("selectpicker")){
+                if($(this).closest('.bootstrap-select').hasClass("open")){
+                    result = true;
+                }
+            }
+            if($(this).is(":focus")){
+                result = true;
+            }
+        });
+        return result;
+    }
+
+    var toolbarIsToggle = $('#filter-panel').hasClass('in');
+    var tableIsFullscreen = $('#tbl_pt').closest('div.bootstrap-table').hasClass('fullscreen');
+
+
+    function getReportSensorData() {
+        //clearInterval(cot_devices_timer_interval);
+        toolbarIsToggle = $('#filter-panel').hasClass('in');
+        tableIsFullscreen = $('#tbl_pt').closest('div.bootstrap-table').hasClass('fullscreen');
+        var data = {
+            action:'ajax',
+            toolbarIsToggle: toolbarIsToggle,
+            tableIsFullscreen: tableIsFullscreen,
+            fechaInicio: $('#fechaInicio').val(),
+            fechaTermino: $('#fechaTermino').val(),
+            filasPorPagina: $('#ccbRowsPerPage').val(),
+            regStatus: $('#regStatus').val(),
+            alarmType: $('#alarmType').val(),
+            searchTxt: $('#searchTxt').val(),
+            token: "{{ csrf_token('ajax-bs') }}",
+            search: $('.search input').val(),
+            autoUpdate: $('#actualizacionAutomatica').is(":checked"),
+            autoUpdateInterval: $('#timer-range-ajax-update').val(),
+            rowsPerPage: $('#rowsPerPage').val(),
+            currentPage: $('#pagination_fra').twbsPagination('getCurrentPage'),
+        };
+
+        $.ajax({
+            url: "{{ path('admin_cot_sos_report_status') }}",
+            type: "POST",
+            data: data,
+            async: true,
+            success: function (html) {
+                if (html) {
+                    if ($(html).find('#pt_table_container').length > 0) {
+                        $('#pt_table_container').replaceWith($(html).find('#pt_table_container'));
+                        if(tableIsFullscreen){
+                            $('#pt_table_container').find('button[name="fullscreen"]').trigger('click');
+                            setHeight(); //.bootstrapTable('toggleFullscreen');
+                        }
+                        else{
+                            $('.fixed-table-container').css("height", '100%');
+                        }
+                        //$('#pt_table_container').find('button[name="fullscreen"]').trigger('click');
+                    }
+                    else {
+                        $.notify(
+                            "pt_table_container Ha ocurrido un error al intentar procesar los datos. Intente recargar la página.",
+                            {style: 'bootstrap', className: 'error', position: "top right"}
+                        );
+                    }
+                    $('.selectpicker').selectpicker('render');
+                }
+                else {
+                    $.notify(
+                        "HTML Ha ocurrido un error al intentar procesar los datos. Intente recargar la página.",
+                        {style: 'bootstrap', className: 'error', position: "top right"}
+                    );
+                }
+
+            },
+            error: function () {
+                $.notify(
+                    "Error Ha ocurrido un error al intentar procesar los datos. Intente recargar la página.",
+                    {style: 'bootstrap', className: 'error', position: "top right"}
+                );
+            }
+        });
+    }
+    /**********************
+     * Se Añade Handler Responsive de redimención de la ventana y sus elementos
+     ***********************/
+    $( window ).resize(function() {
+        setHeight();
+    });
+    function setHeight() {
+        // Returns height of browser viewport
+        var height = $(window).height();
+        jsDump(height);
+        $('.fixed-table-container').css("height", (height - 56) + 'px');
+    }
+//
+    function param(object)
+    {
+        var parameters = [];
+        for (var property in object) {
+            if (object.hasOwnProperty(property)) {
+                parameters.push(encodeURI(property + '=' + object[property]));
+            }
+        }
+
+        return parameters.join('&');
+    }
+    function downloadPtList() {
+        ReportLoader.show('#get_pdf_report', 'Descargando...');
+
+        var path_url = "{{ path('admin_cot_sos_report_status')}}",
+            fechaInicio= $('#fechaInicio').val(),
+            fechaTermino = $('#fechaTermino').val(),
+            regStatus = $('#regStatus').val();
+
+        var params = {
+            ci: 1,
+            action:'excel',
+            fechaInicio: $('#fechaInicio').val(),
+            fechaTermino: $('#fechaTermino').val(),
+            searchTxt: $('#searchTxt').val(),
+            regStatus: $('#regStatus').val(),
+            alarmType: $('#alarmType').val(),
+            token: '{{ csrf_token('pdf-list') }}'
+        };
+
+        path_url = path_url + '?'+ $.param(params);
+        //console.log(path_url);
+        // Data to get
+        {#  //https://stackoverflow.com/questions/16086162/handle-file-download-from-ajax-post  #}
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function () {
+            var a;
+            if (xhttp.readyState === 4) {
+                ReportLoader.hide('#get_pdf_report');
+                if (xhttp.status === 200) {
+                    a = document.createElement('a');
+                    a.href = window.URL.createObjectURL(xhttp.response);
+                    a.download = "Registro alarmas sensores SOS.xlsx";
+                    a.style.display = 'none';
+                    document.body.appendChild(a);
+                    a.click();
+                }
+            }
+        };
+        xhttp.onerror = function () {
+            ReportLoader.hide('#get_pdf_report');
+            $.notify(
+                "Ha ocurrido un error al intentar descargar el archivo.",
+                {  style: 'bootstrap', className: 'error', position:"top right" }
+            );
+        };
+        xhttp.open("GET", path_url);
+        xhttp.setRequestHeader("Content-Type", "application/json");
+        xhttp.setRequestHeader('Cache-Control', 'no-cache');
+        xhttp.responseType = 'blob';
+        xhttp.send();
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,513 @@
+/**
+ * SGV - Legacy Auth Design
+ * Split-screen login with Material Design floating labels
+ * Migrated from Craetion Base to Bootstrap 5
+ */
+
+/* ========================================
+   GLOBAL & RESET
+======================================== */
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: 'Muli', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ========================================
+   PAGE CONTAINER - Split Screen Layout
+======================================== */
+#page-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+#main-container {
+    flex: 1;
+    display: flex;
+}
+
+/* Background Image Section */
+.bg-image {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    position: relative;
+}
+
+.bg-black-op,
+.bg-default-op {
+    background-color: rgba(0, 0, 0, 0.65);
+    display: flex;
+    min-height: 100vh;
+}
+
+/* ========================================
+   HERO SECTIONS - Left & Right
+======================================== */
+.hero-static {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Left Section - Image with text overlay */
+.hero-static.col-md-6.col-xl-8 {
+    align-items: flex-end;
+}
+
+.hero-static .p-30 {
+    padding: 30px;
+}
+
+.font-size-h3 {
+    font-size: 1.75rem;
+}
+
+.font-w600 {
+    font-weight: 600;
+}
+
+.text-white {
+    color: #fff;
+}
+
+.text-white-op {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* Right Section - White panel with form */
+.hero-static.bg-white {
+    background-color: #fff !important;
+}
+
+.content-full {
+    width: 100%;
+    max-width: 100%;
+}
+
+/* ========================================
+   HEADER SECTION
+======================================== */
+.px-30 {
+    padding-left: 30px;
+    padding-right: 30px;
+}
+
+.py-10 {
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.py-30 {
+    padding-top: 30px;
+    padding-bottom: 30px;
+}
+
+.navbar-brand img {
+    max-width: 100%;
+    height: auto;
+}
+
+.img-transparent-dark-bg {
+    background-color: transparent;
+}
+
+.h3 {
+    font-size: 1.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.h5 {
+    font-size: 1.25rem;
+}
+
+.font-w700 {
+    font-weight: 700;
+}
+
+.font-w400 {
+    font-weight: 400;
+}
+
+.mt-30 {
+    margin-top: 30px;
+}
+
+.mb-10 {
+    margin-bottom: 10px;
+}
+
+.mb-0 {
+    margin-bottom: 0;
+}
+
+.text-muted {
+    color: #6c757d;
+}
+
+/* ========================================
+   MATERIAL DESIGN FLOATING LABELS
+======================================== */
+.form-material {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.form-material.floating {
+    position: relative;
+}
+
+.form-material.floating label {
+    position: absolute;
+    left: 12px;
+    top: 12px;
+    font-size: 1rem;
+    color: #6c757d;
+    font-weight: 400;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    background: rgba(255, 255, 255, 0.6);
+    padding: 0 5px;
+    border: none;
+    border-radius: 10px;
+}
+
+.form-material.floating input:focus + label,
+.form-material.floating input:not(:placeholder-shown) + label,
+.form-material.floating input.filled + label {
+    top: -10px;
+    left: 8px;
+    font-size: 0.875rem;
+    color: #007bff;
+    font-weight: 500;
+}
+
+.form-material input.form-control {
+    width: 100%;
+    height: 50px;
+    padding: 12px;
+    font-size: 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.form-material input.form-control:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+/* ========================================
+   CUSTOM BUTTON STYLES (Legacy Green)
+======================================== */
+.w3-btn {
+    border: none;
+    display: inline-block;
+    outline: 0;
+    padding: 6px 16px;
+    vertical-align: middle;
+    overflow: hidden;
+    text-decoration: none !important;
+    color: #fff;
+    background-color: #4CAF50;
+    text-align: center;
+    cursor: pointer;
+    white-space: nowrap;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border-radius: 4px;
+}
+
+.w3-btn:hover {
+    background-color: #45a049;
+    box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    transform: translateY(-1px);
+}
+
+.w3-btn:active {
+    transform: translateY(0);
+}
+
+.w3-margin-bottom {
+    margin-bottom: 16px !important;
+}
+
+/* ========================================
+   PROGRESS BAR (Top Loading Bar)
+======================================== */
+.loader-css-bar {
+    height: 4px;
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    overflow: hidden;
+    background-image: linear-gradient(to right, rgba(64, 76, 86, 0.48), rgba(64, 77, 87, 0.38), #ffffff);
+    z-index: 9999;
+    display: none;
+}
+
+.loader-css-bar:before {
+    display: block;
+    position: absolute;
+    content: "";
+    left: -200px;
+    width: 200px;
+    height: 4px;
+    background-image: linear-gradient(to right, #E91E63, #9C27B0, #673AB7);
+    animation: loading 2s linear infinite;
+}
+
+@keyframes loading {
+    from {
+        left: -200px;
+        width: 30%;
+    }
+    50% {
+        width: 30%;
+    }
+    70% {
+        width: 70%;
+    }
+    80% {
+        left: 50%;
+    }
+    95% {
+        left: 120%;
+    }
+    to {
+        left: 100%;
+    }
+}
+
+/* ========================================
+   BUTTON SPINNER
+======================================== */
+@keyframes spinner {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.spinner:before {
+    content: '';
+    box-sizing: border-box;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 30px;
+    height: 30px;
+    margin-top: -15px;
+    margin-left: -15px;
+    border-radius: 50%;
+    border: 2px solid #fcfcfc;
+    border-top-color: #0098ff;
+    animation: spinner 0.6s linear infinite;
+}
+
+.has-spinner {
+    position: relative;
+    display: none;
+}
+
+/* ========================================
+   ALERTS & NOTIFICATIONS
+======================================== */
+.alert {
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    border-radius: 0.375rem;
+    border: 1px solid transparent;
+}
+
+.alert-danger {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border-color: #fecaca;
+}
+
+.alert-success {
+    background-color: #d1fae5;
+    color: #065f46;
+    border-color: #a7f3d0;
+}
+
+/* ========================================
+   CUSTOM CHECKBOX
+======================================== */
+.custom-control-label {
+    font-weight: 400;
+    cursor: pointer;
+}
+
+.custom-control-input {
+    margin-right: 8px;
+}
+
+/* ========================================
+   LINKS
+======================================== */
+.link-effect {
+    text-decoration: none;
+    transition: all 0.15s ease;
+}
+
+.link-effect:hover {
+    text-decoration: underline;
+}
+
+/* ========================================
+   ANIMATIONS
+======================================== */
+.invisible {
+    opacity: 0;
+}
+
+[data-toggle="appear"] {
+    animation: fadeInRight 0.8s ease-out forwards;
+}
+
+@keyframes fadeInRight {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.animated.fadeInRight {
+    animation: fadeInRight 0.8s ease-out;
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+======================================== */
+@media (max-width: 767px) {
+    .hero-static.col-md-6.col-xl-8 {
+        display: none !important;
+    }
+
+    .hero-static.col-md-6.col-xl-4 {
+        width: 100%;
+        max-width: 100%;
+        flex: 0 0 100%;
+    }
+
+    .px-30 {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+}
+
+@media (min-width: 768px) {
+    .d-md-flex {
+        display: flex !important;
+    }
+
+    .d-none.d-md-flex {
+        display: flex !important;
+    }
+
+    .align-items-md-end {
+        align-items: flex-end !important;
+    }
+}
+
+/* ========================================
+   UTILITY CLASSES
+======================================== */
+.mx-0 {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+.d-none {
+    display: none !important;
+}
+
+.d-inline-block {
+    display: inline-block !important;
+}
+
+.d-flex {
+    display: flex !important;
+}
+
+.align-items-center {
+    align-items: center !important;
+}
+
+.font-italic {
+    font-style: italic;
+}
+
+.mr-10 {
+    margin-right: 10px;
+}
+
+.mr-5 {
+    margin-right: 5px;
+}
+
+.mb-5 {
+    margin-bottom: 5px;
+}
+
+.mt-30 {
+    margin-top: 30px !important;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.row {
+    display: flex;
+    flex-wrap: wrap;
+    margin-right: -15px;
+    margin-left: -15px;
+}
+
+[class*="col-"] {
+    position: relative;
+    width: 100%;
+    padding-right: 15px;
+    padding-left: 15px;
+}
+
+@media (min-width: 768px) {
+    .col-md-6 {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+}
+
+@media (min-width: 1200px) {
+    .col-xl-4 {
+        flex: 0 0 33.333333%;
+        max-width: 33.333333%;
+    }
+
+    .col-xl-8 {
+        flex: 0 0 66.666667%;
+        max-width: 66.666667%;
+    }
+
+    .main-content-boxed #main-container > .content,
+    .main-content-boxed #page-header > .content {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+}

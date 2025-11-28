@@ -1,0 +1,33 @@
+<div class="col-sm-12">
+    <div class="panel panel-info">
+        <div class="panel-heading">
+            <h2 class="panel-title">Licencias de conducir</h2>
+        </div>
+        <div class="panel-body">
+            <!-- Inicio tabla  -->
+            <div class="funkyradio">
+                {% set tipo = '' %}
+                {% if licencias is defined %}
+                    {% for licencia in licencias %}
+
+                        {% if tipo != licencia.tipoLicencia %}
+                            {% set tipo = licencia.tipoLicencia %}
+                        <span>
+                            <h3 class="panel-title">{{ tipo }}</h3>
+                        </span>
+                        {% endif %}
+
+                        <div class="funkyradio-success">
+                            <input type="checkbox" name="licence" id="select-unselect-licence-{{ licencia.idLicencia }}" class="select-unselect-licence" value="{{ licencia.idLicencia }}"/>
+                            <label for="select-unselect-licence-{{ licencia.idLicencia }}" title="{{ licencia.nombreLicencia }}" style="font-size: 11pt;padding: 0px;margin-top: 0px !important;margin-bottom: 1px !important;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;">
+                                <span class="label label-info">{{ licencia.aliasLicencia }}</span> {{  licencia.nombreLicencia|truncate(50, false, ".")}}
+                            </label>
+                        </div>
+
+                    {% endfor %}
+                {% endif %}
+            </div>
+            <!-- Fin Tabla  -->
+        </div>
+    </div>
+</div>

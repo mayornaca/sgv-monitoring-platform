@@ -1,0 +1,118 @@
+{# Formulario AJAX Ubicación - Bootstrap 5 #}
+<div>
+    <div id="ajax_frm_add" class="form-group col-sm-12 stop-propagation">
+        <div class="row">
+            <div id="frm_new_location">
+                <form class="form needs-validation" id="frm_add_location" novalidate>
+                    <div class="row g-3 mb-3">
+                        <div class="form-group col-sm-12 mb-3">
+                            <label for="frm_new_location_name">Nombre *</label>
+                            <input type="text" class="form-control"
+                                   id="frm_new_location_name"
+                                   name="frm_new_location_name"
+                                   placeholder="Nombre de la ubicación" value="" required>
+                            <div class="invalid-feedback">Por favor ingrese el nombre de la ubicación.</div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="form-group col-sm-12 mb-3">
+                            <label for="frm_new_location_desc">Descripción *</label>
+                            <input type="text" class="form-control"
+                                   id="frm_new_location_desc"
+                                   name="frm_new_location_desc"
+                                   placeholder="Descripción de la ubicación" value="" required>
+                            <div class="invalid-feedback">Por favor ingrese una descripción.</div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {# Botones del formulario #}
+        <div class="mt-3 d-flex gap-2">
+            <button class="btn btn-success stop-propagation" id="btn_set_location">
+                <i class="fa fa-check"></i> Crear y seleccionar
+            </button>
+            <button class="btn btn-secondary ms-auto stop-propagation" id="btn_cancel_location">
+                <i class="fa fa-times"></i> Cerrar
+            </button>
+        </div>
+
+        <script>
+            (function() {
+                var frm_new_location_name = $("#frm_new_location_name"),
+                    frm_new_location_desc = $("#frm_new_location_desc"),
+                    btn_set_location = $("#btn_set_location"),
+                    selTarget = $("#{{ selTarget|default('') }}");
+
+                // Cerrar popup
+                $("#btn_cancel_location").on('click', function(e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    if (typeof closeAjaxFrmPopup === 'function') {
+                        closeAjaxFrmPopup();
+                    }
+                });
+
+                // Guardar ubicación
+                btn_set_location.on('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // Validación Bootstrap 5 nativa
+                    var form = document.getElementById('frm_add_location');
+                    if (!form.checkValidity()) {
+                        form.classList.add('was-validated');
+                        return;
+                    }
+                    form.classList.add('was-validated');
+
+                    var data = {
+                        nombre: frm_new_location_name.val(),
+                        descripcion: frm_new_location_desc.val()
+                    };
+
+                    $.ajax({
+                        url: "{{ path('location_create_ajax') }}",
+                        type: 'POST',
+                        data: data,
+                        dataType: "json",
+                        success: function(response) {
+                            if (response.mensaje_success) {
+                                showNotification(response.mensaje_success, {className: 'success'});
+
+                                // Actualizar select directamente por ID (patrón legacy funcional)
+                                if (response.idLocation) {
+                                    var optionText = data.nombre;
+                                    var optionValue = response.idLocation;
+
+                                    // Actualizar select de ubicación (siempre existe)
+                                    var $selectUbicacion = $("#frm_edit_reg-id_ubicacion");
+                                    if ($selectUbicacion.length && $selectUbicacion.find('[value="' + optionValue + '"]').length === 0) {
+                                        $selectUbicacion.append(new Option(optionText, optionValue));
+                                    }
+
+                                    // Seleccionar el nuevo valor
+                                    $selectUbicacion.val(optionValue).trigger('change');
+
+                                    // Refresh TODOS los selectpickers
+                                    $('.selectpicker').selectpicker('refresh');
+                                }
+
+                                if (typeof closeAjaxFrmPopup === 'function') {
+                                    closeAjaxFrmPopup();
+                                }
+                            } else if (response.mensaje_error) {
+                                showNotification(response.mensaje_error, {className: 'error'});
+                            }
+                        },
+                        error: function() {
+                            showNotification('Ha ocurrido un error al procesar la solicitud', {className: 'error'});
+                        }
+                    });
+                });
+            })();
+        </script>
+    </div>
+</div>

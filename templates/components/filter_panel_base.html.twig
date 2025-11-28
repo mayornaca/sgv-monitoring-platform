@@ -1,0 +1,225 @@
+{#
+/**
+ * Filter Panel Base Template
+ * Versión: 1.0.0
+ *
+ * Template base reutilizable para paneles de filtros estandarizados.
+ *
+ * Uso:
+ * {% embed 'components/filter_panel_base.html.twig' with {
+ *     panel_id: 'my-filter-panel',
+ *     panel_title: 'Filtros',
+ *     collapsed: false,
+ *     show_auto_update: true
+ * } %}
+ *     {% block filter_fields %}
+ *         <!-- Campos de filtro aquí -->
+ *     {% endblock %}
+ *     {% block action_buttons %}
+ *         <!-- Botones adicionales aquí -->
+ *     {% endblock %}
+ * {% endembed %}
+ *
+ * Variables disponibles:
+ * - panel_id: ID del panel (requerido)
+ * - panel_title: Título del panel (default: 'Filtros')
+ * - collapsed: Iniciar colapsado (default: false)
+ * - show_header: Mostrar encabezado (default: true)
+ * - collapsible: Panel colapsable (default: true)
+ * - show_auto_update: Mostrar controles de auto-actualización (default: false)
+ * - auto_update_interval: Intervalo inicial en segundos (default: 60)
+ * - form_method: Método del formulario (default: 'get')
+ * - form_action: Action del formulario (default: '')
+ * - show_reset_button: Mostrar botón limpiar (default: true)
+ * - show_submit_button: Mostrar botón filtrar (default: true)
+ * - submit_button_text: Texto botón submit (default: 'Filtrar')
+ * - reset_button_text: Texto botón reset (default: 'Limpiar')
+ * - css_class: Clases CSS adicionales para el panel (default: '')
+ */
+#}
+
+{% set panel_id = panel_id|default('filter-panel') %}
+{% set panel_title = panel_title|default('Filtros') %}
+{% set collapsed = collapsed|default(false) %}
+{% set show_header = show_header|default(true) %}
+{% set collapsible = collapsible|default(true) %}
+{% set show_auto_update = show_auto_update|default(false) %}
+{% set auto_update_interval = auto_update_interval|default(60) %}
+{% set form_method = form_method|default('get') %}
+{% set form_action = form_action|default('') %}
+{% set show_reset_button = show_reset_button|default(true) %}
+{% set show_submit_button = show_submit_button|default(true) %}
+{% set submit_button_text = submit_button_text|default('Filtrar') %}
+{% set reset_button_text = reset_button_text|default('Limpiar') %}
+{% set css_class = css_class|default('') %}
+
+<div id="{{ panel_id }}" class="filter-panel {{ css_class }}">
+    {% if show_header %}
+    <div class="filter-panel-header">
+        <h5 class="filter-panel-title">
+            <i class="fas fa-filter"></i> {{ panel_title }}
+        </h5>
+        {% if collapsible %}
+        <button type="button"
+                class="btn btn-sm btn-secondary filter-panel-toggle"
+                data-bs-toggle="collapse"
+                data-bs-target="#{{ panel_id }}-collapse"
+                aria-expanded="{{ not collapsed }}"
+                aria-controls="{{ panel_id }}-collapse">
+            <i class="fas fa-chevron-down"></i>
+        </button>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div id="{{ panel_id }}-collapse" class="filter-panel-body collapse {{ not collapsed ? 'show' : '' }}">
+        <form id="{{ panel_id }}-form" method="{{ form_method }}" action="{{ form_action }}">
+            {% block form_content %}
+                {# Auto-update controls (si está habilitado) #}
+                {% if show_auto_update %}
+                <div class="filter-auto-update">
+                    <label class="filter-auto-update-label">Auto-actualización:</label>
+
+                    <div class="filter-auto-update-switch">
+                        <input type="checkbox" id="autoUpdateSwitch" name="autoUpdate">
+                        <span class="filter-auto-update-slider"></span>
+                    </div>
+
+                    <div class="filter-auto-update-interval">
+                        <label for="updateInterval">Intervalo:</label>
+                        <input type="number"
+                               id="updateInterval"
+                               name="updateInterval"
+                               class="form-control form-control-sm"
+                               value="{{ auto_update_interval }}"
+                               min="5"
+                               max="300"
+                               step="5">
+                        <span>segundos</span>
+                    </div>
+                </div>
+                {% endif %}
+
+                {# Campos de filtro (block personalizable) #}
+                {% block filter_fields %}
+                    {# Este bloque debe ser sobrescrito por el template que usa embed #}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        Por favor, define el bloque <code>filter_fields</code> con tus campos de filtro.
+                    </div>
+                {% endblock %}
+
+                {# Divider antes de los botones #}
+                <div class="filter-panel-divider"></div>
+
+                {# Botones de acción #}
+                <div class="filter-panel-actions">
+                    {% if show_submit_button %}
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> {{ submit_button_text }}
+                    </button>
+                    {% endif %}
+
+                    {% if show_reset_button %}
+                    <button type="reset" class="btn btn-secondary">
+                        <i class="fas fa-undo"></i> {{ reset_button_text }}
+                    </button>
+                    {% endif %}
+
+                    {# Botones adicionales personalizables #}
+                    {% block action_buttons %}
+                        {# Botones personalizados (Excel, PDF, etc.) #}
+                    {% endblock %}
+                </div>
+            {% endblock %}
+        </form>
+    </div>
+</div>
+
+{# CSS inline para casos donde el CSS externo no esté cargado #}
+{% block inline_styles %}
+<style>
+    /* Estilos inline mínimos (se sobrescriben con filter-panels-standard.css) */
+    .filter-panel {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    }
+
+    .filter-panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.25rem;
+        background: #ffffff;
+        border-bottom: 1px solid #dee2e6;
+        border-radius: 0.5rem 0.5rem 0 0;
+    }
+
+    .filter-panel-title {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #495057;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .filter-panel-body {
+        padding: 1.25rem;
+    }
+
+    .filter-panel-actions {
+        display: flex;
+        gap: 0.5rem;
+        padding-top: 1rem;
+        margin-top: 1rem;
+        border-top: 1px solid #dee2e6;
+        flex-wrap: wrap;
+    }
+
+    .filter-panel-divider {
+        height: 1px;
+        background: #dee2e6;
+        margin: 1rem 0;
+    }
+</style>
+{% endblock %}
+
+{# JavaScript inline para inicialización básica #}
+{% block inline_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicialización básica del panel
+        const panel = document.getElementById('{{ panel_id }}');
+        if (!panel) return;
+
+        const form = panel.querySelector('form');
+        if (!form) return;
+
+        // Si FilterPanel.js está disponible, usarlo
+        if (typeof FilterPanel !== 'undefined') {
+            const filterPanel = new FilterPanel('#{{ panel_id }}', {
+                autoUpdate: {{ show_auto_update ? 'true' : 'false' }},
+                updateInterval: {{ auto_update_interval * 1000 }},
+                preserveState: true,
+                stateKey: 'filterPanel_{{ panel_id }}',
+
+                {% block filter_panel_options %}
+                    {# Opciones adicionales para FilterPanel.js #}
+                {% endblock %}
+            });
+
+            // Guardar referencia global para acceso externo
+            window['filterPanel_{{ panel_id }}'] = filterPanel;
+        }
+
+        {% block custom_scripts %}
+            {# Scripts personalizados para este panel específico #}
+        {% endblock %}
+    });
+</script>
+{% endblock %}

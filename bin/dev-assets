@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# Script para desarrollo con assets en aaPanel
+# Uso: ./bin/dev-assets
+
+echo "🔧 Recompilando assets para desarrollo..."
+
+# Limpiar assets compilados
+rm -rf public/assets/
+
+# Recompilar
+php bin/console asset-map:compile --env=dev
+
+echo "✅ Assets recompilados. Los cambios en JavaScript/CSS ahora están disponibles."
+echo "💡 Ejecuta este script después de modificar archivos en assets/"
+
+# Opcional: mostrar estadísticas
+echo ""
+echo "📊 Assets compilados:"
+ls -la public/assets/ | grep -E '\.(js|css)$' | wc -l | xargs echo "   Archivos:"
+
+<system-reminder>
+Learning output style is active. Remember to follow the specific guidelines for this style.
+</system-reminder>

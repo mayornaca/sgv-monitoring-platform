@@ -1,0 +1,164 @@
+{# Contenedor de Tabla de Permisos de Trabajo - Patrón Bitácora #}
+<div>
+    {# SubToolbar con panel de filtros - FUERA del container AJAX #}
+    <div id="subToolbar" class="mb-2">
+            <div id="filter-panel" class="collapse">
+                <div class="card">
+                    <div class="card-body">
+                        <form id="report_params" role="form" action="" method="get">
+                            <input type="hidden" value="1" id="ci" name="ci">
+
+                            <div class="row g-3">
+                                {# Columna 1: Fechas #}
+                                <div class="col-md-2">
+                                    <div class="mb-3">
+                                        <label for="fechaInicio" class="form-label">Fecha de inicio</label>
+                                        <div class="input-group" id="dtpFechaInicio">
+                                            <input type="text"
+                                                   id="fechaInicio"
+                                                   name="fechaInicio"
+                                                   class="form-control form-control-sm filter_panel_control"
+                                                   placeholder="DD-MM-YYYY HH:mm:ss"
+                                                   value="{{ fechaInicio }}">
+                                            <span class="input-group-text form-control-sm">
+                                                <i class="fas fa-calendar"></i>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="fechaTermino" class="form-label">Fecha de término</label>
+                                        <div class="input-group" id="dtpFechaTermino">
+                                            <input type="text"
+                                                   id="fechaTermino"
+                                                   name="fechaTermino"
+                                                   class="form-control form-control-sm filter_panel_control"
+                                                   placeholder="DD-MM-YYYY HH:mm:ss"
+                                                   value="{{ fechaTermino }}">
+                                            <span class="input-group-text form-control-sm">
+                                                <i class="fas fa-calendar"></i>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {# Columna 2: Opciones de visualización #}
+                                <div class="col-md-2">
+                                    <div class="mb-3">
+                                        <label for="ccbRowsPerPage" class="form-label">Filas por página</label>
+                                        <select class="form-select form-select-sm filter_panel_control"
+                                                id="ccbRowsPerPage"
+                                                name="rowsPerPage">
+                                            <option selected="selected" value="10">10</option>
+                                            <option value="25">25</option>
+                                            <option value="50">50</option>
+                                            <option value="100">100</option>
+                                            <option value="500">500</option>
+                                            <option value="All">Todos</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="regStatus" class="form-label">Estado de Registros</label>
+                                        <select class="selectpicker filter_panel_control"
+                                                id="regStatus"
+                                                name="regStatus[]"
+                                                multiple
+                                                data-selected-text-format="count > 3"
+                                                data-actions-box="true"
+                                                data-select-all-text="Todos"
+                                                data-deselect-all-text="Ninguno">
+                                            <option value="all">Todos</option>
+                                            <optgroup label="Aún no comienzan">
+                                                <option value="0">Nuevos</option>
+                                                <option value="1">Programados</option>
+                                            </optgroup>
+                                            <optgroup label="En curso">
+                                                <option value="2">Menor que 9hs</option>
+                                                <option value="3">Entre 9hs y 24hs</option>
+                                                <option value="4">Mayor que 24hs</option>
+                                            </optgroup>
+                                            <optgroup label="Otros">
+                                                <option value="-1">Borradores</option>
+                                                <option value="5">Finalizados</option>
+                                                <option value="trash">Eliminados</option>
+                                            </optgroup>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {# Columna 3: Búsqueda #}
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <label for="searchTxt" class="form-label">Buscar en todos los registros</label>
+                                        <input type="text"
+                                               name="searchTxt"
+                                               class="form-control form-control-sm filter_panel_control"
+                                               id="searchTxt"
+                                               value="{{ searchTxt|default('') }}"
+                                               placeholder="Título, empresa, líder...">
+                                        <small class="form-text text-muted">Busca en título, empresa, líder y ubicación</small>
+                                    </div>
+                                </div>
+
+                                {# Columna 4: Actualización automática #}
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <label class="form-label">Actualización Automática</label>
+                                        <div class="form-check form-switch">
+                                            <input type="checkbox"
+                                                   name="actualizacionAutomatica"
+                                                   class="form-check-input"
+                                                   id="actualizacionAutomatica"
+                                                   checked>
+                                            <label class="form-check-label" for="actualizacionAutomatica">Activar</label>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">
+                                            <i class="fas fa-clock"></i> Intervalo: <span id="timer-value-display">{{ autoUpdateInterval|default(15) }}</span> segundos
+                                        </label>
+                                        <input class="form-range filter_panel_control"
+                                               id="timer-range-ajax-update"
+                                               type="range"
+                                               min="5"
+                                               max="180"
+                                               value="{{ autoUpdateInterval|default(15) }}"
+                                               name="points"
+                                               step="5"
+                                               oninput="document.getElementById('timer-value-display').textContent = this.value">
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Container AJAX - se actualiza sin afectar #subToolbar #}
+    <div id="pt_table_container">
+        {# Toolbar con botones principales #}
+        <div id="toolbar">
+            <div class="btn-group no_pdf_render">
+                <button id="total-records" class="btn btn-info" type="button">
+                    Total registros: <span id="total" class="badge bg-light text-dark"> {{ data_table|json_decode|length }} </span>
+                </button>
+                <button id="toggle_task_bar" type="button" class="btn btn-secondary">
+                    <i class="fas fa-filter"></i> Filtros & Opciones
+                </button>
+                <button id="get_pdf_report" type="button" class="btn btn-danger" onclick="downloadPtListPDF();">
+                    <i class="fas fa-file-pdf"></i> PDF
+                </button>
+                <button id="new-pt" class="btn btn-primary" onclick="addRegPT();">
+                    <i class="fas fa-plus-circle"></i> Crear Permiso
+                </button>
+                <button id="btn-refresh" class="btn btn-info" onclick="getPTData();">
+                    <span class="fas fa-sync rotate_ajax_icon"></span> Actualizar
+                </button>
+            </div>
+        </div>
+
+        {# Incluir la tabla separada #}
+        {{ include('dashboard/siv/permisos_trabajos/tabla.html.twig') }}
+    </div>
+</div>

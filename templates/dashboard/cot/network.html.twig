@@ -1,0 +1,622 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block title %}Monitor de red{% endblock %}
+
+{# Sobrescribir content_title para eliminar el H1 que ocupa espacio #}
+{% block content_title %}{% endblock %}
+
+{# Agregar título en el toolbar superior (content_top_header) #}
+{% block content_top_header %}
+    <div class="d-flex align-items-center gap-2">
+        <h5 class="m-0">
+            <i class="fas fa-network-wired" style="color: var(--color-primary, #5368d5);"></i>
+            Monitor de red
+        </h5>
+    </div>
+
+    {# Keep the original search, user menu, and settings #}
+    {{ parent() }}
+{% endblock %}
+
+{% block head_stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('gojs/ZoomSlider.css') }}">
+    <style>
+        #myDiagramDiv {
+            background-color: #ffffff;
+            width: 100%;
+            height: 900px;
+            border: 1px solid #d4eaff;
+            position: relative;
+        }
+        /* Posicionar el ZoomSlider dentro del diagrama en la esquina superior derecha */
+        .zoomSlider {
+            position: absolute !important;
+            top: 10px !important;
+            right: 10px !important;
+            left: auto !important;
+            z-index: 100 !important;
+            opacity: 0.9 !important;
+        }
+        .controls-panel {
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 5px;
+        }
+        .controls-panel button {
+            margin-right: 5px;
+        }
+    </style>
+{% endblock %}
+
+{% block head_javascript %}
+    {{ parent() }}
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{{ asset('gojs/go.js') }}"></script>
+    <script src="{{ asset('gojs/ZoomSlider.js') }}"></script>
+{% endblock %}
+
+{% block main %}
+    <div class="content-panel">
+        <div class="content-panel-body">
+            <!-- Panel de controles -->
+            <div class="controls-panel">
+                <button id="SaveButton" class="btn btn-sm btn-primary" onclick="save()">
+                    <i class="fas fa-save"></i> Guardar
+                </button>
+                <button class="btn btn-sm btn-info" onclick="load()">
+                    <i class="fas fa-sync"></i> Recargar
+                </button>
+                <button class="btn btn-sm btn-warning" onclick="addPort('top')">
+                    <i class="fas fa-plus"></i> Agregar Puerto Superior
+                </button>
+                <button class="btn btn-sm btn-warning" onclick="addPort('bottom')">
+                    <i class="fas fa-plus"></i> Agregar Puerto Inferior
+                </button>
+                <button class="btn btn-sm btn-warning" onclick="addPort('left')">
+                    <i class="fas fa-plus"></i> Agregar Puerto Izquierdo
+                </button>
+                <button class="btn btn-sm btn-warning" onclick="addPort('right')">
+                    <i class="fas fa-plus"></i> Agregar Puerto Derecho
+                </button>
+            </div>
+
+            <!-- Canvas para GoJS -->
+            <div id="myDiagramDiv" style="position: relative;"></div>
+
+            <!-- Textarea para guardar/editar modelo JSON -->
+            <div style="margin-top: 20px;">
+                <h5>JSON</h5>
+                <textarea id="mySavedModel" style="width: 100%; height: 200px; font-family: monospace; font-size: 12px;">{{ json_graphic_template|raw }}</textarea>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Establecer licencia GoJS ANTES de cualquier otra cosa
+        go.licenseKey = '73ff42e1b51c28c702d95d76423d38f919a1756499841ca30c0311f6ec0d3a06329dbb7103d08cc8d1aa1bfd197f9489d9c26b7a9f4a5139b232d4d944e2d2f1b23024e71209468bf05626949efd2ba8ae6a61f497e571a288288de0fbabc29c55f7f1cb4bc9';
+
+        var myDiagram;
+        var zoomSlider;
+
+        function init() {
+            var $ = go.GraphObject.make;
+
+            myDiagram = $(go.Diagram, "myDiagramDiv", {
+                "undoManager.isEnabled": true,
+                "animationManager.isEnabled": false,
+                "grid.visible": false,
+                "grid.gridCellSize": new go.Size(5, 5),
+                isReadOnly: false,
+                initialContentAlignment: go.Spot.Center,
+                initialAutoScale: go.Diagram.UniformToFill
+            });
+
+            // Listener para modificaciones
+            myDiagram.addDiagramListener("Modified", function(e) {
+                var button = document.getElementById("SaveButton");
+                if (button) button.disabled = !myDiagram.isModified;
+                var idx = document.title.indexOf("*");
+                if (myDiagram.isModified) {
+                    if (idx < 0) document.title += "*";
+                } else {
+                    if (idx >= 0) document.title = document.title.substr(0, idx);
+                }
+            });
+
+            // Función para crear botones de menú contextual
+            function makeButton(text, action, visiblePredicate) {
+                return $("ContextMenuButton",
+                    $(go.TextBlock, text),
+                    { click: action },
+                    visiblePredicate ? new go.Binding("visible", "", function(o, e) {
+                        return o.diagram ? visiblePredicate(o, e) : false;
+                    }).ofObject() : {});
+            }
+
+            // Menú contextual para nodos
+            var nodeMenu = $("ContextMenu",
+                makeButton("Copiar", function(e, obj) {
+                    e.diagram.commandHandler.copySelection();
+                }),
+                makeButton("Eliminar", function(e, obj) {
+                    e.diagram.commandHandler.deleteSelection();
+                }),
+                $(go.Shape, "LineH", { strokeWidth: 2, height: 1, stretch: go.GraphObject.Horizontal }),
+                makeButton("Add top port", function(e, obj) { addPort("top"); }),
+                makeButton("Add left port", function(e, obj) { addPort("left"); }),
+                makeButton("Add right port", function(e, obj) { addPort("right"); }),
+                makeButton("Add bottom port", function(e, obj) { addPort("bottom"); })
+            );
+
+            var portSize = new go.Size(14, 13);
+
+            // Menú contextual para puertos
+            var portMenu = $("ContextMenu",
+                makeButton("Intercambiar orden", function(e, obj) {
+                    swapOrder(obj.part.adornedObject);
+                }),
+                makeButton("Eliminar puerto", function(e, obj) {
+                    removePort(obj.part.adornedObject);
+                }),
+                makeButton("Cambiar color", function(e, obj) {
+                    changeColor(obj.part.adornedObject);
+                }),
+                makeButton("Eliminar puertos de este costado", function(e, obj) {
+                    removeAll(obj.part.adornedObject);
+                })
+            );
+
+            // Template principal para nodos
+            myDiagram.nodeTemplate = $(go.Node, "Table", {
+                    locationObjectName: "BODY",
+                    locationSpot: go.Spot.Center,
+                    selectionObjectName: "BODY",
+                    contextMenu: nodeMenu,
+                    resizable: true,
+                    resizeObjectName: "BODY"
+                },
+                new go.Binding("location", "loc", go.Point.parse).makeTwoWay(go.Point.stringify),
+
+                // Cuerpo del nodo
+                $(go.Panel, "Auto", {
+                        row: 1, column: 1, name: "BODY",
+                        stretch: go.GraphObject.Fill
+                    },
+                    $(go.Shape, "Rectangle", {
+                            fill: "#AC193D",
+                            stroke: null,
+                            strokeWidth: 0,
+                            minSize: new go.Size(56, 56)
+                        },
+                        new go.Binding("desiredSize", "size", go.Size.parse).makeTwoWay(go.Size.stringify),
+                        new go.Binding("fill", "color")
+                    ),
+                    $(go.TextBlock, {
+                            margin: 10,
+                            textAlign: "center",
+                            font: "14px Segoe UI,sans-serif",
+                            stroke: "white",
+                            editable: true
+                        },
+                        new go.Binding("text", "name").makeTwoWay()
+                    )
+                ),
+
+                // Panel izquierdo de puertos
+                $(go.Panel, "Vertical",
+                    new go.Binding("itemArray", "leftArray"), {
+                        row: 1, column: 0,
+                        itemTemplate: $(go.Panel, {
+                                _side: "left",
+                                fromSpot: go.Spot.Left, toSpot: go.Spot.Left,
+                                fromLinkable: true, toLinkable: true, cursor: "pointer",
+                                contextMenu: portMenu
+                            },
+                            new go.Binding("portId", "portId"),
+                            $(go.Shape, "Rectangle", {
+                                    stroke: null, strokeWidth: 0,
+                                    desiredSize: portSize,
+                                    margin: new go.Margin(1, 0)
+                                },
+                                new go.Binding("fill", "portColor")
+                            ),
+                            $(go.TextBlock, "", {
+                                    margin: 0, textAlign: "center",
+                                    font: "9pt helvetica, arial, sans-serif",
+                                    stroke: "white", editable: true
+                                },
+                                new go.Binding("text", "text").makeTwoWay()
+                            )
+                        )
+                    }
+                ),
+
+                // Panel superior de puertos
+                $(go.Panel, "Horizontal",
+                    new go.Binding("itemArray", "topArray"), {
+                        row: 0, column: 1,
+                        itemTemplate: $(go.Panel, {
+                                _side: "top",
+                                fromSpot: go.Spot.Top, toSpot: go.Spot.Top,
+                                fromLinkable: true, toLinkable: true, cursor: "pointer",
+                                contextMenu: portMenu
+                            },
+                            new go.Binding("portId", "portId"),
+                            $(go.Shape, "Rectangle", {
+                                    stroke: null, strokeWidth: 0,
+                                    desiredSize: portSize,
+                                    margin: new go.Margin(0, 1)
+                                },
+                                new go.Binding("fill", "portColor")
+                            ),
+                            $(go.TextBlock, "", {
+                                    margin: 0, textAlign: "center",
+                                    font: "9pt helvetica, arial, sans-serif",
+                                    stroke: "white", editable: true
+                                },
+                                new go.Binding("text", "text").makeTwoWay()
+                            )
+                        )
+                    }
+                ),
+
+                // Panel derecho de puertos
+                $(go.Panel, "Vertical",
+                    new go.Binding("itemArray", "rightArray"), {
+                        row: 1, column: 2,
+                        itemTemplate: $(go.Panel, {
+                                _side: "right",
+                                fromSpot: go.Spot.Right, toSpot: go.Spot.Right,
+                                fromLinkable: true, toLinkable: true, cursor: "pointer",
+                                contextMenu: portMenu
+                            },
+                            new go.Binding("portId", "portId"),
+                            $(go.Shape, "Rectangle", {
+                                    stroke: null, strokeWidth: 0,
+                                    desiredSize: portSize,
+                                    margin: new go.Margin(1, 0)
+                                },
+                                new go.Binding("fill", "portColor")
+                            ),
+                            $(go.TextBlock, "", {
+                                    margin: 0, textAlign: "center",
+                                    font: "9pt helvetica, arial, sans-serif",
+                                    stroke: "white", editable: true
+                                },
+                                new go.Binding("text", "text").makeTwoWay()
+                            )
+                        )
+                    }
+                ),
+
+                // Panel inferior de puertos
+                $(go.Panel, "Horizontal",
+                    new go.Binding("itemArray", "bottomArray"), {
+                        row: 2, column: 1,
+                        itemTemplate: $(go.Panel, {
+                                _side: "bottom",
+                                fromSpot: go.Spot.Bottom, toSpot: go.Spot.Bottom,
+                                fromLinkable: true, toLinkable: true, cursor: "pointer",
+                                contextMenu: portMenu
+                            },
+                            new go.Binding("portId", "portId"),
+                            $(go.Shape, "Rectangle", {
+                                    stroke: null, strokeWidth: 0,
+                                    desiredSize: portSize,
+                                    margin: new go.Margin(0, 1)
+                                },
+                                new go.Binding("fill", "portColor")
+                            ),
+                            $(go.TextBlock, "", {
+                                    margin: 0, textAlign: "center",
+                                    font: "9pt helvetica, arial, sans-serif",
+                                    stroke: "white", editable: true
+                                },
+                                new go.Binding("text", "text").makeTwoWay()
+                            )
+                        )
+                    }
+                )
+            );
+
+            // Template para comentarios
+            myDiagram.nodeTemplateMap.add("Comment",
+                $(go.Node, "Auto",
+                    new go.Binding("location", "loc", go.Point.parse).makeTwoWay(go.Point.stringify),
+                    { locationSpot: go.Spot.Center },
+                    $(go.Shape, "Rectangle", { fill: "#ffffff26", strokeWidth: 0 }),
+                    $(go.TextBlock, {
+                            margin: 5,
+                            maxSize: new go.Size(200, NaN),
+                            wrap: go.TextBlock.WrapFit,
+                            textAlign: "center",
+                            editable: true,
+                            font: "bold 12pt Helvetica, Arial, sans-serif",
+                            stroke: '#454545'
+                        },
+                        new go.Binding("text").makeTwoWay()
+                    )
+                )
+            );
+
+            // Template para títulos
+            myDiagram.nodeTemplateMap.add("Title",
+                $(go.Node, "Auto",
+                    new go.Binding("location", "loc", go.Point.parse).makeTwoWay(go.Point.stringify),
+                    { locationSpot: go.Spot.Center },
+                    $(go.Shape, "Rectangle", { fill: "#ffffff26", strokeWidth: 0 }),
+                    $(go.TextBlock, {
+                            margin: 5,
+                            wrap: go.TextBlock.WrapFit,
+                            textAlign: "center",
+                            editable: true,
+                            font: "bold 16pt Helvetica, Arial, sans-serif",
+                            stroke: '#000d33'
+                        },
+                        new go.Binding("text").makeTwoWay()
+                    )
+                )
+            );
+
+            // Template para enlaces con CustomLink
+            myDiagram.linkTemplate = $(CustomLink, {
+                    routing: go.Link.AvoidsNodes,
+                    corner: 4,
+                    curve: go.Link.JumpGap,
+                    reshapable: true,
+                    resegmentable: true,
+                    relinkableFrom: true,
+                    relinkableTo: true
+                },
+                new go.Binding("points").makeTwoWay(),
+                $(go.Shape, { stroke: "#2F4F4F", strokeWidth: 2 },
+                    new go.Binding("stroke", "color"),
+                    new go.Binding("strokeWidth", "width"),
+                    new go.Binding("strokeDashArray", "dash")
+                ),
+                $(go.TextBlock, "transition", {
+                        textAlign: "center",
+                        font: "10pt helvetica, arial, sans-serif",
+                        stroke: "black",
+                        margin: 4,
+                        editable: true
+                    },
+                    new go.Binding("text", "text").makeTwoWay()
+                )
+            );
+
+            // Soporte para doble-click en el fondo para agregar nodos
+            myDiagram.toolManager.clickCreatingTool.archetypeNodeData = {
+                name: "Nodo",
+                leftArray: [],
+                rightArray: [],
+                topArray: [],
+                bottomArray: []
+            };
+
+            // Menú contextual del diagrama
+            myDiagram.contextMenu = $("ContextMenu",
+                makeButton("Pegar", function(e, obj) {
+                    e.diagram.commandHandler.pasteSelection(e.diagram.lastInput.documentPoint);
+                }, function(o) {
+                    return o.diagram.commandHandler.canPasteSelection();
+                }),
+                makeButton("Deshacer", function(e, obj) {
+                    e.diagram.commandHandler.undo();
+                }, function(o) {
+                    return o.diagram.commandHandler.canUndo();
+                }),
+                makeButton("Rehacer", function(e, obj) {
+                    e.diagram.commandHandler.redo();
+                }, function(o) {
+                    return o.diagram.commandHandler.canRedo();
+                })
+            );
+
+            // Zoom slider
+            zoomSlider = new ZoomSlider(myDiagram, {
+                alignment: go.Spot.TopRight, alignmentFocus: go.Spot.TopRight,
+                size: 150, buttonSize: 30, orientation: 'vertical'
+            });
+
+            // Cargar el diagrama
+            load();
+        }
+
+        // Funciones para manejo de puertos
+        function addPort(side) {
+            myDiagram.startTransaction("addPort");
+            myDiagram.selection.each(function(node) {
+                if (!(node instanceof go.Node)) return;
+                var i = 0;
+                while (node.findPort(side + i.toString()) !== node) i++;
+                var name = side + i.toString();
+                var arr = node.data[side + "Array"];
+                if (arr) {
+                    var newportdata = {
+                        portId: name,
+                        portColor: go.Brush.randomColor(),
+                        text: ""
+                    };
+                    myDiagram.model.insertArrayItem(arr, -1, newportdata);
+                }
+            });
+            myDiagram.commitTransaction("addPort");
+        }
+
+        function swapOrder(port) {
+            var arr = port.panel.itemArray;
+            if (arr.length >= 2) {
+                for (var i = 0; i < arr.length; i++) {
+                    if (arr[i].portId === port.portId) {
+                        myDiagram.startTransaction("swap ports");
+                        if (i >= arr.length - 1) i--;
+                        var newarr = arr.slice(0);
+                        newarr[i] = arr[i + 1];
+                        newarr[i + 1] = arr[i];
+                        myDiagram.model.setDataProperty(port.part.data, port._side + "Array", newarr);
+                        myDiagram.commitTransaction("swap ports");
+                        break;
+                    }
+                }
+            }
+        }
+
+        function removePort(port) {
+            myDiagram.startTransaction("removePort");
+            var pid = port.portId;
+            var arr = port.panel.itemArray;
+            for (var i = 0; i < arr.length; i++) {
+                if (arr[i].portId === pid) {
+                    myDiagram.model.removeArrayItem(arr, i);
+                    break;
+                }
+            }
+            myDiagram.commitTransaction("removePort");
+        }
+
+        function removeAll(port) {
+            myDiagram.startTransaction("removePorts");
+            var nodedata = port.part.data;
+            var side = port._side;
+            myDiagram.model.setDataProperty(nodedata, side + "Array", []);
+            myDiagram.commitTransaction("removePorts");
+        }
+
+        function changeColor(port) {
+            myDiagram.startTransaction("colorPort");
+            var data = port.data;
+            myDiagram.model.setDataProperty(data, "portColor", go.Brush.randomColor());
+            myDiagram.commitTransaction("colorPort");
+        }
+
+        // Guardar y cargar
+        function save() {
+            document.getElementById("mySavedModel").value = myDiagram.model.toJson();
+            myDiagram.isModified = false;
+        }
+
+        function load() {
+            var modelText = document.getElementById("mySavedModel").value;
+            if (modelText) {
+                myDiagram.model = go.Model.fromJson(modelText);
+            }
+        }
+
+        // Funciones auxiliares
+        function jsonEqual(a,b) {
+            return JSON.stringify(a) === JSON.stringify(b);
+        }
+
+        // Obtener datos de red via AJAX
+        function getNetWorkData(){
+            fetch('{{ path('cot_dashboard_cot_network') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.canvas_model) {
+                    myDiagram.model = go.Model.fromJson(data.canvas_model);
+                }
+            })
+            .catch(error => console.error('Error al obtener datos de red:', error));
+        }
+
+        // CustomLink para separar enlaces paralelos
+        function CustomLink() {
+            go.Link.call(this);
+        }
+        go.Diagram.inherit(CustomLink, go.Link);
+
+        CustomLink.prototype.findSidePortIndexAndCount = function(node, port) {
+            var nodedata = node.data;
+            if (nodedata !== null) {
+                var portdata = port.data;
+                var side = port._side;
+                var arr = nodedata[side + "Array"];
+                var len = arr.length;
+                for (var i = 0; i < len; i++) {
+                    if (arr[i] === portdata) return [i, len];
+                }
+            }
+            return [-1, len];
+        };
+
+        CustomLink.prototype.computeEndSegmentLength = function(node, port, spot, from) {
+            var esl = go.Link.prototype.computeEndSegmentLength.call(this, node, port, spot, from);
+            var other = this.getOtherPort(port);
+            if (port !== null && other !== null) {
+                var thispt = port.getDocumentPoint(this.computeSpot(from));
+                var otherpt = other.getDocumentPoint(this.computeSpot(!from));
+                if (Math.abs(thispt.x - otherpt.x) > 20 || Math.abs(thispt.y - otherpt.y) > 20) {
+                    var info = this.findSidePortIndexAndCount(node, port);
+                    var idx = info[0];
+                    var count = info[1];
+                    if (port._side == "top" || port._side == "bottom") {
+                        if (otherpt.x < thispt.x) {
+                            return esl + 4 + idx * 8;
+                        } else {
+                            return esl + (count - idx - 1) * 8;
+                        }
+                    } else {
+                        if (otherpt.y < thispt.y) {
+                            return esl + 4 + idx * 8;
+                        } else {
+                            return esl + (count - idx - 1) * 8;
+                        }
+                    }
+                }
+            }
+            return esl;
+        };
+
+        CustomLink.prototype.hasCurviness = function() {
+            if (isNaN(this.curviness)) return true;
+            return go.Link.prototype.hasCurviness.call(this);
+        };
+
+        CustomLink.prototype.computeCurviness = function() {
+            if (isNaN(this.curviness)) {
+                var fromnode = this.fromNode;
+                var fromport = this.fromPort;
+                var fromspot = this.computeSpot(true);
+                var frompt = fromport.getDocumentPoint(fromspot);
+                var tonode = this.toNode;
+                var toport = this.toPort;
+                var tospot = this.computeSpot(false);
+                var topt = toport.getDocumentPoint(tospot);
+                if (Math.abs(frompt.x - topt.x) > 20 || Math.abs(frompt.y - topt.y) > 20) {
+                    if ((fromspot.equals(go.Spot.Left) || fromspot.equals(go.Spot.Right)) &&
+                        (tospot.equals(go.Spot.Left) || tospot.equals(go.Spot.Right))) {
+                        var fromseglen = this.computeEndSegmentLength(fromnode, fromport, fromspot, true);
+                        var toseglen = this.computeEndSegmentLength(tonode, toport, tospot, false);
+                        var c = (fromseglen - toseglen) / 2;
+                        if (frompt.x + fromseglen >= topt.x - toseglen) {
+                            if (frompt.y < topt.y) return c;
+                            if (frompt.y > topt.y) return -c;
+                        }
+                    } else if ((fromspot.equals(go.Spot.Top) || fromspot.equals(go.Spot.Bottom)) &&
+                        (tospot.equals(go.Spot.Top) || tospot.equals(go.Spot.Bottom))) {
+                        var fromseglen = this.computeEndSegmentLength(fromnode, fromport, fromspot, true);
+                        var toseglen = this.computeEndSegmentLength(tonode, toport, tospot, false);
+                        var c = (fromseglen - toseglen) / 2;
+                        if (frompt.x + fromseglen >= topt.x - toseglen) {
+                            if (frompt.y < topt.y) return c;
+                            if (frompt.y > topt.y) return -c;
+                        }
+                    }
+                }
+            }
+            return go.Link.prototype.computeCurviness.call(this);
+        };
+
+        // Inicializar cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+{% endblock %}

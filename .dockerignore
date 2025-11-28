@@ -1,0 +1,80 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Docker files
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# Environment files (use .env.docker instead)
+.env.local
+.env.*.local
+.env.prod
+
+# Dependencies (will be installed in container)
+/vendor/
+/node_modules/
+
+# Cache and logs (will be generated in container)
+/var/cache/*
+/var/log/*
+!/var/cache/.gitkeep
+!/var/log/.gitkeep
+
+# Temporary files
+/var/tmp/*
+!/var/tmp/.gitkeep
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+/tests/
+/phpunit.xml
+/.phpunit.result.cache
+
+# Build artifacts
+/public/build/
+/public/bundles/
+
+# Downloads and uploads (generated content)
+/public/downloads/*
+/public/uploads/*
+!/public/downloads/.gitkeep
+!/public/uploads/.gitkeep
+
+# Documentation (not needed in container)
+/docs/
+/DEPLOYMENT.md
+/DEPLOYMENT_MANUAL.md
+/README.md
+/CLAUDE.md
+/AGENTS.md
+
+# OpenSpec (development only)
+/openspec/
+
+# Old project
+/old-project/
+
+# NPM/Yarn
+npm-debug.log
+yarn-error.log
+package-lock.json
+
+# Composer
+composer.phar
+/composer.lock
+
+# Hash and certificates (security sensitive)
+/hash/
+
+# Test files
+test-page.js

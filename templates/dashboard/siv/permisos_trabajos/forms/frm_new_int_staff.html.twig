@@ -1,0 +1,299 @@
+{# Formulario AJAX Personal Interno - Versión Simplificada para Popup #}
+<div>
+    <div id="ajax_frm_add" class="col-sm-12 stop-propagation">
+        <div class="row">
+            <div id="frm_new_int_staff">
+                <form class="form needs-validation" id="frm_add_internal_staff" novalidate>
+                    <input id="frm_new_int_staff_id" class="d-none" value="-1">
+
+                    <div class="row g-2 mb-2">
+                        <div class="col-sm-6 mb-2">
+                            <label for="frm_new_int_staff_names" class="form-label small">Nombres *</label>
+                            <input type="text" class="form-control form-control-sm control_new_int_staff"
+                                   id="frm_new_int_staff_names"
+                                   name="frm_new_int_staff_names"
+                                   placeholder="Nombres" value="" required>
+                            <div class="invalid-feedback">Por favor ingrese los nombres.</div>
+                        </div>
+                        <div class="col-sm-6 mb-2">
+                            <label for="frm_new_int_staff_lastnames" class="form-label small">Apellidos *</label>
+                            <input type="text" class="form-control form-control-sm control_new_int_staff"
+                                   id="frm_new_int_staff_lastnames"
+                                   name="frm_new_int_staff_lastnames"
+                                   placeholder="Apellidos" value="" required>
+                            <div class="invalid-feedback">Por favor ingrese los apellidos.</div>
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-2">
+                        <div class="col-sm-6 mb-2">
+                            <label for="frm_new_int_staff_rut" class="form-label small">RUT</label>
+                            <input type="text" class="form-control form-control-sm control_new_int_staff"
+                                   id="frm_new_int_staff_rut"
+                                   name="frm_new_int_staff_rut"
+                                   placeholder="RUT (opcional)" value="">
+                        </div>
+                        <div class="col-sm-6 mb-2">
+                            <label for="frm_new_int_staff_phone" class="form-label small">Teléfono</label>
+                            <input type="text" class="form-control form-control-sm control_new_int_staff"
+                                   id="frm_new_int_staff_phone"
+                                   name="frm_new_int_staff_phone"
+                                   placeholder="Teléfono (opcional)" value=""
+                                   pattern="[0-9]{0,15}" title="Solo números, máximo 15 dígitos">
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-2">
+                        <div class="col-sm-6 mb-2">
+                            <label for="frm_new_int_staff_email" class="form-label small">e-Mail</label>
+                            <input type="email" class="form-control form-control-sm control_new_int_staff"
+                                   id="frm_new_int_staff_email"
+                                   name="frm_new_int_staff_email"
+                                   placeholder="Correo electrónico (opcional)" value="">
+                            <div class="invalid-feedback">Por favor ingrese un correo válido.</div>
+                        </div>
+
+                        <div class="col-sm-3 mb-2">
+                            <label for="frm_new_int_staff_anexo" class="form-label small">Anexo</label>
+                            <input type="text" class="form-control form-control-sm control_new_int_staff"
+                                   id="frm_new_int_staff_anexo"
+                                   name="frm_new_int_staff_anexo"
+                                   placeholder="Anexo (opcional)" value=""
+                                   pattern="[0-9]{2,4}" title="Solo números, 2-4 dígitos">
+                        </div>
+
+                        <div class="col-sm-3 mb-2">
+                            <label class="form-label small">Autoriza PT</label>
+                            <div class="form-check form-switch mt-1">
+                                <input type="checkbox" class="form-check-input control_new_int_staff"
+                                       id="frm_new_int_staff_autoriza_ot"
+                                       name="frm_new_int_staff_autoriza_ot"
+                                       {% if selTarget == 'frm_edit_reg-id_autorizador' %}checked{% endif %}>
+                                <label class="form-check-label small" for="frm_new_int_staff_autoriza_ot">Sí</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-2">
+                        <div class="col-sm-6 mb-2">
+                            <label class="form-label small" for="frm_new_int_staff_concesionarie">Concesionaria *</label>
+                            <select class="form-select form-select-sm control_new_int_staff"
+                                    id="frm_new_int_staff_concesionarie"
+                                    name="frm_new_int_staff_concesionarie" required>
+                                <option value="">Seleccione</option>
+                                <option value="c-0">Sin Asignar</option>
+                                {% for conc in arr_concesionarias %}
+                                    <option value="{{ conc.id }}">{{ conc.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">Por favor seleccione una concesionaria.</div>
+                        </div>
+                        <div class="col-sm-6 mb-2">
+                            <label class="form-label small" for="frm_new_int_staff_cost_center">Centro de costo *</label>
+                            <select class="form-select form-select-sm control_new_int_staff"
+                                    id="frm_new_int_staff_cost_center"
+                                    name="frm_new_int_staff_cost_center" required>
+                                <option value="">Seleccione</option>
+                                {% for cc in arr_centro_de_costo %}
+                                    <option value="{{ cc.id_centro_de_costo }}">{{ cc.nombre_centro_de_costo }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">Por favor seleccione un centro de costo.</div>
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-2">
+                        <div class="col-sm-6 mb-2">
+                            <label class="form-label small" for="frm_new_int_staff_area">Área *</label>
+                            <select class="form-select form-select-sm control_new_int_staff"
+                                    id="frm_new_int_staff_area"
+                                    name="frm_new_int_staff_area" required>
+                                <option value="">Seleccione</option>
+                                {% for ar in arr_areas %}
+                                    <option value="{{ ar.id_area }}">{{ ar.nombre_area }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">Por favor seleccione un área.</div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {# Botones del formulario #}
+        <div class="mt-2 d-flex gap-2">
+            <button class="btn btn-sm btn-warning stop-propagation d-none" id="btn_edit_int_staff">
+                <i class="fa fa-edit"></i> Editar
+            </button>
+            <button class="btn btn-sm btn-success stop-propagation" id="btn_set_int_staff">
+                <i class="fa fa-check"></i> Crear y seleccionar
+            </button>
+            <button class="btn btn-sm btn-info stop-propagation" id="btn_search_int_staff">
+                <i class="fa fa-search"></i> Buscar
+            </button>
+            <button class="btn btn-sm btn-secondary ms-auto stop-propagation" id="btn_cancel_int_staff">
+                <i class="fa fa-times"></i> Cerrar
+            </button>
+        </div>
+
+        <script>
+            (function() {
+                // Variables del formulario
+                var frm_new_int_staff_id = $("#frm_new_int_staff_id"),
+                    frm_new_int_staff_names = $("#frm_new_int_staff_names"),
+                    frm_new_int_staff_lastnames = $("#frm_new_int_staff_lastnames"),
+                    frm_new_int_staff_rut = $("#frm_new_int_staff_rut"),
+                    frm_new_int_staff_phone = $("#frm_new_int_staff_phone"),
+                    frm_new_int_staff_autoriza_ot = $('#frm_new_int_staff_autoriza_ot'),
+                    frm_new_int_staff_email = $("#frm_new_int_staff_email"),
+                    frm_new_int_staff_anexo = $("#frm_new_int_staff_anexo"),
+                    frm_new_int_staff_concesionarie = $("#frm_new_int_staff_concesionarie"),
+                    frm_new_int_staff_cost_center = $("#frm_new_int_staff_cost_center"),
+                    frm_new_int_staff_area = $("#frm_new_int_staff_area"),
+                    btn_edit_int_staff = $("#btn_edit_int_staff"),
+                    btn_set_int_staff = $("#btn_set_int_staff"),
+                    selTarget = $("#{{ selTarget|default('') }}"),
+                    key_Action = 0;
+
+                // Cerrar popup
+                $("#btn_cancel_int_staff").on('click', function(e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    if (typeof closeAjaxFrmPopup === 'function') {
+                        closeAjaxFrmPopup();
+                    }
+                });
+
+                // Guardar personal interno
+                btn_set_int_staff.on('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // Validación Bootstrap 5 nativa
+                    var form = document.getElementById('frm_add_internal_staff');
+                    if (!form.checkValidity()) {
+                        form.classList.add('was-validated');
+                        return;
+                    }
+                    form.classList.add('was-validated');
+
+                    var data = {
+                        nombres: frm_new_int_staff_names.val(),
+                        apellidos: frm_new_int_staff_lastnames.val(),
+                        rut: frm_new_int_staff_rut.val(),
+                        fono: frm_new_int_staff_phone.val(),
+                        correo_electronico: frm_new_int_staff_email.val(),
+                        anexo: frm_new_int_staff_anexo.val(),
+                        autoriza_ot: frm_new_int_staff_autoriza_ot.is(":checked") ? 1 : 0,
+                        id_concesionaria: frm_new_int_staff_concesionarie.val(),
+                        id_centro_costo: frm_new_int_staff_cost_center.val(),
+                        id_area: frm_new_int_staff_area.val()
+                    };
+
+                    $.ajax({
+                        url: "{{ path('staff_create_ajax') }}",
+                        type: 'POST',
+                        data: data,
+                        dataType: "json",
+                        success: function(response) {
+                            if (response.mensaje_success) {
+                                showNotification(response.mensaje_success, {className: 'success'});
+
+                                // Actualizar select directamente por ID (patrón legacy funcional)
+                                if (response.idStaff) {
+                                    var optionText = 'RUT: ' + data.rut + ' | ' + data.nombres + ' ' + data.apellidos;
+                                    var optionValue = 'i-' + response.idStaff;
+
+                                    // 1. Actualizar select de lider trabajo (siempre)
+                                    var $selectLider = $("#frm_edit_reg-id_lider_trabajo_solicitante");
+                                    if ($selectLider.length && $selectLider.find('[value="' + optionValue + '"]').length === 0) {
+                                        $selectLider.append(new Option(optionText, optionValue));
+                                    }
+
+                                    // 2. Si autoriza PT, agregarlo también a autorizadores
+                                    if (data.autoriza_ot == 1 || data.autoriza_ot === '1') {
+                                        var $selectAutorizador = $("#frm_edit_reg-id_autorizador");
+                                        if ($selectAutorizador.length && $selectAutorizador.find('[value="' + optionValue + '"]').length === 0) {
+                                            $selectAutorizador.append(new Option(optionText, optionValue));
+                                        }
+                                    }
+
+                                    // 3. Refresh TODOS los selectpickers ANTES de seleccionar
+                                    $('.selectpicker').selectpicker('refresh');
+
+                                    // 4. Seleccionar en el target correcto según contexto
+                                    var $targetSelect = $("#{{ selTarget|default('frm_edit_reg-id_lider_trabajo_solicitante') }}");
+                                    if ($targetSelect.length) {
+                                        $targetSelect.val(optionValue);
+                                        $targetSelect.selectpicker('refresh');
+                                    }
+                                }
+
+                                if (typeof closeAjaxFrmPopup === 'function') {
+                                    closeAjaxFrmPopup();
+                                }
+                            } else if (response.idStaff) {
+                                // Ya existe - aplicar misma lógica
+                                showNotification('El personal ya existe en el sistema', {className: 'info'});
+
+                                var optionText = 'RUT: ' + data.rut + ' | ' + data.nombres + ' ' + data.apellidos;
+                                var optionValue = 'i-' + response.idStaff;
+
+                                // 1. Actualizar select de lider trabajo
+                                var $selectLider = $("#frm_edit_reg-id_lider_trabajo_solicitante");
+                                if ($selectLider.length && $selectLider.find('[value="' + optionValue + '"]').length === 0) {
+                                    $selectLider.append(new Option(optionText, optionValue));
+                                }
+
+                                // 2. Si autoriza PT, agregarlo también a autorizadores
+                                if (data.autoriza_ot == 1 || data.autoriza_ot === '1') {
+                                    var $selectAutorizador = $("#frm_edit_reg-id_autorizador");
+                                    if ($selectAutorizador.length && $selectAutorizador.find('[value="' + optionValue + '"]').length === 0) {
+                                        $selectAutorizador.append(new Option(optionText, optionValue));
+                                    }
+                                }
+
+                                // 3. Refresh TODOS los selectpickers ANTES de seleccionar
+                                $('.selectpicker').selectpicker('refresh');
+
+                                // 4. Seleccionar en el target
+                                var $targetSelect = $("#{{ selTarget|default('frm_edit_reg-id_lider_trabajo_solicitante') }}");
+                                if ($targetSelect.length) {
+                                    $targetSelect.val(optionValue);
+                                    $targetSelect.selectpicker('refresh');
+                                }
+
+                                if (typeof closeAjaxFrmPopup === 'function') {
+                                    closeAjaxFrmPopup();
+                                }
+                            } else if (response.mensaje_error) {
+                                showNotification(response.mensaje_error, {className: 'error'});
+                            }
+                        },
+                        error: function() {
+                            showNotification('Ha ocurrido un error al procesar la solicitud', {className: 'error'});
+                        }
+                    });
+                });
+
+                // Buscar personal
+                $("#btn_search_int_staff").on('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    alert('Función de búsqueda en desarrollo');
+                });
+
+                // Editar personal
+                btn_edit_int_staff.on('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    key_Action = 1;
+                    btn_set_int_staff.html('<i class="fa fa-save"></i> Guardar y seleccionar');
+                    $('.control_new_int_staff').prop("disabled", false);
+                    btn_edit_int_staff.hide();
+                    btn_set_int_staff.show();
+                });
+            })();
+        </script>
+    </div>
+</div>

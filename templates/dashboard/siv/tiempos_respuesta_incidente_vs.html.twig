@@ -1,0 +1,471 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block title %}Tiempos de respuesta por incidente{% endblock %}
+
+{% block content_title %}{% endblock %}
+
+{% block content_top_header %}
+    <div class="d-flex align-items-center gap-2">
+        <h5 class="m-0">
+            <i class="fas fa-hourglass" style="color: var(--color-primary, #5368d5);"></i>
+            Tiempos de Respuesta por Incidente
+        </h5>
+    </div>
+    {{ parent() }}
+{% endblock %}
+
+{% block head_stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-table@1.22.1/dist/bootstrap-table.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@eonasdan/tempus-dominus@6/dist/css/tempus-dominus.min.css">
+    <style>
+        .btn-group.stick-top.go-to-graphic.affix {
+            top: 73px;
+            left: 1px;
+            z-index: 1000;
+        }
+        .export-section { margin-top: 10px; }
+        .table-responsive { margin-top: 20px; }
+        .badge { padding: 5px 10px; }
+    </style>
+{% endblock %}
+
+{% block configured_head_contents %}
+    {{ parent() }}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/i18n/defaults-es_ES.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@eonasdan/tempus-dominus@6/dist/js/tempus-dominus.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.22.1/dist/bootstrap-table.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.22.1/dist/locale/bootstrap-table-es-ES.min.js"></script>
+    <!-- Report Loader -->
+    <script src="{{ asset('js/report-loader.js') }}"></script>
+{% endblock %}
+
+{% block page_content %}
+    <div id="main-wrapper" class="container-fluid">
+        <!-- Barra de acciones -->
+        <div class="mb-3">
+            <div class="btn-group">
+                <button class="btn btn-info" type="button">
+                    Total registros: <span id="total" class="badge bg-light text-dark">{{ data_table|length|default(0) }}</span>
+                </button>
+                <button id="toggle_task_bar" type="button" class="btn btn-secondary" data-bs-toggle="collapse" data-bs-target="#filter-panel">
+                    <i class="fas fa-filter"></i> Filtros & Opciones
+                </button>
+                {% if data_table|length > 0 %}
+                <button id="btn_generate_report" class="btn btn-success">
+                    <i class="fas fa-file-excel"></i> Descargar Excel
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Panel de filtros -->
+        <div class="mb-3" onmouseover="stopTimerToggleTaskBar();">
+            <div id="filter-panel" class="filter-panel collapse show">
+                <div class="card">
+                    <div class="card-body">
+                        <form id="report_params" class="row g-3" action="" method="get">
+                            <input type="hidden" value="1" id="ci" name="ci">
+
+                            <!-- Fila 1: Fechas -->
+                            <div class="col-md-3">
+                                <label for="fechaInicio" class="form-label">
+                                    <i class="fas fa-calendar-alt me-1"></i>Fecha de inicio
+                                </label>
+                                <div class="input-group" id="dtpFechaInicio">
+                                    <input type="text" id="fechaInicio" name="fechaInicio" class="form-control required"
+                                           placeholder="DD-MM-YYYY HH:mm:ss" value="{{ fechaInicio }}">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-calendar"></i>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label for="fechaTermino" class="form-label required">
+                                    <i class="fas fa-calendar-alt me-1"></i>Fecha de término
+                                </label>
+                                <div class="input-group" id="dtpFechaTermino">
+                                    <input type="text" id="fechaTermino" name="fechaTermino" class="form-control required"
+                                           placeholder="DD-MM-YYYY HH:mm:ss" value="{{ fechaTermino }}">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-calendar"></i>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Contingencias -->
+                            <div class="col-md-3">
+                                <label for="p_tipo_contingencia" class="form-label">Contingencias</label>
+                                <select class="selectpicker form-control" id="p_tipo_contingencia" name="p_tipo_contingencia[]"
+                                        multiple data-selected-text-format="count > 3" data-actions-box="true" data-live-search="true">
+                                    {% for item in m_tipo_contingencia %}
+                                        <option value="{{ item.cod_contingencia }}" selected="selected">({{ item.cod_contingencia }}) {{ item.contingencia }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Botón Generar Reporte -->
+                            <div class="col-md-3 d-flex align-items-end">
+                                <button id="btn_submit" type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-search"></i> Generar Reporte
+                                </button>
+                            </div>
+
+                            <!-- Fila 2: Rutas y Sentido -->
+                            <div class="col-md-3">
+                                <label for="ccbRuta" class="form-label">Ruta</label>
+                                <select class="selectpicker form-control" id="ccbRuta" name="p_ruta">
+                                    <option value="0" data-startkm="-" data-endkm="-" selected="selected">Todas</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label for="ccbSentido" class="form-label">Sentido</label>
+                                <select class="selectpicker form-control" id="ccbSentido" name="p_sentido">
+                                    <option value="all" selected="selected">Todos</option>
+                                    <option value="Oriente-Poniente">Oriente-Poniente</option>
+                                    <option value="Poniente-Oriente">Poniente-Oriente</option>
+                                    <option value="Ambas">Ambas</option>
+                                </select>
+                            </div>
+
+                            <!-- Km Inicio/Fin -->
+                            <div class="col-md-3">
+                                <label for="p_km_ini" class="form-label">Km Inicio</label>
+                                <input id="p_km_ini" type="number" name="p_km_ini" class="form-control" disabled value="{{ p_km_ini }}">
+                            </div>
+
+                            <div class="col-md-3">
+                                <label for="p_km_fin" class="form-label">Km Término</label>
+                                <input id="p_km_fin" type="number" name="p_km_fin" class="form-control" disabled value="{{ p_km_fin }}">
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de resultados -->
+        {% if data_table is defined and data_table|length > 0 %}
+            <div class="table-responsive">
+                <table id="tbl_incidentes"
+                       class="table table-striped table-hover table-sm table-bordered"
+                       data-toggle="table"
+                       data-search="true"
+                       data-show-refresh="true"
+                       data-show-columns="true"
+                       data-show-fullscreen="true"
+                       data-id-field="id"
+                       data-maintain-meta-data="false"
+                       data-icons-prefix="fa"
+                       data-icons='{"refresh":"fa-sync","columns":"fa-columns","fullscreen":"fa-expand"}'>
+                    <thead>
+                        <tr>
+                            <th data-field="id" data-sortable="true"># Incidente</th>
+                            <th data-field="creacion" data-sortable="true">Creación</th>
+                            <th data-field="pk" data-sortable="true" class="text-center">PK</th>
+                            <th data-field="sentido" data-sortable="true">Sentido</th>
+                            <th data-field="estado" data-sortable="true" class="text-center">Estado</th>
+                            <th data-field="descripcion" data-sortable="true">Descripción</th>
+                            <th data-field="eje" data-sortable="true" class="text-center">Eje</th>
+                            <th data-field="zona" data-sortable="true" class="text-center">Zona</th>
+                            <th data-field="calzada" data-sortable="true" class="text-center">Calzada</th>
+                            <th data-field="fecha_hora" data-sortable="true" class="text-center">Fecha Hora</th>
+                            <th data-field="fecha_inicio" data-sortable="true" class="text-center">Fecha Hora Inicio</th>
+                            <th data-field="fecha_fin" data-sortable="true" class="text-center">Fecha Hora Término</th>
+                            <th data-field="plan" data-sortable="true" class="text-center">Plan Contingencia</th>
+                            <th data-field="comentario_ini" data-sortable="true" class="text-center">Comentario Inicio</th>
+                            <th data-field="comentario_fin" data-sortable="true" class="text-center">Comentario Fin</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in data_table %}
+                            <tr data-id="{{ row.num_incidente_r }}">
+                                <td>{{ row.num_incidente_r }}</td>
+                                <td>{{ row.fecha_creacion_r }}</td>
+                                <td class="text-center">{{ row.pk_r }}</td>
+                                <td>{{ row.sentido_r }}</td>
+                                <td class="text-center">{{ row.estado_r }}</td>
+                                <td>{{ row.descripcion_r }}</td>
+                                <td class="text-center">{{ row.eje_r }}</td>
+                                <td class="text-center">{{ row.zona_r }}</td>
+                                <td class="text-center">{{ row.calzada_r }}</td>
+                                <td class="text-center">{{ row.fecha_hora_r }}</td>
+                                <td class="text-center">{{ row.fecha_hora_inicio_r }}</td>
+                                <td class="text-center">{{ row.fecha_hora_fin_r }}</td>
+                                <td class="text-center">{{ row.plan_contingencia_r }}</td>
+                                <td class="text-center">{{ row.comentario_ini_r }}</td>
+                                <td class="text-center">{{ row.comentario_fin_r }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info text-center">
+                <i class="fas fa-info-circle fa-2x mb-3"></i>
+                <h5>No se encontraron datos</h5>
+                <p>Ajuste los filtros de búsqueda e intente nuevamente</p>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block body_javascript %}
+    {{ parent() }}
+    <script>
+        // Definir funciones globales PRIMERO
+        var timer_toggle_task_bar;
+        var stoped = false;
+
+        function stopTimerToggleTaskBar() {
+            if (!stoped) {
+                clearTimeout(timer_toggle_task_bar);
+                stoped = true;
+            }
+        }
+
+        // Función de descarga Excel
+        function downloadExcel() {
+            ReportLoader.show('#btn_generate_report', 'Descargando...');
+
+            var params = {
+                action: 'excel',
+                fechaInicio: $('#fechaInicio').val(),
+                fechaTermino: $('#fechaTermino').val(),
+                p_tipo_contingencia: $('#p_tipo_contingencia').val(),
+                p_ruta: $('#ccbRuta').val(),
+                p_sentido: $('#ccbSentido').val(),
+                p_km_ini: $('#p_km_ini').val(),
+                p_km_fin: $('#p_km_fin').val()
+            };
+
+            var path_url = "{{ path('admin_siv_dashboard_report_tiempos_respuesta_incidente_vs') }}" + '?' + $.param(params);
+
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (xhttp.readyState === 4) {
+                    ReportLoader.hide('#btn_generate_report');
+                    if (xhttp.status === 200) {
+                        var filename = "Tiempos_Respuesta_Incidente_VS.xlsx";
+                        var disposition = xhttp.getResponseHeader('Content-Disposition');
+                        if (disposition && disposition.indexOf('attachment') !== -1) {
+                            var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                            var matches = filenameRegex.exec(disposition);
+                            if (matches != null && matches[1]) {
+                                filename = matches[1].replace(/['"]/g, '');
+                            }
+                        }
+
+                        var a = document.createElement('a');
+                        a.href = window.URL.createObjectURL(xhttp.response);
+                        a.download = filename;
+                        a.style.display = 'none';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    }
+                }
+            };
+            xhttp.onerror = function() {
+                ReportLoader.hide('#btn_generate_report');
+                alert("Ha ocurrido un error al intentar descargar el archivo.");
+            };
+            xhttp.open("GET", path_url);
+            xhttp.setRequestHeader("Content-Type", "application/json");
+            xhttp.setRequestHeader('Cache-Control', 'no-cache');
+            xhttp.responseType = 'blob';
+            xhttp.send();
+        }
+
+        jQuery(document).ready(function() {
+            // Configuración Tempus Dominus para datetime picker
+            const datetimeOptions = {
+                display: {
+                    components: {
+                        calendar: true,
+                        date: true,
+                        month: true,
+                        year: true,
+                        decades: true,
+                        clock: true,
+                        hours: true,
+                        minutes: true,
+                        seconds: true
+                    },
+                    icons: {
+                        date: 'fas fa-calendar',
+                        up: 'fas fa-arrow-up',
+                        down: 'fas fa-arrow-down',
+                        previous: 'fas fa-chevron-left',
+                        next: 'fas fa-chevron-right',
+                        today: 'fas fa-calendar-check',
+                        clear: 'fas fa-trash',
+                        close: 'fas fa-times'
+                    }
+                },
+                localization: {
+                    locale: 'es',
+                    format: 'dd-MM-yyyy HH:mm:ss',
+                    hourCycle: 'h23'
+                }
+            };
+
+            // Inicializar DateTimePickers
+            const pickerInicio = new tempusDominus.TempusDominus(
+                document.getElementById('dtpFechaInicio'),
+                datetimeOptions
+            );
+
+            const pickerTermino = new tempusDominus.TempusDominus(
+                document.getElementById('dtpFechaTermino'),
+                datetimeOptions
+            );
+
+            // Link pickers para validación min/max
+            pickerInicio.subscribe('change.td', (e) => {
+                if (e.date) {
+                    pickerTermino.updateOptions({ restrictions: { minDate: e.date } });
+                }
+            });
+
+            pickerTermino.subscribe('change.td', (e) => {
+                if (e.date) {
+                    pickerInicio.updateOptions({ restrictions: { maxDate: e.date } });
+                }
+            });
+
+            // Cargar valores default
+            {% if fechaInicio %}
+            $('#fechaInicio').val('{{ fechaInicio }}');
+            {% endif %}
+            {% if fechaTermino %}
+            $('#fechaTermino').val('{{ fechaTermino }}');
+            {% endif %}
+
+            // Restaurar selección de contingencias
+            {% if p_tipo_contingencia and p_tipo_contingencia != ["all"] %}
+            $('#p_tipo_contingencia').selectpicker('val', [{% for item in p_tipo_contingencia %}'{{ item }}',{% endfor %}]);
+            {% endif %}
+
+            // Restaurar ruta
+            {% if p_ruta %}
+            $('#ccbRuta').selectpicker('val', '{{ p_ruta }}');
+            {% endif %}
+
+            // Restaurar sentido
+            {% if p_sentido %}
+            $('#ccbSentido').selectpicker('val', '{{ p_sentido }}');
+            {% endif %}
+
+            // Lógica de validación Km Inicio/Fin basado en ruta
+            var p_km_ini = $('#p_km_ini'),
+                p_km_fin = $('#p_km_fin'),
+                ccbRuta = $('#ccbRuta');
+
+            ccbRuta.change(function() {
+                var option_selected = $(this).find("option:selected"),
+                    startkm = option_selected.data('startkm'),
+                    endkm = option_selected.data('endkm');
+
+                if (startkm !== '-' && endkm !== '-') {
+                    p_km_ini.prop('disabled', false);
+                    p_km_fin.prop('disabled', false);
+                    p_km_ini.prop('min', startkm);
+                    p_km_ini.prop('max', endkm);
+                    p_km_fin.prop('min', startkm);
+                    p_km_fin.prop('max', endkm);
+                    p_km_ini.val(startkm);
+                    p_km_fin.val(endkm);
+                } else {
+                    p_km_ini.val(null);
+                    p_km_fin.val(null);
+                    p_km_ini.prop('disabled', true);
+                    p_km_fin.prop('disabled', true);
+                }
+            });
+
+            p_km_ini.change(function() {
+                var option_selected = ccbRuta.find("option:selected"),
+                    min = option_selected.data('startkm'),
+                    max = option_selected.data('endkm'),
+                    val = $(this).val() !== "" ? parseInt($(this).val()) : "";
+
+                if (!!val) {
+                    if (val >= min && val <= max) {
+                        p_km_fin.prop('min', val);
+                        if (parseInt(p_km_fin.val()) < parseInt(p_km_ini.val())) {
+                            p_km_fin.val(p_km_ini.val());
+                        }
+                    }
+                    if (parseInt(min) > parseInt(val)) {
+                        p_km_ini.val(min);
+                    }
+                    if (parseInt(max) < parseInt(val)) {
+                        p_km_ini.val(max);
+                    }
+                } else {
+                    ccbRuta.trigger('change');
+                }
+            });
+
+            p_km_fin.change(function() {
+                var option_selected = ccbRuta.find("option:selected"),
+                    min = option_selected.data('startkm'),
+                    max = option_selected.data('endkm'),
+                    val = $(this).val() !== "" ? parseInt($(this).val()) : "";
+
+                if (!!val) {
+                    if (val >= min && val <= max) {
+                        p_km_ini.prop('max', val);
+                        if (parseInt(p_km_fin.val()) < parseInt(p_km_ini.val())) {
+                            p_km_ini.val(p_km_fin.val());
+                        }
+                    }
+                    if (parseInt(min) > parseInt(val)) {
+                        p_km_fin.val(min);
+                    }
+                    if (parseInt(max) < parseInt(val)) {
+                        p_km_fin.val(max);
+                    }
+                } else {
+                    ccbRuta.trigger('change');
+                }
+            });
+
+            // Trigger para cargar valores iniciales
+            ccbRuta.change();
+
+            // Auto-collapse panel después de 600ms
+            timer_toggle_task_bar = setTimeout(function() {
+                $("#toggle_task_bar").trigger("click");
+            }, 600);
+
+            // Validación del formulario
+            $("#report_params").submit(function() {
+                var fechaInicio = $('#fechaInicio').val();
+                var fechaTermino = $('#fechaTermino').val();
+
+                if (!fechaInicio || !fechaTermino) {
+                    alert("Por favor ingrese las fechas de inicio y término.");
+                    return false;
+                }
+
+                // Mostrar loader en submit
+                ReportLoader.show('#btn_submit', 'Generando...');
+                return true;
+            });
+
+            // Event listener para botón "Descargar Excel"
+            $('#btn_generate_report').on('click', function(e) {
+                e.preventDefault();
+                downloadExcel();
+            });
+        });
+    </script>
+{% endblock %}

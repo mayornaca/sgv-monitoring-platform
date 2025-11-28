@@ -1,0 +1,74 @@
+# This file is the entry point to configure your own services.
+# Files in the packages/ subdirectory configure your dependencies.
+
+# Put parameters here that don't need to change on each machine where the app is deployed
+# https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
+parameters:
+    locale: es
+    localtimezone: 'America/Santiago'
+    siv_templates_directory: '%kernel.project_dir%/public/files/templates'
+    cot_devices_directory: '%kernel.project_dir%/public/downloads'
+    instance_concessions: '%env(string:INSTANCE_CONCESSIONS)%'
+
+services:
+    # default configuration for services in *this* file
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+
+    # makes classes in src/ available to be used as services
+    # this creates a service per class whose id is the fully-qualified class name
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+
+    # add more service definitions when explicit configuration is needed
+    # please note that last definitions always *replace* previous ones
+
+    # WhatsApp Transport Factory for Symfony Notifier
+    App\Notifier\WhatsApp\MetaWhatsAppTransportFactory:
+        parent: notifier.transport_factory.abstract
+        calls:
+            - setLogger: ['@logger']
+        tags:
+            - { name: chatter.transport_factory }
+
+    # WhatsApp Notification Service with Failover
+    # Ahora usa ConfigurationService - todas las credenciales desde app_settings
+    App\Service\WhatsAppNotificationService: ~
+
+    # WhatsApp Webhook Controller
+    # Ahora usa ConfigurationService para webhook_verify_token
+    App\Controller\Api\WhatsAppWebhookController: ~
+
+    # Debug Command
+    App\Command\DebugWebhookTokenCommand:
+        arguments:
+            $whatsappWebhookVerifyToken: '%env(WHATSAPP_WEBHOOK_VERIFY_TOKEN)%'
+
+    # Re-validate WhatsApp Phone Number Command
+    # Ahora usa ConfigurationService - todas las credenciales desde app_settings
+    App\Command\RevalidateWhatsAppPhoneCommand: ~
+
+    # COT Controller - Token de autenticación para cronjobs
+    App\Controller\Dashboard\CotController:
+        arguments:
+            $cronAuthToken: '%env(string:CRON_AUTH_TOKEN)%'
+
+    # Admin Dashboard Controller - Configuración de concesiones de instancia
+    App\Controller\Admin\DashboardController:
+        arguments:
+            $instanceConcessions: '%instance_concessions%'
+
+    # Configuration Service con encriptación
+    App\Service\ConfigurationService:
+        arguments:
+            $appSecret: '%env(APP_SECRET)%'
+
+    # App Settings Repository con caché
+    App\Repository\AppSettingRepository:
+        calls:
+            - setCache: ['@cache.app']

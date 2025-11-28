@@ -1,0 +1,776 @@
+{#{{ dump(data_table) }}#}
+<style>
+    .timeText:before {
+        content: "Seleccione Horario";
+    }
+    .bold{font-weight: bold;}
+    .tachado{text-decoration:line-through;}
+    .paragraph_truncated{
+        min-width: 500px;
+        /*max-width: 800px;*/
+        /*padding: 4px !important;*/
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+    }
+    .featured_row{
+        background-color: #FFEB3B !important;
+    }
+</style>
+<div style="margin-top: -8px;">
+    <table class="table table-striped table-hover bootstrapTable"
+           id="tbl_bitacora_scada"
+           data-toolbar="#toolbar"
+           data-search="false"
+            {% if search %}
+           data-search-text="{{ search }}"
+            {% endif %}
+           data-show-toggle="true"
+           data-show-fullscreen="true"
+           data-show-columns="true"
+           data-id-field="id"
+           data-remember-order="true"
+           data-click-to-select="false"
+           data-pagination="true"
+           data-page-size="10"
+           data-page-list="[10, 25, 50, 100, 500]"
+           {#data-custom-sort="customSort"#}
+    >
+        <thead id="tbl_bitacora_scada_header">
+        <tr>
+            {#<th data-checkbox="false" data-sortable="false"></th>#}
+            <th data-field="id" data-sortable="true">#</th>
+            <th data-sortable="true">Registro</th>
+            <th data-sortable="true" data-width="150" data-width-unit="px">Autor</th>
+            <th data-sortable="true" data-width="150" data-width-unit="px">Fecha/Hora</th>
+            <th data-sortable="true" data-width="150" data-width-unit="px">Modificado por</th>
+            <th data-sortable="true" data-width="150" data-width-unit="px" data-visible="false">Fecha/Hora modificación</th>
+            <th data-sortable="false" data-width="150" data-width-unit="px" class="text-center no_pdf_render">Acciones</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for row in data_table|json_decode %}
+            <tr data-id="{{ row.id }}" data-json="{{ row|json_encode|replace({'"': "'"}) }}" class="{% if row.status == 1 %}featured_row{% endif %}" {#class="{% if row.estado == 2 %}success{% elseif row.estado == 3 %}warning{% elseif row.estado == 4 %}danger{% endif %}"#}>
+                {#<td class="bs-checkbox bg-white" style="width: 36px;">
+                <label class="custom-checkbox-slider custom-checkbox">
+                    <input data-index="{{ loop.index }}" name="btSelectItem" type="checkbox" class="custom-checkbox-slider-input" data-id="{{ row.id }}" >
+                    <span class="custom-checkbox-slider-indicator"></span>
+                </label>
+                </td>#}
+                <td>{{ row.id }}</td>
+                <td class="paragraph_truncated {% if row.reg_status == 0 %}tachado{% endif %}">{{ row.text }}</td>
+                <td>{{ row.created_by_name }}</td>
+                <td>{{ row.created_at }}</td>
+                <td>
+                    {% if row.updated_at  and row.deleted_restored_at %}
+                        {% if row.updated_at|date()  > row.deleted_restored_at|date() %}
+                            {{ row.updated_by_name }}
+                        {% else %}
+                            {{ row.deleted_restored_by_name }}
+                        {% endif %}
+                    {% elseif row.updated_at %}
+                        {{ row.updated_by_name }}
+                    {% elseif row.deleted_restored_at %}
+                        {{ row.deleted_restored_by_name }}
+                    {% endif %}
+                </td>
+                <td>
+                    {% if row.updated_at  and row.deleted_restored_at %}
+                        {% if row.updated_at|date()  > row.deleted_restored_at|date() %}
+                            {{ row.updated_at }}
+                        {% else %}
+                            {{ row.deleted_restored_at }}
+                        {% endif %}
+                    {% elseif row.updated_at %}
+                        {{ row.updated_at }}
+                    {% elseif row.deleted_restored_at %}
+                        {{ row.deleted_restored_at }}
+                    {% endif %}
+                </td>
+                {#fechaUtc|date('d-m-Y H:i:s')#}
+                <td class="text-right bg-white no_pdf_render">
+                    {% if row.reg_status == 0 %}
+                        <span class="badge" style="background-color: #f44336;">Eliminado</span>
+                    {% else %}
+                    {# TODO: Sistema de permisos granulares - ntty_46 = TblBt01Bitacora (EDIT) #}
+                    {# {% if is_granted('EDIT', classId('ntty_46')) %} #}
+                        {#
+                        {% if row.estado in [0,1] %}
+                            <button id="btn_start_pt_{{ row.id  }}" class="btn btn-xs btn-success waves-effect waves-light" onclick="startPt({{ row.id }});">
+                                <span class="glyphicon glyphicon-play-circle"></span>
+                            </button>
+                        {% endif %}
+                        <button id="btn_view_fra_{{ row.id  }}" class="btn btn-xs btn-info waves-effect waves-light" onclick="editPT({{ row.id }});">
+                            <span class="glyphicon glyphicon-{% if row.estado == 5 %}zoom-in{% else %}pencil{% endif %}"></span>
+                        </button>
+                        {% if row.estado in [2,3,4] %}
+                            <button id="button_pt_finish_{{ row.id  }}" class="btn btn-xs btn-danger waves-effect waves-light button_pt_finish" onclick="FinishPT({{ row.id }});">
+                                <span class="glyphicon glyphicon-off"></span>
+                            </button>
+                        {% endif %}
+                        #}
+                    {# {% elseif is_granted('VIEW', classId('ntty_46')) %} #}
+                    {# TODO: Sistema de permisos granulares - ntty_46 = TblBt01Bitacora (VIEW) #}
+                        {#
+                        <button id="btn_view_fra_{{ row.id  }}" class="btn btn-xs btn-info waves-effect waves-light" onclick="editPT({{ row.id }});">
+                            <span class="glyphicon glyphicon-zoom-in"></span>
+                        </button>
+                        #}
+                    {# {% endif %} #}
+
+                            <button id="btn_download_bs_{{ row.id  }}" class="btn btn-sm btn-primary waves-effect waves-light d-none" onclick="downloadRegBinnacleScada({{ row.id }});">
+                                <i class="fas fa-download"></i>
+                            </button>
+
+                        {% if row.status == 0 %}
+                            <button id="btn_highlight_bs_{{ row.id  }}" class="btn btn-sm btn-secondary waves-effect waves-light" onclick="highlightRegBinnacleScada({{ row.id }},{{ row.status }});">
+                                <i class="far fa-star"></i>
+                            </button>
+                        {% elseif row.status == 1 %}
+                            <button id="btn_highlight_bs_{{ row.id  }}" class="btn btn-sm btn-warning waves-effect waves-light" onclick="highlightRegBinnacleScada({{ row.id }},{{ row.status }});">
+                                <i class="fas fa-star"></i>
+                            </button>
+                        {% endif %}
+
+                    {# TODO: Sistema de permisos granulares - ntty_46 = TblBt01Bitacora (DELETE) #}
+                    {# {% if is_granted('DELETE', classId('ntty_46')) %} #}
+
+                        {% if row.reg_status in [1] %}
+                            <button id="btn_delete_bs_{{ row.id  }}" class="btn btn-sm btn-danger waves-effect waves-light"
+                                    onclick="bootbox.confirm({
+                                            size: 'small',
+                                            message: '¿Esta seguro que desea eliminar el registro?',
+                                            callback: function(result){
+                                                if(result){
+                                                    deleteRegBinnacleScada({{ row.id }});
+                                                }
+                                            }});
+                                    ">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        {% endif %}
+
+                    {# {% endif %} #}
+                    {% endif %}
+
+                    {#{% if row.estado in [0,1,2,3,4] %}
+
+                    {% if row.estado in [2,3,4] %}
+
+                    {% endif %}
+                {% endif %}#}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+<script>
+    /*$('.stick-top').affix({
+        offset: {top: 300}
+    });*/
+    var tbl_bitacora_scada = $('#tbl_bitacora_scada');
+
+    var stoped=false;
+    var timer_toggle_task_bar;
+    function stopTimerToggleTaskBar() {
+        if(!stoped){
+            if(typeof timer_toggle_task_bar !== 'undefined' && timer_toggle_task_bar && timer_toggle_task_bar.stop) {
+                timer_toggle_task_bar.stop();
+            }
+            stoped=true;
+        }
+    }
+
+    jQuery(document).ready(function() {
+        if(typeof d3 !== 'undefined' && d3.timeout) {
+            timer_toggle_task_bar = d3.timeout(function () {
+                //$("#toggle_task_bar").trigger("click");
+            }, 3000);
+        }
+        //console.log('Is fullscreen ' + tableIsFullscreen);
+        {% if tableIsFullscreen is defined  and tableIsFullscreen is same as(true)%}
+        tableIsFullscreen = true;
+        {% endif %}
+        {% if toolbarIsToggle is defined  and toolbarIsToggle is same as(true) %}
+        $('#filter-panel').collapse('show');
+        {% endif %}
+    });
+    var stickyHeaderOffsetY =0;
+    $(function() {
+        if(typeof d3 !== 'undefined' && d3.timeout) {
+            d3.timeout(function() {
+                $('.rotate_ajax_icon').removeClass('spin_rotate_icon');
+            }, 1800);
+        }
+
+        // Calculate offset BEFORE initializing table
+        if ( $('.navbar-fixed-top').css('height') ) {
+            stickyHeaderOffsetY = +$('.navbar-fixed-top').css('height').replace('px','');
+        }
+        if ( $('.navbar-fixed-top').css('margin-bottom') ) {
+            stickyHeaderOffsetY += +$('.navbar-fixed-top').css('margin-bottom').replace('px','');
+        }
+
+        // Extend columnDefaults BEFORE initializing (after Bootstrap Table JS loads)
+        if ($.fn.bootstrapTable && $.fn.bootstrapTable.columnDefaults) {
+            $.extend($.fn.bootstrapTable.columnDefaults, {
+                search: true,
+                stickyHeader: true,
+                stickyHeaderOffsetY: stickyHeaderOffsetY + 'px',
+                sortable: true
+            });
+        }
+
+        // Initialize Bootstrap Table con íconos Font Awesome
+        tbl_bitacora_scada.bootstrapTable({
+            icons: {
+                paginationSwitchDown: 'fa-caret-square-down',
+                paginationSwitchUp: 'fa-caret-square-up',
+                refresh: 'fa-sync',
+                toggleOff: 'fa-toggle-off',
+                toggleOn: 'fa-toggle-on',
+                columns: 'fa-th-list',
+                detailOpen: 'fa-plus',
+                detailClose: 'fa-minus',
+                fullscreen: 'fa-arrows-alt',
+                search: 'fa-search',
+                clearSearch: 'fa-times'
+            },
+            iconSize: undefined,
+            iconsPrefix: 'fa'
+        });
+
+        // Mover #subToolbar después de .fixed-table-toolbar (dentro de .bootstrap-table)
+        setTimeout(function() {
+            var $subToolbar = $('#subToolbar');
+            var $fixedTableToolbar = $('.fixed-table-toolbar');
+
+            if ($subToolbar.length && $fixedTableToolbar.length) {
+                // Remover subToolbar de su ubicación original
+                $subToolbar.detach();
+                // Insertarlo después de fixed-table-toolbar
+                $fixedTableToolbar.after($subToolbar);
+            }
+        }, 100);
+
+        // Toggle manual del panel de filtros (funciona incluso en fullscreen)
+        $(document).on('click', '#toggle_task_bar', function(e) {
+            e.preventDefault();
+            var filterPanel = document.getElementById('filter-panel');
+            if (filterPanel) {
+                var bsCollapse = new bootstrap.Collapse(filterPanel, {
+                    toggle: true
+                });
+            }
+        });
+
+        // Sincronizar select "Filas por página" con Bootstrap Table
+        $('#ccbRowsPerPage').on('change', function() {
+            var pageSize = $(this).val();
+            if (pageSize === 'All') {
+                tbl_bitacora_scada.bootstrapTable('refreshOptions', {
+                    pagination: false
+                });
+            } else {
+                tbl_bitacora_scada.bootstrapTable('refreshOptions', {
+                    pagination: true,
+                    pageSize: parseInt(pageSize)
+                });
+            }
+        });
+    });
+
+    $(function () {
+        // Initialize Tempus Dominus 6 (Bootstrap 5 compatible)
+        const tempusDominus = window.tempusDominus;
+        if (tempusDominus) {
+            const options = {
+                display: {
+                    components: {
+                        calendar: true,
+                        date: true,
+                        month: true,
+                        year: true,
+                        decades: true,
+                        clock: true,
+                        hours: true,
+                        minutes: true,
+                        seconds: true
+                    }
+                },
+                localization: {
+                    locale: 'es',
+                    format: 'dd-MM-yyyy HH:mm:ss'
+                }
+            };
+
+            // Initialize fecha inicio - sobre el contenedor input-group
+            if (document.getElementById('dtpFechaInicio')) {
+                const pickerInicio = new tempusDominus.TempusDominus(document.getElementById('dtpFechaInicio'), options);
+            }
+
+            // Initialize fecha término - sobre el contenedor input-group
+            if (document.getElementById('dtpFechaTermino')) {
+                const pickerTermino = new tempusDominus.TempusDominus(document.getElementById('dtpFechaTermino'), options);
+            }
+        }
+    });
+
+    /**********************
+     * Se Añade Control de Timer
+     ***********************/
+    {#console.log({{ autoUpdateInterval }});#}
+    if(typeof $.fn.asRange !== 'undefined') {
+        $("#timer-range-ajax-update").asRange({
+            step: 5,
+            range: false,
+            min: 5,
+            max: 60,
+            tip: {
+                active: 'onMove'
+            }
+        });
+    }
+    /**********************
+     * Se Añade Evento al Control de Timer
+     ***********************/
+//
+    $("#timer-range-ajax-update").on('asRange::change', function (e) {
+        if(typeof cot_devices_timer_interval !== 'undefined') {
+            clearInterval(cot_devices_timer_interval);
+            SetPTTimer();
+        }
+    });
+
+    jQuery(document).ready(function() {
+        {% if fechaInicio %}
+        var fechaInicio = '{{ fechaInicio }}';
+        $('#fechaInicio').val(fechaInicio);
+        {% endif %}
+
+        {% if fechaTermino %}
+        var fechaTermino = '{{ fechaTermino }}';
+        $('#fechaTermino').val(fechaTermino);
+        {% endif %}
+
+        {% if regStatus %}
+        $('#regStatus').selectpicker('val', [{% for status in regStatus %}'{{ status }}',{% endfor %}]);
+        {% endif %}
+
+        {% if autoUpdate %}
+        $('#actualizacionAutomatica').prop('checked', true);
+        {% else %}
+        $('#actualizacionAutomatica').prop('checked', false);
+        {% endif %}
+
+        {% if searchTxt %}
+        var searchTxt = '{{ searchTxt }}';
+        $('#searchTxt').val(searchTxt);
+        if(typeof jsDump === 'function') { jsDump(searchTxt); }
+        {% endif %}
+    });
+
+    {# TODO: Sistema de permisos granulares - Descomentar cuando se implemente el nuevo sistema #}
+    {# {% if is_granted('EDIT', classId('ntty_36')) %} #}
+    //Editar
+    function editPT(id) {
+        var path_url = "{{ path('admin_siv_dashboard_bitacora_scada', { action: 'edit', id: '__ID__' })|raw }}";
+        path_url= path_url.replace('__ID__', id);
+
+        $.ajax({
+            url : path_url,
+            type: 'GET',
+            success: function(html) {
+                if(html){
+                    if($(html).find('#ajax_edit_popup_container_render').length > 0) {
+                        $('#ajax_edit_popup_container_render').replaceWith($(html).find('#ajax_edit_popup_container_render'));
+                    }
+                    else{
+                        $.notify(
+                            "Ha ocurrido un error al intentar procesar los datos. Intente recargar la página.",
+                            {style: 'bootstrap', className: 'error', position: "top right"}
+                        );
+                    }
+                    $('#ajax_edit_popup').show();
+                    $('#dialog-bg').show();
+                    $('.selectpicker').selectpicker('render');
+                }
+                else{
+                    $.notify(
+                        "Ha ocurrido un error al intentar procesar los datos. Intente recargar la página.",
+                        {style: 'bootstrap', className: 'error', position: "top right"}
+                    );
+                }
+            }}).fail(function(){
+            $.notify(
+                "Ha ocurrido un error al intentar procesar los datos. Intente recargar la página.",
+                {style: 'bootstrap', className: 'error', position: "top right"}
+            );
+        });
+    }
+    {# {% endif %} #}
+
+    function downloadRegBinnacleScada(id) {
+        var path_url = "{{ path('admin_siv_dashboard_bitacora_scada', { action: 'pdf', id: '__ID__'})|raw }}";
+        path_url= path_url.replace('__ID__', id) /*+ '&time=' + new Date().getTime()*/;
+
+        // Data to get
+        {#  //https://stackoverflow.com/questions/16086162/handle-file-download-from-ajax-post  #}
+        // Use XMLHttpRequest instead of Jquery $ajax
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function () {
+            var a;
+            if (xhttp.readyState === 4 && xhttp.status === 200) {
+                // Trick for making downloadable link
+                a = document.createElement('a');
+                a.href = window.URL.createObjectURL(xhttp.response);
+                // Give filename you wish to download
+                a.download = "Bitacora_SCADA_"+id+".pdf";
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+            }
+        };
+        xhttp.onerror = function () {
+            $.notify(
+                "Ha ocurrido un error al intentar descargar el archivo.",
+                {  style: 'bootstrap', className: 'error', position:"top right" }
+            );
+        };
+        // Post data to URL which handles post request
+        xhttp.open("GET", path_url);
+        xhttp.setRequestHeader("Content-Type", "application/json");
+        /*xhttp.setRequestHeader('cache-control', 'no-cache, must-revalidate, post-check=0, pre-check=0');
+        xhttp.setRequestHeader('cache-control', 'max-age=0');
+        xhttp.setRequestHeader('expires', '0');
+        xhttp.setRequestHeader('expires', 'Tue, 01 Jan 1980 1:00:00 GMT');
+        xhttp.setRequestHeader('pragma', 'no-cache');*/
+        // You should set responseType as blob for binary responses
+        xhttp.responseType = 'blob';
+        xhttp.send();
+    }
+
+    // Validates that the input string is a valid date formatted as "mm/dd/yyyy"
+    function isValidDate(dateString)
+    {
+        // First check for the pattern
+        if(!/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dateString))
+            return false;
+
+        var date_time = dateString.split(" ");
+        // Parse the date parts to integers
+        var parts = date_time[0].split("-");
+        var day = parseInt(parts[0], 10);
+        var month = parseInt(parts[1], 10);
+        var year = parseInt(parts[2], 10);
+
+        // Check the ranges of month and year
+        if(year < 1000 || year > 3000 || month == 0 || month > 12)
+            return false;
+
+        var monthLength = [ 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 ];
+
+        // Adjust for leap years
+        if(year % 400 == 0 || (year % 100 != 0 && year % 4 == 0))
+            monthLength[1] = 29;
+
+        // Check the range of the day
+        return day > 0 && day <= monthLength[month - 1];
+    };
+    var $bs_table = $('#tbl_fra')
+    //var $remove = $('#remove')
+    var selections = []
+    $bs_table.on('check.bs.table uncheck.bs.table ' +
+        'check-all.bs.table uncheck-all.bs.table',
+        function () {
+            //$remove.prop('disabled', !$bs_table.bootstrapTable('getSelections').length)
+
+            // save your data, here just save the current page
+            selections = getIdSelections();
+            // push or splice the selections if you want to save all data selections
+            $('#fra_ids').val(selections);
+            if(typeof jsDump === 'function') { jsDump(selections); }
+        });
+    function getIdSelections() {
+        return $.map($bs_table.bootstrapTable('getSelections'), function (row) {
+            return row.id
+        })
+    }
+
+    /*$bs_table.on('all.bs.table', function (e, name, args) {
+        console.log(name, args)
+    })*/
+    jQuery(document).ready(function() {
+        $('#fra_ids').val(getIdSelections());
+    });
+    function editExcelByIncident() {
+        $('.editable').attr('contenteditable', 'true');
+        $('.editable').addClass('editing');
+    }
+    var pt_object = {};
+    function FinishPT(id_bs) {
+        //var id_pt = e.target.parents('tr').data('id');//parseInt(e.target.id.match(/\d+/));
+        $("#button_bs_finish_" + id_bs).addClass("disabled");
+
+        var path_url = "{{ path('admin_siv_dashboard_bitacora_scada', { action: 'json', id: '__ID__' })|raw }}";
+
+        path_url= path_url.replace('__ID__', id_bs);
+
+        $.ajax({
+            url : path_url,
+            type: 'GET',
+            success: function(response) {
+                if(response){
+                    pt_object = response;
+                    if(typeof jsDump === 'function') { jsDump(pt_object); }
+                    bootbox.dialog({
+                        title: 'Ingrese comentario de finalización del permiso de trabajo.',
+                        size: 'medium',
+                        message: `<div class="stop-propagation">
+            <div class="form-group col-sm-12 stop-propagation">
+
+            <div class="form-group col-sm-6">
+                <label for="frm_finish_reg-fechaInicio">Fecha de Inicio </label>
+                <div class="input-group date col-sm-12" id="frm_finish_reg_dtp_fer_fechaInicio" style="color: #222;">
+                    <input type="text" id="frm_finish_reg-fechaInicio" class="form-control form-control-sm" placeholder="Fecha de término" value="" disabled>
+                    <span class="input-group-addon">
+                        <span class="glyphicon glyphicon-calendar"></span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="form-group col-sm-6">
+                <label for="frm_finish_reg-fechaTermino">Fecha de término </label>
+                <div class="input-group date col-sm-12" id="frm_finish_reg_dtp_fer_FechaTermino" style="color: #222;">
+                    <input type="text" id="frm_finish_reg-fechaTermino" class="form-control form-control-sm" placeholder="Fecha de término" value="">
+                    <span class="input-group-addon">
+                        <span class="glyphicon glyphicon-calendar"></span>
+                    </span>
+                </div>
+            </div>
+
+            <label class="control-label" for="txt_bs_comment">Observaciones Adicionales</label>
+            <textarea class="form-control stop-propagation" id=txt_bs_comment maxlength="255" placeholder="Ingrese comentario de finalización del permiso de trabajo..."></textarea>
+            </div>
+            </div>
+            <div class="btn-group stop-propagation" role=group>
+            <a class="btn icon-btn btn-info waves-effect waves-light pull-right stop-propagation" href=# id=btn_set_bs_comment><span class="glyphicon btn-glyphicon glyphicon-ok img-circle text-info stop-propagation"></span> Aceptar</a></div>
+            <a class="btn icon-btn btn-default waves-effect pull-right stop-propagation" href=# id=btn_cancel_bs_comment><span class="glyphicon btn-glyphicon glyphicon-remove img-circle text-info stop-propagation"></span> Cancelar</a></div>
+            <script>
+            jQuery(document).ready(function() {
+                var now = moment();
+                //$('.selectpicker').selectpicker('render');
+
+                $('#frm_finish_reg-fechaInicio').val(getDateTimeFormat(new Date(pt_object.reg_bs.fechahora_inicio_trabajo),"DD-MM-YYYY HH:mm:ss"));
+
+                var frm_finish_reg_dtp_fer_FechaTermino = $('#frm_finish_reg_dtp_fer_FechaTermino');
+                frm_finish_reg_dtp_fer_FechaTermino.datetimepicker({
+                    useCurrent: false, //Important! See issue #1075
+                    locale: 'es',
+                    format: 'DD-MM-YYYY HH:mm:ss',
+                    /*icons: {
+                        time: 'timeText'
+                    }*/
+
+                });
+                frm_finish_reg_dtp_fer_FechaTermino.data("DateTimePicker").minDate(new Date(pt_object.reg_bs.fechahora_inicio_trabajo));
+                frm_finish_reg_dtp_fer_FechaTermino.data("DateTimePicker").maxDate(now.clone().add(10, 'minutes'));
+                /*frm_finish_reg_dtp_fer_FechaTermino.on("dp.change", function (e) {
+
+                });*/
+                $(".bootbox.modal.fade.in").click(function(e){e.stopPropagation(); });
+                $(".modal-dialog").click(function(e){e.stopPropagation(); });
+                $(".modal-content").click(function(e){e.stopPropagation(); });
+                $(".bootbox-close-button.close").click(function(e){e.stopPropagation();bootbox.hideAll(); });
+                $("#btn_cancel_bs_comment").click(function(e){e.stopPropagation();bootbox.hideAll(); });
+            });
+            <\/script>`
+                    });
+
+                    $('#btn_set_bs_comment').click(function (e) {
+                        e.stopPropagation();
+                        var el_txt_bs_comment = $('#txt_bs_comment');
+                        var txt_bs_comment = el_txt_bs_comment.val();
+
+                        var path_url = "{{ path('admin_siv_dashboard_bitacora_scada') }}";
+
+                        var data = {
+                            action: 'finish',
+                            id: id_bs,
+                            fechahora_fin_trabajo: $("#frm_finish_reg-fechaTermino").val(),
+                            observaciones: txt_bs_comment,
+
+                            //update_by: '1'
+                            token: "{{ csrf_token('finish-bs') }}"
+                        };//fechaTermino
+
+                        if (txt_bs_comment.length > 1) {
+                            $.ajax({
+                                url: path_url,
+                                type: 'POST',
+                                data: data,
+                                dataType: "json",
+                                success: function (response/*, status, jqXHR,html*/) {
+                                    if (response.msg) {
+                                        $.notify(
+                                            response.msg,
+                                            {style: 'bootstrap', className: response.msg_type, position: "top right"}
+                                        );
+                                        $('#btn_close_ajax_edit_popup').trigger('click');
+                                    }
+                                    else {
+                                        $.notify(
+                                            "Ha ocurrido un error al intentar procesar los datos. Reintente la operación.",
+                                            {style: 'bootstrap', className: 'error', position: "top right"}
+                                        );
+                                    }
+                                    getBinacleScadaData();
+                                }
+                            }).error(function () {
+                                $.notify(
+                                    "Ha ocurrido un error al intentar procesar los datos. Reintente la operación.",
+                                    {style: 'bootstrap', className: 'error', position: "top right"}
+                                );
+
+                            });
+                            bootbox.hideAll();
+
+                        }
+                        else {
+                            $('#txt_bs_comment').notify(
+                                "Este campo es obligatorio.",
+                                {style: 'bootstrap', className: 'error', position: "bottom left"}
+                            );
+                        }
+                    });
+                }
+                else{
+                    $.notify(
+                        "Ha ocurrido un error al intentar procesar los datos. Intente recargar la página.",
+                        {style: 'bootstrap', className: 'error', position: "top right"}
+                    );
+                }
+
+            }}).error(function(){
+            $.notify(
+                "Ha ocurrido un error al intentar procesar los datos. Intente recargar la página.",
+                {style: 'bootstrap', className: 'error', position: "top right"}
+            );
+        });
+    }
+
+    function highlightRegBinnacleScada(id_bs, status) {
+        status = (status==1) ? 0 : 1;
+
+        var path_url = "{{ path('admin_siv_dashboard_bitacora_scada') }}";
+        var data = {
+            action: 'highlight',
+            id: id_bs,
+            highlight: status,
+            token: "{{ csrf_token('highlight-bs') }}"
+        };
+        $.ajax({
+            url: path_url,
+            type: 'POST',
+            data: data,
+            dataType: "json",
+            success: function (response) {
+                if (response.msg) {
+                    $.notify(
+                        response.msg,
+                        {style: 'bootstrap', className: response.msg_type, position: "top right"}
+                    );
+                }
+                else {
+                    $.notify(
+                        "Ha ocurrido un error al intentar procesar los datos. Reintente la operación.",
+                        {style: 'bootstrap', className: 'error', position: "top right"}
+                    );
+                }
+                getBinacleScadaData();
+            },
+            error: function () {
+                $.notify(
+                    "Ha ocurrido un error al intentar procesar los datos. Reintente la operación.",
+                    {style: 'bootstrap', className: 'error', position: "top right"}
+                );
+            }
+        });
+    }
+
+    function deleteRegBinnacleScada(id_bs) {
+        var path_url = "{{ path('admin_siv_dashboard_bitacora_scada') }}";
+
+        var data = {
+            action: 'delete',
+            id: id_bs,
+            token: "{{ csrf_token('delete-bs') }}"
+        };
+        $.ajax({
+            url: path_url,
+            type: 'POST',
+            data: data,
+            dataType: "json",
+            success: function (response) {
+                if (response.msg) {
+                    $.notify(
+                        response.msg,
+                        {style: 'bootstrap', className: response.msg_type, position: "top right"}
+                    );
+                }
+                else {
+                    $.notify(
+                        "Ha ocurrido un error al intentar procesar los datos. Reintente la operación.",
+                        {style: 'bootstrap', className: 'error', position: "top right"}
+                    );
+                }
+                getBinacleScadaData();
+            },
+            error: function () {
+                $.notify(
+                    "Ha ocurrido un error al intentar procesar los datos. Reintente la operación.",
+                    {style: 'bootstrap', className: 'error', position: "top right"}
+                );
+            }
+        });
+    }
+
+    function startRegBinnacleScada(id_bs) {
+        var path_url = "{{ path('admin_siv_dashboard_bitacora_scada') }}";
+
+        var data = {
+            action: 'start',
+            id: id_bs,
+            token: "{{ csrf_token('start-bs') }}"
+        };
+        $.ajax({
+            url: path_url,
+            type: 'POST',
+            data: data,
+            dataType: "json",
+            success: function (response) {
+                if (response.msg) {
+                    $.notify(
+                        response.msg,
+                        {style: 'bootstrap', className: response.msg_type, position: "top right"}
+                    );
+                }
+                else {
+                    $.notify(
+                        "Ha ocurrido un error al intentar procesar los datos. Reintente la operación.",
+                        {style: 'bootstrap', className: 'error', position: "top right"}
+                    );
+                }
+                getBinacleScadaData();
+            },
+            error: function () {
+                $.notify(
+                    "Ha ocurrido un error al intentar procesar los datos. Reintente la operación.",
+                    {style: 'bootstrap', className: 'error', position: "top right"}
+                );
+            }
+        });
+    }
+</script>

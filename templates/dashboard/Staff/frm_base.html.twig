@@ -1,0 +1,120 @@
+<h4 class="text-danger">{{ form_errors(form) }}</h4>
+<div class="col-sm-6">
+    <fieldset>
+        <div class="form-group">
+            {{ form_label(form.nombres) }}
+            {{ form_widget(form.nombres, {'attr': {'class': 'form-control requerido', 'placeholder' : 'Nombres'}}) }}
+            <span class="text-danger">{{ form_errors(form.nombres) }}</span>
+        </div>
+        <div class="form-group col-sm-6">
+            {{ form_label(form.rut) }}
+            {{ form_widget(form.rut, {'attr': {'class': 'form-control', 'placeholder' : 'RUT', 'onBlur' : 'validarRUT("frm_staff_rut");'}}) }}
+            <span class="text-danger">{{ form_errors(form.rut) }}</span>
+        </div>
+
+        <div class="form-group col-sm-6">
+            {{ form_label(form.anexo) }}
+            <div class="input-group" style="width: 100%;">
+                <span class="input-group-addon"><span class="glyphicon glyphicon-earphone" aria-hidden="true"></span></span>
+                {{ form_widget(form.anexo, {'attr': {'class': 'form-control', 'placeholder' : 'Ejemplo: 3456'}}) }}
+                <span class="text-danger">{{ form_errors(form.anexo) }}</span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            {{ form_label(form.correoElectronico) }}
+            <div class="input-group" style="width: 100%;">
+                <span class="input-group-addon" id="basic-addon1">@</span>
+                {{ form_widget(form.correoElectronico, {'attr': {'class': 'form-control', 'placeholder' : 'Ejemplo: juan.perez@dominio.cl','aria-describedby':'basic-addon1'}}) }}
+                <span class="text-danger">{{ form_errors(form.correoElectronico) }}</span>
+            </div>
+        </div>
+        <div class="form-group">
+            {{ form_label(form.fono,'Teléfono') }}
+            <div class="input-group" style="width: 100%;">
+                <span class="input-group-addon"><span class="glyphicon glyphicon-phone" aria-hidden="true"></span></span>
+                {{ form_widget(form.fono, {'attr': {'class': 'form-control', 'placeholder' : 'Ejemplo: +569 567 89 012'}}) }}
+                <span class="text-danger">{{ form_errors(form.fono) }}</span>
+            </div>
+        </div>
+        <div class="form-group">
+            {{ form_label(form.idConcesionaria,'Concessionarie') }}
+            {{ form_widget(form.idConcesionaria, {'attr': {'class': 'form-control requerido', 'placeholder' : 'Concessionarie'}}) }}
+            <span class="text-danger">{{ form_errors(form.idConcesionaria) }}</span>
+        </div>
+        <div class="form-group col-sm-6">
+            {{ form_label(form.idCentroDeCosto,'Cost Center') }}
+            {{ form_widget(form.idCentroDeCosto, {'attr': {'class': 'form-control requerido', 'placeholder' : 'Cost Center'}}) }}
+            <span class="text-danger">{{ form_errors(form.idCentroDeCosto) }}</span>
+        </div>
+        <div class="form-group col-sm-6">
+            {{ form_label(form.idArea,'Area') }}
+            {{ form_widget(form.idArea, {'attr': {'class': 'form-control requerido', 'placeholder' : 'Area'}}) }}
+            <span class="text-danger">{{ form_errors(form.idArea) }}</span>
+        </div>
+        {{ form_row(form.photo) }}
+    </fieldset>
+</div>
+
+<div class="col-sm-6">
+    <fieldset>
+        <div class="form-group">
+            {{ form_label(form.apellidos) }}
+            {{ form_widget(form.apellidos, {'attr': {'class': 'form-control requerido', 'placeholder' : 'Apellidos'}}) }}
+            <span class="text-danger">{{ form_errors(form.apellidos) }}</span>
+        </div>
+
+        <div class="form-group">
+            {{ form_label(form.parent,'Supervisor Directo') }}
+            {{ form_widget(form.parent, {'attr': {'class': 'selectpicker' , 'data-live-search': 'true', 'title': 'Seleccione'}}) }}
+            <span class="text-danger">{{ form_errors(form.parent) }}</span>
+        </div>
+
+        <div class="form-group col-sm-6">
+            {{ form_label(form.fechaEmisionLicencia,'Emisión licencia') }}
+            <div class="input-group date" id="dtpFechaEmisionLicencia" data-toggle="tooltip" data-placement="right" title="Haga clic en el ícono de calendario para seleccionar la fecha" style="width: 100%;">
+                {{ form_widget(form.fechaEmisionLicencia, {'attr': {'class': 'form-control','placeholder':'Fecha de emisión'}}) }}
+                <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+            </div>
+            <span class="text-danger">{{ form_errors(form.fechaEmisionLicencia) }}</span>
+        </div>
+
+        <div class="form-group col-sm-6">
+            {{ form_label(form.fechaVencimientoLicencia,'Vcto. de la licencia') }}
+            <div class="input-group date" id="dtpFechaVencimientoLicencia" data-toggle="tooltip" data-placement="right" title="Haga clic en el ícono de calendario para seleccionar la fecha" style="width: 100%;">
+                {{ form_widget(form.fechaVencimientoLicencia, {'attr': {'class': 'form-control','placeholder':'Fecha vencimiento'}}) }}
+                <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+            </div>
+            <span class="text-danger">{{ form_errors(form.fechaVencimientoLicencia) }}</span>
+        </div>
+
+        <div class="form-group col-sm-6">
+            {{ form_label(form.fechaInicioEstadoLicenciaConducir,'Inicio de suspención') }}
+            <div class="input-group date" id="dtpFechaInicioEstadoLicenciaConducir" data-toggle="tooltip" data-placement="right" title="Haga clic en el ícono de calendario para seleccionar la fecha" style="width: 100%;">
+                {{ form_widget(form.fechaInicioEstadoLicenciaConducir, {'attr': {'class': 'form-control','placeholder':'Fecha de inicio'}}) }}
+                <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+            </div>
+            <span class="text-danger">{{ form_errors(form.fechaInicioEstadoLicenciaConducir) }}</span>
+        </div>
+
+        <div class="form-group col-sm-6">
+            {{ form_label(form.fechaTerminoEstadoLicenciaConducir,'Término de suspención') }}
+            <div class="input-group date" id="dtpFechaTerminoEstadoLicenciaConducir" data-toggle="tooltip" data-placement="right" title="Haga clic en el ícono de calendario para seleccionar la fecha" style="width: 100%;">
+                {{ form_widget(form.fechaTerminoEstadoLicenciaConducir, {'attr': {'class': 'form-control','placeholder':'Fecha de término'}}) }}
+                <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+            </div>
+            <span class="text-danger">{{ form_errors(form.fechaTerminoEstadoLicenciaConducir) }}</span>
+        </div>
+
+        <div class="form-group col-sm-6">
+            {{ form_label(form.estadoLicenciaConducir,'Suspención de la licencia') }}
+            {{ form_widget(form.estadoLicenciaConducir, {'attr': {'class': 'form-control'}}) }}
+            <span class="text-danger">{{ form_errors(form.estadoLicenciaConducir) }}</span>
+        </div>
+        <div class="form-group col-sm-6">
+            {{ form_label(form.autorizaOt,'Autoriza OT') }}
+            {{ form_widget(form.autorizaOt, {'attr': {'class': 'form-control'}}) }}
+            <span class="text-danger">{{ form_errors(form.autorizaOt) }}</span>
+        </div>
+    </fieldset>
+</div>

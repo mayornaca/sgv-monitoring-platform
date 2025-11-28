@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Lista de Permisos de Trabajo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 9px;
+            line-height: 1.3;
+            color: #333;
+        }
+
+        .container {
+            width: 100%;
+            padding: 5mm;
+        }
+
+        .header {
+            display: table;
+            width: 100%;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #2f75b5;
+            padding-bottom: 8px;
+        }
+
+        .header-left, .header-center, .header-right {
+            display: table-cell;
+            vertical-align: middle;
+        }
+
+        .header-left { width: 25%; }
+        .header-center { width: 50%; text-align: center; }
+        .header-right { width: 25%; text-align: right; }
+
+        .logo-left, .logo-right {
+            max-height: 50px;
+        }
+
+        .header-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #2f75b5;
+            margin-bottom: 5px;
+        }
+
+        .report-info {
+            font-size: 10px;
+            margin: 5px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        thead th {
+            background-color: #2f75b5;
+            color: white;
+            padding: 6px 3px;
+            text-align: center;
+            font-size: 8px;
+            border: 1px solid #ddd;
+            font-weight: bold;
+        }
+
+        tbody td {
+            padding: 4px 3px;
+            border: 1px solid #ddd;
+            font-size: 8px;
+            vertical-align: top;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        /* Estados con colores */
+        .estado-borrador { color: #757575; }
+        .estado-nuevo { color: #2196F3; }
+        .estado-programado { color: #9C27B0; }
+        .estado-encurso { color: #FF9800; font-weight: bold; }
+        .estado-encurso-critico { color: #f44336; font-weight: bold; }
+        .estado-finalizado { color: #4CAF50; }
+
+        .bold { font-weight: bold; }
+        .text-center { text-align: center; }
+
+        @page {
+            margin: 10mm 8mm;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {# Header {{ absolute_url('/images/concessions/HCSQELGZDdo.png') }}#}
+        <div class="header">
+            <div class="header-left">
+                <img src="file:///www/wwwroot/vs.gvops.cl/public/images/concessions/HCSQELGZDdo.png" alt="Concesionaria Costanera Norte" class="logo-left">
+            </div>
+            <div class="header-center">
+                <div class="header-title">Lista de Permisos de Trabajo</div>
+                <div class="report-info">
+                    {% if fechaInicio %}Desde: {{ fechaInicio }}{% endif %}
+                    {% if fechaTermino %} - Hasta: {{ fechaTermino }}{% endif %}
+                </div>
+                <div class="report-info">
+                    Generado: {{ "now"|date('d-m-Y H:i:s') }}
+                </div>
+            </div>
+            <div class="header-right">{# {{ absolute_url('/images/coordinacion_concesiones_obras_publicas.jpg') }} #}
+                <img src="file:///www/wwwroot/vs.gvops.cl/public/images/coordinacion_concesiones_obras_publicas.jpg" alt="MOP" class="logo-right">
+            </div>
+        </div>
+
+        {# Tabla #}
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 4%;">#</th>
+                    <th style="width: 15%;">Trabajo</th>
+                    <th style="width: 10%;">Ubicación</th>
+                    <th style="width: 8%;">Estado</th>
+                    <th style="width: 11%;">Inicio</th>
+                    <th style="width: 11%;">Término</th>
+                    <th style="width: 8%;">Transcurrido</th>
+                    <th style="width: 13%;">Empresa</th>
+                    <th style="width: 10%;">Autorizador</th>
+                    <th style="width: 10%;">Responsable</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set permisos = data_table|json_decode %}
+                {% if permisos and permisos|length > 0 %}
+                    {% for row in permisos %}
+                        <tr>
+                            <td class="text-center">{{ row.id }}</td>
+                            <td>{{ row.titulo|default('-') }}</td>
+                            <td>{{ row.ubicacion|default('-') }}</td>
+                            <td class="text-center">
+                                {% if row.estado == -1 %}
+                                    <span class="estado-borrador">Borrador</span>
+                                {% elseif row.estado == 0 %}
+                                    <span class="estado-nuevo">Nuevo</span>
+                                {% elseif row.estado == 1 %}
+                                    <span class="estado-programado">Programado</span>
+                                {% elseif row.estado == 2 %}
+                                    <span class="estado-encurso">En curso</span>
+                                {% elseif row.estado == 3 %}
+                                    <span class="estado-encurso">En curso</span>
+                                {% elseif row.estado == 4 %}
+                                    <span class="estado-encurso-critico">En curso</span>
+                                {% elseif row.estado == 5 %}
+                                    <span class="estado-finalizado">Finalizado</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">{{ row.fechahora_inicio_trabajo|default('-') }}</td>
+                            <td class="text-center">{{ row.fechahora_fin_trabajo|default('-') }}</td>
+                            <td class="text-center">
+                                {% if row.fechahora_fin_trabajo and row.fechahora_inicio_trabajo %}
+                                    Finalizado
+                                {% elseif row.fechahora_inicio_trabajo %}
+                                    {% if row.fechahora_inicio_trabajo|date('Y-m-d H:i:s') <= "now"|date('Y-m-d H:i:s') %}
+                                        {% set elapsed_seconds = "now"|date('U') - row.fechahora_inicio_trabajo|date('U') %}
+                                        {% set hours = (elapsed_seconds / 3600)|round(0, 'floor') %}
+                                        {% set minutes = ((elapsed_seconds % 3600) / 60)|round(0, 'floor') %}
+                                        {{ hours }}h {{ minutes }}m
+                                    {% else %}
+                                        Pendiente
+                                    {% endif %}
+                                {% else %}
+                                    --
+                                {% endif %}
+                            </td>
+                            <td>{{ row.empresa_solicitante|default('-') }}</td>
+                            <td>{{ row.autorizado_por|default('-') }}</td>
+                            <td>{{ row.lider_trabajo_solicitante|default('-') }}</td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="10" class="text-center">No se encontraron registros</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+
+        <div style="margin-top: 15px; font-size: 8px; color: #666;">
+            Total de registros: {{ permisos|length }}
+        </div>
+    </div>
+</body>
+</html>

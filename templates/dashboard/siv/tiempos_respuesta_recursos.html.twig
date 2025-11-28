@@ -1,0 +1,515 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block title %}Tiempos de Respuesta por Recursos{% endblock %}
+
+{% block content_title %}{% endblock %}
+
+{% block content_top_header %}
+    <div class="d-flex align-items-center gap-2">
+        <h5 class="m-0">
+            <i class="fas fa-stopwatch" style="color: var(--color-primary, #5368d5);"></i>
+            Tiempos de Respuesta por Recursos
+        </h5>
+    </div>
+    {{ parent() }}
+{% endblock %}
+
+{% block head_stylesheets %}
+    {{ parent() }}
+    <!-- Bootstrap Table CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-table@1.22.1/dist/bootstrap-table.min.css">
+    <!-- Tempus Dominus 6 CSS (Bootstrap 5 compatible) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@eonasdan/tempus-dominus@6/dist/css/tempus-dominus.min.css">
+    <!-- Bootstrap Select CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">
+    <style>
+
+        .btn-group.stick-top.go-to-graphic.affix {
+            top: 73px;
+            left: 1px;
+            z-index: 1000;
+        }
+        .table-responsive { margin-top: 20px; }
+        .badge { padding: 5px 10px; }
+    </style>
+{% endblock %}
+
+{% block configured_head_contents %}
+    {{ parent() }}
+    <!-- jQuery (necesario ANTES de Bootstrap y plugins) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <!-- Popper.js (requerido por Tempus Dominus) -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <!-- Tempus Dominus 6 JS (Bootstrap 5 compatible) -->
+    <script src="https://cdn.jsdelivr.net/npm/@eonasdan/tempus-dominus@6/dist/js/tempus-dominus.min.js"></script>
+    <!-- Bootstrap Table JS (debe cargar ANTES de que se renderice la tabla) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.22.1/dist/bootstrap-table.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.22.1/dist/locale/bootstrap-table-es-ES.min.js"></script>
+    <!-- Bootstrap Select (debe cargar ANTES de que se renderice la tabla) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/i18n/defaults-es_ES.min.js"></script>
+    <!-- Report Loader -->
+    <script src="{{ asset('js/report-loader.js') }}"></script>
+{% endblock %}
+
+{% block page_content %}
+    <div id="main-wrapper" class="container-fluid">
+        <!-- Barra de acciones -->
+        <div class="mb-3">
+            <div class="btn-group">
+                <button class="btn btn-info" type="button">
+                    Total registros: <span id="total" class="badge bg-light text-dark">{{ data_table|length|default(0) }}</span>
+                </button>
+                <button id="toggle_task_bar" type="button" class="btn btn-secondary" data-bs-toggle="collapse" data-bs-target="#filter-panel">
+                    <i class="fas fa-filter"></i> Filtros & Opciones
+                </button>
+                {% if data_table is defined and data_table|length > 0 %}
+                    <button id="btn_generate_report" class="btn btn-success">
+                        <i class="fas fa-file-excel"></i> Descargar Excel
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Panel de filtros -->
+        <div class="mb-3" onmouseover="stopTimerToggleTaskBar();">
+            <div id="filter-panel" class="filter-panel collapse show">
+                <div class="card">
+                    <div class="card-body">
+                        <form id="report_params" class="row g-3" action="" method="get">
+                            <input type="hidden" value="1" id="ci" name="ci">
+
+                            <div class="col-md-2">
+                                <label for="fechaInicio" class="form-label">
+                                    <i class="fas fa-calendar-alt me-1"></i>Fecha de inicio
+                                </label>
+                                <div class="input-group" id="dtpFechaInicio">
+                                    <input type="text" id="fechaInicio" name="fechaInicio" class="form-control required"
+                                           placeholder="DD-MM-YYYY HH:mm:ss" value="{{ fechaInicio }}">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-calendar"></i>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-2">
+                                <label for="fechaTermino" class="form-label">
+                                    <i class="fas fa-calendar-alt me-1"></i>Fecha de término
+                                </label>
+                                <div class="input-group" id="dtpFechaTermino">
+                                    <input type="text" id="fechaTermino" name="fechaTermino" class="form-control required"
+                                           placeholder="DD-MM-YYYY HH:mm:ss" value="{{ fechaTermino }}">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-calendar"></i>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-2">
+                                <label for="p_tipo_contingencia" class="form-label">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>Contingencias
+                                </label>
+                                <select class="selectpicker form-control"
+                                        id="p_tipo_contingencia"
+                                        name="p_tipo_contingencia[]"
+                                        multiple
+                                        data-selected-text-format="count > 3"
+                                        data-actions-box="true"
+                                        data-select-all-text="Todos"
+                                        data-deselect-all-text="Ninguno"
+                                        data-live-search="true">
+                                    {% for tipo in m_tipo_contingencia|default([]) %}
+                                        <option value="{{ tipo.cod_contingencia }}" selected>({{ tipo.cod_contingencia }}) {{ tipo.contingencia }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-2">
+                                <label for="ccbRuta" class="form-label">
+                                    <i class="fas fa-road me-1"></i>Rutas
+                                </label>
+                                <select class="form-select" id="ccbRuta" name="p_ruta">
+                                    <option value="0" data-startkm="-" data-endkm="-" selected>Todas</option>
+                                    <option value="EJE COSTANERA" data-startkm="0" data-endkm="35">EJE COSTANERA</option>
+                                    <option value="TUNEL SALIDA RUTA 5 SUR" data-startkm="0" data-endkm="1">TUNEL SALIDA RUTA 5 SUR</option>
+                                    <option value="TUNNEL EJE 7 CS" data-startkm="0" data-endkm="1">TUNNEL EJE 7 CS</option>
+                                    <option value="EJE KENNEDY" data-startkm="0" data-endkm="8">EJE KENNEDY</option>
+                                    <option value="EJE AMB" data-startkm="0" data-endkm="2">EJE AMB</option>
+                                </select>
+                                <label for="ccbSentido" class="form-label mt-2">
+                                    <i class="fas fa-arrows-alt-h me-1"></i>Sentido
+                                </label>
+                                <select class="form-select" id="ccbSentido" name="p_sentido">
+                                    <option value="all" selected>Todos</option>
+                                    <option value="Oriente-Poniente">Oriente-Poniente</option>
+                                    <option value="Poniente-Oriente">Poniente-Oriente</option>
+                                    <option value="Ambas">Ambas</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-2">
+                                <label for="p_km_ini" class="form-label">
+                                    <i class="fas fa-map-marker-alt me-1"></i>Km Inicio
+                                </label>
+                                <input id="p_km_ini" type="number" name="p_km_ini" class="form-control" disabled value="{{ p_km_ini }}">
+                                <label for="p_km_fin" class="form-label mt-2">
+                                    <i class="fas fa-map-marker-alt me-1"></i>Km Fin
+                                </label>
+                                <input id="p_km_fin" type="number" name="p_km_fin" class="form-control" disabled value="{{ p_km_fin }}">
+                            </div>
+
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button id="btn_submit" type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-search"></i> Generar Reporte
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de resultados -->
+        {% if data_table is defined and data_table|length > 0 %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover table-sm table-bordered"
+                       id="tbl_fra"
+                       data-toggle="table"
+                       data-search="true"
+                       data-show-refresh="true"
+                       data-show-columns="true"
+                       data-show-fullscreen="true"
+                       data-id-field="num_incidente_r"
+                       data-remember-order="true"
+                       data-icons-prefix="fa"
+                       data-icons='{"refresh":"fa-sync","columns":"fa-columns","fullscreen":"fa-expand"}'>
+                    <thead>
+                        <tr>
+                            <th data-field="num_incidente_r" data-sortable="true"># Incidente</th>
+                            <th data-sortable="true">Creación</th>
+                            <th data-sortable="true">PK</th>
+                            <th data-sortable="true">Sentido</th>
+                            <th data-sortable="true">Eje</th>
+                            <th data-sortable="true">Calzada</th>
+                            <th data-sortable="true">Descripción</th>
+                            <th data-sortable="true">Recurso</th>
+                            <th data-sortable="true" data-visible="false">Estado</th>
+                            <th data-sortable="true">Fecha Hora</th>
+                            <th data-sortable="true">Fecha Hora Inicio</th>
+                            <th data-sortable="true">Fecha Hora Término</th>
+                            <th data-sortable="true">Plan Contingencia</th>
+                            <th data-sortable="true">Comentario Inicio</th>
+                            <th data-sortable="true">Comentario Fin</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in data_table %}
+                            <tr>
+                                <td>{{ row.num_incidente_r }}</td>
+                                <td>{{ row.fecha_creacion_r }}</td>
+                                <td>{{ row.pk_r }}</td>
+                                <td>{{ row.sentido_r }}</td>
+                                <td>{{ row.eje_r }}</td>
+                                <td>{{ row.calzada_r }}</td>
+                                <td>{{ row.descripcion_r }}</td>
+                                <td>{{ row.nombre_recurso_r|default('N/A') }}</td>
+                                <td>{{ row.estado_r }}</td>
+                                <td>{{ row.fecha_hora_r }}</td>
+                                <td>{{ row.fecha_hora_inicio_r }}</td>
+                                <td>{{ row.fecha_hora_fin_r }}</td>
+                                <td>{{ row.plan_contingencia_r }}</td>
+                                <td>{{ row.comentario_ini_r }}</td>
+                                <td>{{ row.comentario_fin_r }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info text-center">
+                <i class="fas fa-info-circle fa-2x mb-3"></i>
+                <h5>No se encontraron datos</h5>
+                <p>Ajuste los filtros de búsqueda e intente nuevamente</p>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block body_javascript %}
+    {{ parent() }}
+    <script>
+        var timer_toggle_task_bar;
+        var stoped = false;
+
+        function stopTimerToggleTaskBar() {
+            if (!stoped) {
+                clearTimeout(timer_toggle_task_bar);
+                stoped = true;
+            }
+        }
+
+        function showAjaxLoader() {
+            console.log('Loading...');
+        }
+
+        function hideAjaxLoader() {
+            console.log('Loaded');
+        }
+
+        function downloadExcel() {
+            ReportLoader.show('#btn_generate_report', 'Descargando...');
+
+            var params = {
+                action: 'excel',
+                fechaInicio: $('#fechaInicio').val(),
+                fechaTermino: $('#fechaTermino').val(),
+                p_tipo_contingencia: $('#p_tipo_contingencia').val(),
+                p_ruta: $('#ccbRuta').val(),
+                p_sentido: $('#ccbSentido').val(),
+                p_km_ini: $('#p_km_ini').val(),
+                p_km_fin: $('#p_km_fin').val()
+            };
+
+            var path_url = "{{ path('admin_siv_dashboard_report_tiempos_respuesta_recursos') }}" + '?' + $.param(params);
+
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (xhttp.readyState === 4) {
+                    ReportLoader.hide('#btn_generate_report');
+                    if (xhttp.status === 200) {
+                        var filename = "Tiempos_Respuesta_Recursos.xlsx";
+                        var disposition = xhttp.getResponseHeader('Content-Disposition');
+                        if (disposition && disposition.indexOf('attachment') !== -1) {
+                            var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                            var matches = filenameRegex.exec(disposition);
+                            if (matches != null && matches[1]) {
+                                filename = matches[1].replace(/['"]/g, '');
+                            }
+                        }
+
+                        var a = document.createElement('a');
+                        a.href = window.URL.createObjectURL(xhttp.response);
+                        a.download = filename;
+                        a.style.display = 'none';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    }
+                }
+            };
+            xhttp.onerror = function() {
+                ReportLoader.hide('#btn_generate_report');
+                alert("Ha ocurrido un error al intentar descargar el archivo.");
+            };
+            xhttp.open("GET", path_url);
+            xhttp.setRequestHeader("Content-Type", "application/json");
+            xhttp.setRequestHeader('Cache-Control', 'no-cache');
+            xhttp.responseType = 'blob';
+            xhttp.send();
+        }
+
+        jQuery(document).ready(function() {
+            // ==================================================
+            // PASO 1: Configurar Tempus Dominus 6 (datetime picker)
+            // ==================================================
+            const datetimePickerOptions = {
+                display: {
+                    components: {
+                        calendar: true,
+                        date: true,
+                        month: true,
+                        year: true,
+                        decades: true,
+                        clock: true,
+                        hours: true,
+                        minutes: true,
+                        seconds: true
+                    },
+                    viewMode: 'calendar',
+                    icons: {
+                        date: 'fas fa-calendar',
+                        up: 'fas fa-arrow-up',
+                        down: 'fas fa-arrow-down',
+                        previous: 'fas fa-chevron-left',
+                        next: 'fas fa-chevron-right',
+                        today: 'fas fa-calendar-check',
+                        clear: 'fas fa-trash',
+                        close: 'fas fa-times'
+                    }
+                },
+                localization: {
+                    locale: 'es',
+                    format: 'dd-MM-yyyy HH:mm:ss',
+                    hourCycle: 'h23'
+                }
+            };
+
+            // Inicializar Tempus Dominus en fechaInicio
+            const pickerInicio = new tempusDominus.TempusDominus(
+                document.getElementById('dtpFechaInicio'),
+                datetimePickerOptions
+            );
+
+            // Inicializar Tempus Dominus en fechaTermino
+            const pickerTermino = new tempusDominus.TempusDominus(
+                document.getElementById('dtpFechaTermino'),
+                datetimePickerOptions
+            );
+
+            // Link pickers para validación min/max
+            pickerInicio.subscribe('change.td', (e) => {
+                if (e.date) {
+                    pickerTermino.updateOptions({
+                        restrictions: {
+                            minDate: e.date
+                        }
+                    });
+                }
+            });
+
+            pickerTermino.subscribe('change.td', (e) => {
+                if (e.date) {
+                    pickerInicio.updateOptions({
+                        restrictions: {
+                            maxDate: e.date
+                        }
+                    });
+                }
+            });
+
+            // Cargar valores default DESPUÉS de inicializar
+            {% if fechaInicio %}
+            $('#fechaInicio').val('{{ fechaInicio }}');
+            {% endif %}
+
+            {% if fechaTermino %}
+            $('#fechaTermino').val('{{ fechaTermino }}');
+            {% endif %}
+
+            // ==================================================
+            // PASO 2: Inicializar Bootstrap Select (selectpickers)
+            // ==================================================
+            $('.selectpicker').selectpicker('render');
+
+            // ==================================================
+            // PASO 3: Inicializar Bootstrap Table
+            // ==================================================
+            $('#tbl_fra').bootstrapTable({
+                locale: 'es-ES'
+            });
+
+            // ==================================================
+            // PASO 4: Lógica de habilitación dinámica de KM según ruta
+            // ==================================================
+            var p_km_ini = $('#p_km_ini'),
+                p_km_fin = $('#p_km_fin'),
+                ccbRuta = $('#ccbRuta');
+
+            ccbRuta.change(function () {
+                var option_selected = $(this).find("option:selected"),
+                    startkm = option_selected.data('startkm'),
+                    endkm = option_selected.data('endkm');
+
+                if(startkm !== '-' && endkm !== '-'){
+                    p_km_ini.prop('disabled', false);
+                    p_km_fin.prop('disabled', false);
+                    p_km_ini.prop('min', startkm);
+                    p_km_ini.prop('max', endkm);
+                    p_km_fin.prop('min', startkm);
+                    p_km_fin.prop('max', endkm);
+                    p_km_ini.val(startkm);
+                    p_km_fin.val(endkm);
+                } else {
+                    p_km_ini.val(null);
+                    p_km_fin.val(null);
+                    p_km_ini.prop('disabled', true);
+                    p_km_fin.prop('disabled', true);
+                }
+            });
+
+            p_km_ini.change(function () {
+                var option_selected = ccbRuta.find("option:selected"),
+                    min = option_selected.data('startkm'),
+                    max = option_selected.data('endkm'),
+                    val = $(this).val() !== "" ? parseInt($(this).val()) : "";
+
+                if(!!val){
+                    if(val >= min && val <= max){
+                        p_km_fin.prop('min', val);
+                        if(parseInt(p_km_fin.val()) < parseInt(p_km_ini.val())){
+                            p_km_fin.val(p_km_ini.val());
+                        }
+                    }
+                    if(parseInt(min) > parseInt(val)){
+                        p_km_ini.val(min);
+                    }
+                    if(parseInt(max) < parseInt(val)){
+                        p_km_ini.val(max);
+                    }
+                }
+            });
+
+            p_km_fin.change(function () {
+                var option_selected = ccbRuta.find("option:selected"),
+                    min = option_selected.data('startkm'),
+                    max = option_selected.data('endkm'),
+                    val = $(this).val() !== "" ? parseInt($(this).val()) : "";
+
+                if(!!val){
+                    if(val >= min && val <= max){
+                        p_km_ini.prop('max', val);
+                        if(parseInt(p_km_ini.val()) > parseInt(p_km_fin.val())){
+                            p_km_ini.val(p_km_fin.val());
+                        }
+                    }
+                    if(parseInt(min) > parseInt(val)){
+                        p_km_fin.val(min);
+                    }
+                    if(parseInt(max) < parseInt(val)){
+                        p_km_fin.val(max);
+                    }
+                }
+            });
+
+            // ==================================================
+            // PASO 5: Restaurar valores de filtros
+            // ==================================================
+            {% if p_ruta %}
+            $('#ccbRuta').val('{{ p_ruta }}');
+            ccbRuta.trigger('change');
+            {% endif %}
+
+            {% if p_sentido %}
+            $('#ccbSentido').val('{{ p_sentido }}');
+            {% endif %}
+
+            {% if p_km_ini %}
+            $('#p_km_ini').val('{{ p_km_ini }}');
+            {% endif %}
+
+            {% if p_km_fin %}
+            $('#p_km_fin').val('{{ p_km_fin }}');
+            {% endif %}
+
+            // ==================================================
+            // PASO 6: Auto-collapse panel después de 600ms
+            // ==================================================
+            timer_toggle_task_bar = setTimeout(function() {
+                $("#toggle_task_bar").trigger("click");
+            }, 600);
+
+            // Loader en submit del formulario
+            jQuery('#report_params').on('submit', function() {
+                ReportLoader.show('#btn_submit', 'Generando...');
+            });
+
+            // ==================================================
+            // PASO 7: Evento click en botón descargar
+            // ==================================================
+            $('#btn_generate_report').click(function(e) {
+                e.preventDefault();
+                downloadExcel();
+            });
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,296 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block page_title %}Diagnóstico WhatsApp{% endblock %}
+
+{% block main %}
+
+<div class="card mb-3">
+    <div class="card-header">
+        <h5 class="mb-0">Enviar Mensaje de Prueba</h5>
+    </div>
+    <div class="card-body">
+        <form id="test-message-form">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="template" class="form-label">Template</label>
+                    <select class="form-select" id="template" name="template" required>
+                        <option value="">Seleccione...</option>
+                        {% for template in templates %}
+                            <option value="{{ template.id }}" data-params="{{ template.parametrosCount }}">
+                                {{ template.nombre }} ({{ template.parametrosCount }} parámetros)
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="destination" class="form-label">Destinatario</label>
+                    <select class="form-select" id="destination" name="destination" required>
+                        <option value="">Seleccione destinatario...</option>
+                        {% for recipient in recipients %}
+                            <option value="{{ recipient.telefono }}" data-id="{{ recipient.id }}">
+                                {{ recipient }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100" id="send-btn">Enviar Prueba</button>
+                </div>
+            </div>
+            <div id="params-container" class="mt-3" style="display: none;">
+                <h6>Parámetros del Template</h6>
+                <div id="params-fields"></div>
+            </div>
+            <div id="result-container" class="mt-3" style="display: none;">
+                <div id="result-message"></div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header">
+        <h5 class="mb-0">Estado de Números</h5>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Tipo</th>
+                    <th>Número</th>
+                    <th>Estado</th>
+                    <th>Calidad</th>
+                    <th>Modo</th>
+                    <th>Tier</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>PRIMARY</strong></td>
+                    {% if primary_status.configured %}
+                        <td>{{ primary_status.display_phone_number ?? 'N/A' }}</td>
+                        <td><span class="badge bg-light text-dark">{{ primary_status.code_verification_status }}</span></td>
+                        <td><span class="badge bg-light text-dark">{{ primary_status.quality_rating }}</span></td>
+                        <td>{{ primary_status.account_mode ?? 'N/A' }}</td>
+                        <td>{{ primary_status.messaging_limit_tier ?? 'N/A' }}</td>
+                    {% else %}
+                        <td colspan="5">{{ primary_status.error ?? 'No configurado' }}</td>
+                    {% endif %}
+                </tr>
+                <tr>
+                    <td><strong>BACKUP</strong></td>
+                    {% if backup_status.configured %}
+                        <td>{{ backup_status.display_phone_number ?? 'N/A' }}</td>
+                        <td><span class="badge bg-light text-dark">{{ backup_status.code_verification_status }}</span></td>
+                        <td><span class="badge bg-light text-dark">{{ backup_status.quality_rating }}</span></td>
+                        <td>{{ backup_status.account_mode ?? 'N/A' }}</td>
+                        <td>{{ backup_status.messaging_limit_tier ?? 'N/A' }}</td>
+                    {% else %}
+                        <td colspan="5">{{ backup_status.error ?? 'No configurado' }}</td>
+                    {% endif %}
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header">
+        <h5 class="mb-0">Configuración</h5>
+    </div>
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-4">PRIMARY Token:</dt>
+            <dd class="col-sm-8">{{ configuration.primary.token ?? 'NO CONFIGURADO' }}</dd>
+
+            <dt class="col-sm-4">PRIMARY Phone ID:</dt>
+            <dd class="col-sm-8">{{ configuration.primary.phone_id ?? 'NO CONFIGURADO' }}</dd>
+
+            <dt class="col-sm-4">BACKUP Token:</dt>
+            <dd class="col-sm-8">{{ configuration.backup.token ?? 'NO CONFIGURADO' }}</dd>
+
+            <dt class="col-sm-4">BACKUP Phone ID:</dt>
+            <dd class="col-sm-8">{{ configuration.backup.phone_id ?? 'NO CONFIGURADO' }}</dd>
+
+            <dt class="col-sm-4">API Version:</dt>
+            <dd class="col-sm-8">{{ configuration.api_version }}</dd>
+
+            <dt class="col-sm-4">Failover Threshold:</dt>
+            <dd class="col-sm-8">{{ configuration.failover_threshold }} reintentos</dd>
+
+            <dt class="col-sm-4">Max Retries:</dt>
+            <dd class="col-sm-8">{{ configuration.max_retries }}</dd>
+        </dl>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Métricas (últimos {{ metrics.period_days }} días)</h6>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Total:</dt>
+                    <dd class="col-sm-8">{{ metrics.total }}</dd>
+
+                    <dt class="col-sm-4">Entregados:</dt>
+                    <dd class="col-sm-8">{{ metrics.success_count }}</dd>
+
+                    <dt class="col-sm-4">Fallidos:</dt>
+                    <dd class="col-sm-8">{{ metrics.by_status.failed }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Rendimiento</h6>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Pendientes:</dt>
+                    <dd class="col-sm-8">{{ metrics.by_status.pending }}</dd>
+
+                    <dt class="col-sm-4">Tasa de Entrega:</dt>
+                    <dd class="col-sm-8">{{ metrics.delivery_rate }}%</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header">
+        <button class="btn btn-link w-100 text-start p-0" type="button" data-bs-toggle="collapse" data-bs-target="#content-mensajes" aria-expanded="true">
+            <h5 class="mb-0">
+                <i class="fas fa-chevron-down"></i> Últimos 10 mensajes
+            </h5>
+        </button>
+    </div>
+    <div id="content-mensajes" class="collapse show">
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Destinatario</th>
+                        <th>Template</th>
+                        <th>Estado</th>
+                        <th>Fecha</th>
+                        <th>Meta ID</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for message in recent_messages %}
+                        <tr>
+                            <td>{{ message.id }}</td>
+                            <td>{{ message.recipient.nombre }}</td>
+                            <td>{{ message.template.nombre }}</td>
+                            <td><span class="badge bg-info">{{ message.estado }}</span></td>
+                            <td>{{ message.createdAt|date('Y-m-d H:i') }}</td>
+                            <td>{{ message.metaMessageId|slice(0, 20) }}...</td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="6">No hay mensajes recientes</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('test-message-form');
+    const templateSelect = document.getElementById('template');
+    const paramsContainer = document.getElementById('params-container');
+    const paramsFields = document.getElementById('params-fields');
+    const resultContainer = document.getElementById('result-container');
+    const resultMessage = document.getElementById('result-message');
+    const sendBtn = document.getElementById('send-btn');
+
+    // Cuando cambia el template, mostrar campos de parámetros
+    templateSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const paramsCount = parseInt(selectedOption.dataset.params || 0);
+
+        paramsFields.innerHTML = '';
+
+        if (paramsCount > 0) {
+            paramsContainer.style.display = 'block';
+            for (let i = 0; i < paramsCount; i++) {
+                const div = document.createElement('div');
+                div.className = 'mb-2';
+                div.innerHTML = `
+                    <label class="form-label">Parámetro ${i + 1}</label>
+                    <input type="text" class="form-control param-input" name="param${i}" required
+                           placeholder="Valor del parámetro ${i + 1}">
+                `;
+                paramsFields.appendChild(div);
+            }
+        } else {
+            paramsContainer.style.display = 'none';
+        }
+    });
+
+    // Enviar formulario
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const templateId = templateSelect.value;
+        const destinationSelect = document.getElementById('destination');
+        const selectedOption = destinationSelect.options[destinationSelect.selectedIndex];
+        const recipientId = selectedOption.dataset.id;
+        const paramInputs = document.querySelectorAll('.param-input');
+        const params = Array.from(paramInputs).map(input => input.value);
+
+        if (!templateId || !recipientId) {
+            alert('Complete todos los campos requeridos');
+            return;
+        }
+
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Enviando...';
+
+        try {
+            const response = await fetch('{{ path('admin_whatsapp_send_test') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    template_id: templateId,
+                    recipient_id: recipientId,
+                    params: params
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                resultMessage.innerHTML = `
+                    <p><strong>Mensaje enviado exitosamente</strong></p>
+                    <p>Message ID: ${data.message_id} | Meta ID: ${data.meta_message_id || 'N/A'} | Estado: ${data.status} | Phone: ${data.phone_used || 'N/A'}</p>
+                `;
+            } else {
+                resultMessage.innerHTML = `<p><strong>Error:</strong> ${data.error}</p>`;
+            }
+
+            resultContainer.style.display = 'block';
+
+        } catch (error) {
+            resultMessage.innerHTML = `<p><strong>Error de conexión:</strong> ${error.message}</p>`;
+            resultContainer.style.display = 'block';
+        } finally {
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = 'Enviar Prueba';
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,321 @@
+{# Tabla de Permisos de Trabajo - Patrón Bitácora #}
+<style>
+    .bold{font-weight: bold;}
+    .tachado{text-decoration:line-through;}
+    /* Estados legacy-compatible */
+    .status-badge--1{background-color: #757575; color: white;} /* Borrador */
+    .status-badge-0{background-color: #2196F3; color: white;} /* Nuevo */
+    .status-badge-1{background-color: #9C27B0; color: white;} /* Programado */
+    .status-badge-2{background-color: #FF9800; color: white;} /* En curso <9hs */
+    .status-badge-3{background-color: #FF9800; color: white;} /* En curso 9-24hs */
+    .status-badge-4{background-color: #f44336; color: white;} /* En curso >24hs */
+    .status-badge-5{background-color: #4CAF50; color: white;} /* Finalizado */
+</style>
+
+<div style="margin-top: -8px;">
+    <table class="table table-striped table-hover bootstrapTable"
+           id="tbl_pt"
+           data-toolbar="#toolbar"
+           data-search="true"
+           {% if search %}
+           data-search-text="{{ search }}"
+           {% endif %}
+           data-show-toggle="true"
+           data-show-fullscreen="true"
+           data-show-columns="true"
+           data-id-field="id"
+           data-remember-order="true"
+           data-click-to-select="false"
+           data-pagination="true"
+           data-page-size="10"
+           data-page-list="[10, 25, 50, 100, 500]"
+    >
+        <thead id="tbl_pt_header">
+        <tr>
+            <th data-field="id" data-sortable="true">#</th>
+            <th data-sortable="true">Trabajo</th>
+            <th data-sortable="true" data-sort-stable="true">Ubicación</th>
+            <th data-sortable="true">Estado</th>
+            <th data-sortable="true">Inicio</th>
+            <th data-sortable="true">Término</th>
+            <th data-sortable="true">T-Transcurrido</th>
+            <th data-sortable="true">Empresa</th>
+            <th data-sortable="true">Autorizador</th>
+            <th data-sortable="true">Responsable</th>
+            <th data-sortable="true">Fecha de creación</th>
+            <th data-sortable="false" class="text-center no_pdf_render">Acciones</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% set permisos = data_table|json_decode %}
+        {% if permisos and permisos|length > 0 %}
+            {% for row in permisos %}
+                <tr data-id="{{ row.id }}" data-json="{{ row|json_encode|replace({'"': "'"}) }}" class="{% if row.estado == 2 %}table-success{% elseif row.estado == 3 %}table-warning{% elseif row.estado == 4 %}table-danger{% endif %}">
+                    <td>{{ row.id }}</td>
+                    <td>{{ row.titulo|default('-') }}</td>
+                    <td>{{ row.ubicacion|default('-') }}</td>
+                    <td {% if renderPDF|default(false) %}style="min-width: 100px"{% endif %}>
+                        {% if row.estado > -1 %}{{ row.estado }}-{% endif %}
+                        <span class="bold">
+                            {% if row.estado == -1 %}Borrador
+                            {% elseif row.estado == 0 %}Nuevo
+                            {% elseif row.estado == 1 %}Programado
+                            {% elseif row.estado in [2,3,4] %}En curso
+                            {% elseif row.estado == 5 %}Finalizado
+                            {% endif %}
+                        </span>
+                    </td>
+                    <td>{{ row.fechahora_inicio_trabajo|default('-') }}</td>
+                    <td>{{ row.fechahora_fin_trabajo|default('-') }}</td>
+                    <td>
+                        {% if row.fechahora_fin_trabajo and row.fechahora_inicio_trabajo %}
+                            {% if row.fechahora_fin_trabajo|date('Y-m-d H:i:s') <= "now"|date('Y-m-d H:i:s') %}
+                                Finalizado
+                            {% endif %}
+                        {% elseif row.fechahora_inicio_trabajo %}
+                            {% if row.fechahora_inicio_trabajo|date('Y-m-d H:i:s') <= "now"|date('Y-m-d H:i:s') %}
+                                {% set elapsed_seconds = "now"|date('U') - row.fechahora_inicio_trabajo|date('U') %}
+                                {% set hours = (elapsed_seconds / 3600)|round(0, 'floor') %}
+                                {% set minutes = ((elapsed_seconds % 3600) / 60)|round(0, 'floor') %}
+                                {{ hours }}h {{ minutes }}m
+                            {% elseif row.fechahora_inicio_trabajo|date('Y-m-d H:i:s') > "now"|date('Y-m-d H:i:s') %}
+                                Aún no comienza
+                            {% endif %}
+                        {% else %}
+                            --
+                        {% endif %}
+                    </td>
+                    <td>{{ row.empresa_solicitante|default('-') }}</td>
+                    <td>{{ row.autorizado_por|default('-') }}</td>
+                    <td>{{ row.lider_trabajo_solicitante|default('-') }}</td>
+                    <td>{{ row.fechahora_creacion_ot|default('-') }}</td>
+                    <td class="text-right bg-white no_pdf_render">
+                        {% if row.reg_status == 0 %}
+                            <span class="badge bg-danger">Eliminado</span>
+                        {% else %}
+                            <div class="btn-group btn-group-sm" role="group">
+                                {# Botón START - Solo estados 0,1 (Nuevo/Programado) - Legacy línea 103 #}
+                                {% if row.estado in [0,1] %}
+                                    <button class="btn btn-success"
+                                            onclick="startPT({{ row.id }})"
+                                            title="Iniciar Permiso">
+                                        <i class="fas fa-play-circle"></i>
+                                    </button>
+                                {% endif %}
+
+                                {# Botón EDIT/VIEW - Todos los estados - Legacy línea 107 #}
+                                <button class="btn btn-info"
+                                        onclick="editPT({{ row.id }})"
+                                        title="{% if row.estado == 5 %}Ver Detalle{% else %}Editar{% endif %}">
+                                    <i class="fas fa-{% if row.estado == 5 %}eye{% else %}pencil-alt{% endif %}"></i>
+                                </button>
+
+                                {# Botón FINISH - Solo estados 2,3,4 (En Curso) - Legacy línea 110 #}
+                                {% if row.estado in [2,3,4] %}
+                                    <button class="btn btn-danger"
+                                            onclick="finishPT({{ row.id }})"
+                                            title="Finalizar Permiso">
+                                        <i class="fas fa-power-off"></i>
+                                    </button>
+                                {% endif %}
+
+                                {# Botón DOWNLOAD - Estado > 0 - Legacy línea 121 #}
+                                {% if row.estado > 0 %}
+                                    <button class="btn btn-primary"
+                                            onclick="downloadPT({{ row.id }})"
+                                            title="Descargar PDF">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                {% endif %}
+
+                                {# Botón DELETE - Solo estados -1,0,1 (Borrador/Nuevo/Programado) - Legacy línea 127 #}
+                                {% if row.estado in [-1,0,1] %}
+                                    <button class="btn btn-danger"
+                                            onclick="deletePT({{ row.id }})"
+                                            title="Eliminar">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    /*********************************
+     * Script de Inicialización Bootstrap Table + SubToolbar
+     * Patrón Bitácora - Adaptado para Permisos de Trabajo
+     *********************************/
+
+    var $tbl_pt = $('#tbl_pt');
+    var stoped = false;
+    var timer_toggle_task_bar;
+
+    function stopTimerToggleTaskBar() {
+        if(!stoped){
+            if(typeof timer_toggle_task_bar !== 'undefined' && timer_toggle_task_bar && timer_toggle_task_bar.stop) {
+                timer_toggle_task_bar.stop();
+            }
+            stoped=true;
+        }
+    }
+
+    jQuery(document).ready(function() {
+        // Timer para auto-colapsar filtros (opcional)
+        if(typeof d3 !== 'undefined' && d3.timeout) {
+            timer_toggle_task_bar = d3.timeout(function () {
+                //$("#toggle_task_bar").trigger("click");
+            }, 3000);
+        }
+
+        // Restaurar estado de UI desde parámetros
+        {% if tableIsFullscreen is defined and tableIsFullscreen is same as(true) %}
+        tableIsFullscreen = true;
+        {% endif %}
+        {% if toolbarIsToggle is defined and toolbarIsToggle is same as(true) %}
+        $('#filter-panel').collapse('show');
+        {% endif %}
+    });
+
+    var stickyHeaderOffsetY = 0;
+    $(function() {
+        // Remover animación de rotación después de cargar
+        if(typeof d3 !== 'undefined' && d3.timeout) {
+            d3.timeout(function() {
+                $('.rotate_ajax_icon').removeClass('spin_rotate_icon');
+            }, 1800);
+        }
+
+        // Calcular offset para sticky header
+        if ( $('.navbar-fixed-top').css('height') ) {
+            stickyHeaderOffsetY = +$('.navbar-fixed-top').css('height').replace('px','');
+        }
+        if ( $('.navbar-fixed-top').css('margin-bottom') ) {
+            stickyHeaderOffsetY += +$('.navbar-fixed-top').css('margin-bottom').replace('px','');
+        }
+
+        // Extender columnDefaults de Bootstrap Table
+        if ($.fn.bootstrapTable && $.fn.bootstrapTable.columnDefaults) {
+            $.extend($.fn.bootstrapTable.columnDefaults, {
+                search: true,
+                stickyHeader: true,
+                stickyHeaderOffsetY: stickyHeaderOffsetY + 'px',
+                sortable: true
+            });
+        }
+
+        // Inicializar Bootstrap Table con íconos Font Awesome
+        $tbl_pt.bootstrapTable({
+            icons: {
+                paginationSwitchDown: 'fa-caret-square-down',
+                paginationSwitchUp: 'fa-caret-square-up',
+                refresh: 'fa-sync',
+                toggleOff: 'fa-toggle-off',
+                toggleOn: 'fa-toggle-on',
+                columns: 'fa-th-list',
+                detailOpen: 'fa-plus',
+                detailClose: 'fa-minus',
+                fullscreen: 'fa-arrows-alt',
+                search: 'fa-search',
+                clearSearch: 'fa-times'
+            },
+            iconSize: undefined,
+            iconsPrefix: 'fa'
+        });
+
+        // Event delegation para toggle de filtros (funciona después de AJAX)
+        $(document).on('click', '#toggle_task_bar', function(e) {
+            e.preventDefault();
+            var filterPanel = document.getElementById('filter-panel');
+            if (filterPanel) {
+                var bsCollapse = new bootstrap.Collapse(filterPanel, {
+                    toggle: true
+                });
+            }
+        });
+
+        // Sincronizar select "Filas por página" con Bootstrap Table
+        $('#ccbRowsPerPage').on('change', function() {
+            var pageSize = $(this).val();
+            if (pageSize === 'All') {
+                $tbl_pt.bootstrapTable('refreshOptions', {
+                    pagination: false
+                });
+            } else {
+                $tbl_pt.bootstrapTable('refreshOptions', {
+                    pagination: true,
+                    pageSize: parseInt(pageSize)
+                });
+            }
+        });
+    });
+
+    // Inicializar Tempus Dominus (si no está inicializado previamente)
+    $(function () {
+        const tempusDominus = window.tempusDominus;
+        if (tempusDominus && !window.pickerFechaInicio) {
+            const options = {
+                display: {
+                    components: {
+                        calendar: true,
+                        date: true,
+                        month: true,
+                        year: true,
+                        decades: true,
+                        clock: true,
+                        hours: true,
+                        minutes: true,
+                        seconds: true
+                    }
+                },
+                localization: {
+                    locale: 'es',
+                    format: 'dd-MM-yyyy HH:mm:ss'
+                }
+            };
+
+            // Initialize fecha inicio
+            if (document.getElementById('dtpFechaInicio')) {
+                window.pickerFechaInicio = new tempusDominus.TempusDominus(document.getElementById('dtpFechaInicio'), options);
+            }
+
+            // Initialize fecha término
+            if (document.getElementById('dtpFechaTermino')) {
+                window.pickerFechaTermino = new tempusDominus.TempusDominus(document.getElementById('dtpFechaTermino'), options);
+            }
+        }
+    });
+
+    // Setear estados seleccionados desde el servidor (patrón legacy)
+    jQuery(document).ready(function() {
+        {% if fechaInicio %}
+        var fechaInicio = '{{ fechaInicio }}';
+        $('#fechaInicio').val(fechaInicio);
+        {% endif %}
+
+        {% if fechaTermino %}
+        var fechaTermino = '{{ fechaTermino }}';
+        $('#fechaTermino').val(fechaTermino);
+        {% endif %}
+
+        {% if regStatus %}
+        $('#regStatus').selectpicker('val', [{% for status in regStatus %}'{{ status }}',{% endfor %}]);
+        {% endif %}
+
+        {% if autoUpdate %}
+        $('#actualizacionAutomatica').prop('checked', true);
+        {% else %}
+        $('#actualizacionAutomatica').prop('checked', false);
+        {% endif %}
+
+        {% if searchTxt %}
+        var searchTxt = '{{ searchTxt }}';
+        $('#searchTxt').val(searchTxt);
+        {% endif %}
+    });
+</script>

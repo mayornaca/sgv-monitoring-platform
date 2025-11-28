@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Registro Incidente</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .container {
+            width: 100%;
+            padding: 5px;
+        }
+
+        h4 {
+            font-size: 26px;
+            margin-bottom: 10px;
+        }
+
+        table>tbody>tr>td,
+        table>tbody>tr>th,
+        table>tfoot>tr>td,
+        table>tfoot>tr>th,
+        table>thead>tr>td,
+        table>thead>tr>th {
+            padding: 3px;
+            vertical-align: middle;
+        }
+
+        .col9 {
+            background-color: cornsilk;
+        }
+
+        /* Highcharts styling for PDF */
+        tspan {
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 15px;
+        }
+
+        .highcharts-title tspan {
+            font-size: 26px !important;
+        }
+
+        .highcharts-subtitle tspan {
+            font-size: 15px !important;
+        }
+
+        .highcharts-axis-labels {
+            font-size: 15px !important;
+        }
+
+        .highcharts-axis {
+            font-size: 15px !important;
+        }
+
+        /* Bootstrap grid minimal (solo col-xs fuera de media queries para wkhtmltopdf) */
+        .col-xs-1, .col-xs-2, .col-xs-3, .col-xs-4, .col-xs-5, .col-xs-6,
+        .col-xs-7, .col-xs-8, .col-xs-9, .col-xs-10, .col-xs-11, .col-xs-12 {
+            float: left;
+            position: relative;
+            min-height: 1px;
+            padding-left: 15px;
+            padding-right: 15px;
+        }
+        .col-xs-12 { width: 100%; }
+        .col-xs-11 { width: 91.66666667%; }
+        .col-xs-10 { width: 83.33333333%; }
+        .col-xs-9 { width: 75%; }
+        .col-xs-8 { width: 66.66666667%; }
+        .col-xs-7 { width: 58.33333333%; }
+        .col-xs-6 { width: 50%; }
+        .col-xs-5 { width: 41.66666667%; }
+        .col-xs-4 { width: 33.33333333%; }
+        .col-xs-3 { width: 25%; }
+        .col-xs-2 { width: 16.66666667%; }
+        .col-xs-1 { width: 8.33333333%; }
+
+        /* Bootstrap utilities */
+        .pull-left { float: left !important; }
+        .pull-right { float: right !important; }
+        .center-block {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .text-center { text-align: center !important; }
+        .text-right { text-align: right !important; }
+        .inline-block { display: inline-block !important; }
+
+        /* Clearfix */
+        .clearfix:before, .clearfix:after,
+        .container:before, .container:after {
+            content: " ";
+            display: table;
+        }
+        .clearfix:after, .container:after {
+            clear: both;
+        }
+
+        @page {
+            margin: 5mm 1mm 5mm 1mm;
+        }
+        body {
+            margin: 0px !important;
+            padding: 0px !important;
+            width: 100% !important;
+            background-color: #ffffff !important;
+        }
+        .container, .container-fluid {
+            margin: 0px !important;
+            width: 100% !important;
+            padding: 5px 0 0 0 !important;
+        }
+    </style>
+    <link rel="stylesheet" href="{{ absolute_url(asset('pdf/bootstrap.css')) }}">
+    <link rel="stylesheet" href="{{ absolute_url(asset('pdf/style.css')) }}">
+    <!-- jQuery y Bootstrap 3 locales (solo para PDF, no interfiere con web) -->
+{#    <script src="https://vs.gvops.cl/js/jquery-1.11.3.min.js"></script>#}
+    <script src="{{ absolute_url(asset('js/jquery-1.11.3.min.js')) }}"></script>
+{#    <script src="https://vs.gvops.cl/js/bootstrap3-pdf.min.js"></script>#}
+{#    <script src="{{ absolute_url(asset('js/bootstrap3-pdf.min.js')) }}"></script>#}
+
+    <!-- Highcharts 9.1.0 legacy compatible con wkhtmltopdf -->
+{#    <script src="https://vs.gvops.cl/js/highcharts-legacy/highcharts.js"></script>#}
+{#    <script src="https://vs.gvops.cl/js/highcharts-legacy/highcharts-more.js"></script>#}
+{#    <script src="https://vs.gvops.cl/js/highcharts-legacy/highcharts-3d.js"></script>    #}
+
+    <script src="{{ absolute_url(asset('pdf/highcharts/highcharts.js')) }}"></script>
+    <script src="{{ absolute_url(asset('pdf/highcharts/highcharts-more.js')) }}"></script>
+    <script src="{{ absolute_url(asset('pdf/highcharts/highcharts-3d.js')) }}"></script>
+
+
+</head>
+<body>
+    <div class="container">
+        {{ include('dashboard/siv/reportes/registro_incidente/graphics.html.twig') }}
+    </div>
+</body>
+</html>

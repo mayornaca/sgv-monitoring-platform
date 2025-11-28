@@ -1,0 +1,13 @@
+twig:
+    file_name_pattern: '*.twig'
+    default_path: '%kernel.project_dir%/templates'
+    date:
+        format: 'd.m.Y, H:i:s'
+        interval_format: '%%d días'
+        timezone: '%localtimezone%'
+    globals:
+        instance_concessions: '%instance_concessions%'
+
+when@test:
+    twig:
+        strict_variables: true

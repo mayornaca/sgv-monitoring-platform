@@ -1,0 +1,110 @@
+<div>
+    <div id="pt_table_container" class="table-responsive">
+        <div id="toolbar">
+            <div class="btn-group no_pdf_render">
+                <button id="total-records" class="btn btn-info" type="button">
+                    Total de registros: <span id="total" class="badge bg-light text-dark"> {{ total_count_rows_data_table }} </span>
+                </button>
+                <a href="{{ path('admin_cot_sosindex', { id: '1', videowall: 'false', device_status: 'all', contract_ui: 'true', masonry: 'true', grid_items_width: '12', input_device_finder: '' }) }}" type="button" class="btn btn-secondary">
+                    <i class="fas fa-tachometer-alt"></i> Ir al monitor
+                </a>
+                <button id="toggle_task_bar" type="button" class="btn btn-secondary">
+                    <i class="fas fa-filter"></i> Filtros & Opciones
+                </button>
+                <button id="get_pdf_report" type="button" class="btn btn-success" onclick="downloadPtList();">
+                    <i class="fas fa-file-excel"></i> Descargar Excel
+                </button>
+            </div>
+        </div>
+
+        <div id="subToolbar" class="mb-2" onmouseover="stopTimerToggleTaskBar();">
+            <!-- Inicio form de filtros y opciones  -->
+            <div id="filter-panel" class="collapse show">
+                <div class="card">
+                    <div class="card-body">
+                        <!-- Nuevo Formulario de Control -->
+                        <form id="report_params" role="form" action="{{ path('admin_cot_sos_report_status') }}" method="get">
+                            <input type="hidden" value="1" id="ci" name="ci">
+                            <div class="row g-3">
+                                <div class="col-md-2">
+                                    <div class="mb-3">
+                                        <label for="fechaInicio" class="form-label">Fecha de inicio</label>
+                                        <div class="input-group" id="dtpFechaInicio">
+                                            <input type="text" id="fechaInicio" name="fechaInicio" class="form-control filter_panel_control" placeholder="Fecha de inicio" value="{{ fechaInicio }}">
+                                            <span class="input-group-text">
+                                                <i class="fas fa-calendar"></i>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="fechaTermino" class="form-label required">Fecha de término</label>
+                                        <div class="input-group filter_panel_control" id="dtpFechaTermino">
+                                            <input type="text" id="fechaTermino" name="fechaTermino" class="form-control filter_panel_control" placeholder="Fecha de término" value="{{ fechaTermino }}">
+                                            <span class="input-group-text">
+                                                <i class="fas fa-calendar"></i>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <input id="fra_ids" type="text" name="fra_ids" class="d-none">
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="mb-3">
+                                        <label for="regStatus" class="form-label">Estado</label>
+                                        <select class="selectpicker filter_panel_control" id="regStatus" name="regStatus">
+                                            <optgroup label="Estado">
+                                                <option value="0" {% if regStatus == '0' %}selected{% endif %}>Todas</option>
+                                                <option value="1" {% if regStatus == '1' %}selected{% endif %}>Creadas</option>
+                                                <option value="2" {% if regStatus == '2' %}selected{% endif %}>Aceptadas</option>
+                                                <option value="3" {% if regStatus == '3' %}selected{% endif %}>Aceptadas y Finalizadas</option>
+                                                <option value="4" {% if regStatus == '4' %}selected{% endif %}>Finalizadas</option>
+                                            </optgroup>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="alarmType" class="form-label">Tipo Alarma</label>
+                                        <select class="selectpicker filter_panel_control" id="alarmType" name="alarmType[]" multiple data-selected-text-format="count > 3" data-actions-box="true">
+                                            <optgroup label="Sensor de">
+                                                <option value="1" {% if 1 in alarmType %}selected{% endif %}>Extintor 1</option>
+                                                <option value="2" {% if 2 in alarmType %}selected{% endif %}>Extintor 2</option>
+                                                <option value="3" {% if 3 in alarmType %}selected{% endif %}>Red Húmeda</option>
+                                            </optgroup>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <label for="searchTxt" class="form-label">Buscar equipos</label>
+                                        <input type="text" name="searchTxt" class="form-control filter_panel_control" id="searchTxt" placeholder="Nombre del equipo..." value="{{ searchTxt }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="mb-3">
+                                        <label class="form-label">&nbsp;</label>
+                                        <button type="submit" id="btn-refresh" class="btn btn-primary w-100">
+                                            <i class="fas fa-search"></i> Generar Reporte
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 d-none">
+                                    <div class="mb-3">
+                                        <label class="form-label">Actualización Automática</label>
+                                        <div class="form-check form-switch">
+                                            <input type="checkbox" name="actualizacionAutomatica" class="form-check-input" id="actualizacionAutomatica">
+                                            <label class="form-check-label" for="actualizacionAutomatica">Activar</label>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label"><i class="fas fa-clock"></i> Intervalo de actualización</label>
+                                        <input class="form-control filter_panel_control" id="timer-range-ajax-update" type="text" min="5" max="180" value="{% if autoUpdateInterval %}{{ autoUpdateInterval }}{% endif %}" name="points" step="5">
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <!-- Fin form de filtros -->
+        </div>
+        {{ include('dashboard/cot/sensors_alarms/report/tabla.html.twig') }}
+    </div>
+</div>

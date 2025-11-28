@@ -1,0 +1,204 @@
+{# Formulario AJAX Personal Externo - Bootstrap 5 #}
+<div>
+    <div id="ajax_frm_add" class="col-sm-12 stop-propagation">
+        <div class="row">
+            <div id="frm_new_ext_staff">
+                <form class="form needs-validation" id="frm_add_external_staff" novalidate>
+                    <input id="frm_new_ext_staff_id" class="d-none" value="-1">
+
+                    <div class="row g-2 mb-2">
+                        <div class="col-sm-6 mb-2">
+                            <label for="frm_new_ext_staff_names" class="form-label small">Nombres *</label>
+                            <input type="text" class="form-control form-control-sm control_new_ext_staff"
+                                   id="frm_new_ext_staff_names"
+                                   name="frm_new_ext_staff_names"
+                                   placeholder="Nombres" value="" required>
+                            <div class="invalid-feedback">Por favor ingrese los nombres.</div>
+                        </div>
+                        <div class="col-sm-6 mb-2">
+                            <label for="frm_new_ext_staff_lastnames" class="form-label small">Apellidos *</label>
+                            <input type="text" class="form-control form-control-sm control_new_ext_staff"
+                                   id="frm_new_ext_staff_lastnames"
+                                   name="frm_new_ext_staff_lastnames"
+                                   placeholder="Apellidos" value="" required>
+                            <div class="invalid-feedback">Por favor ingrese los apellidos.</div>
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-2">
+                        <div class="col-sm-6 mb-2">
+                            <label for="frm_new_ext_staff_rut" class="form-label small">RUT</label>
+                            <input type="text" class="form-control form-control-sm control_new_ext_staff"
+                                   id="frm_new_ext_staff_rut"
+                                   name="frm_new_ext_staff_rut"
+                                   placeholder="RUT (opcional)" value="">
+                        </div>
+                        <div class="col-sm-6 mb-2">
+                            <label for="frm_new_ext_staff_phone" class="form-label small">Teléfono</label>
+                            <input type="text" class="form-control form-control-sm control_new_ext_staff"
+                                   id="frm_new_ext_staff_phone"
+                                   name="frm_new_ext_staff_phone"
+                                   placeholder="Teléfono (opcional)" value=""
+                                   pattern="[0-9]{0,15}" title="Solo números, máximo 15 dígitos">
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-2">
+                        <div class="col-sm-6 mb-2">
+                            <label for="frm_new_ext_staff_email" class="form-label small">e-Mail</label>
+                            <input type="email" class="form-control form-control-sm control_new_ext_staff"
+                                   id="frm_new_ext_staff_email"
+                                   name="frm_new_ext_staff_email"
+                                   placeholder="Correo electrónico (opcional)" value="">
+                            <div class="invalid-feedback">Por favor ingrese un correo válido.</div>
+                        </div>
+                        <div class="col-sm-6 mb-2">
+                            <label class="form-label small" for="frm_new_ext_staff_company">Empresa Solicitante *</label>
+                            <select class="form-select form-select-sm control_new_ext_staff"
+                                    id="frm_new_ext_staff_company"
+                                    name="frm_new_ext_staff_company" required>
+                                <option value="">Seleccione</option>
+                                {% for empresa in arr_empresas %}
+                                    <option value="{{ empresa.id }}">{{ empresa.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">Por favor seleccione una empresa.</div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {# Botones del formulario #}
+        <div class="mt-2 d-flex gap-2">
+            <button class="btn btn-sm btn-success stop-propagation" id="btn_set_ext_staff">
+                <i class="fa fa-check"></i> Crear y seleccionar
+            </button>
+            <button class="btn btn-sm btn-secondary ms-auto stop-propagation" id="btn_cancel_ext_staff">
+                <i class="fa fa-times"></i> Cerrar
+            </button>
+        </div>
+
+        <script>
+            (function() {
+                // Variables del formulario
+                var frm_new_ext_staff_id = $("#frm_new_ext_staff_id"),
+                    frm_new_ext_staff_names = $("#frm_new_ext_staff_names"),
+                    frm_new_ext_staff_lastnames = $("#frm_new_ext_staff_lastnames"),
+                    frm_new_ext_staff_rut = $("#frm_new_ext_staff_rut"),
+                    frm_new_ext_staff_phone = $("#frm_new_ext_staff_phone"),
+                    frm_new_ext_staff_email = $("#frm_new_ext_staff_email"),
+                    frm_new_ext_staff_company = $("#frm_new_ext_staff_company"),
+                    btn_set_ext_staff = $("#btn_set_ext_staff"),
+                    selTarget = $("#{{ selTarget|default('') }}");
+
+                // Cerrar popup
+                $("#btn_cancel_ext_staff").on('click', function(e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    if (typeof closeAjaxFrmPopup === 'function') {
+                        closeAjaxFrmPopup();
+                    }
+                });
+
+                // Guardar personal externo
+                btn_set_ext_staff.on('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // Validación Bootstrap 5 nativa
+                    var form = document.getElementById('frm_add_external_staff');
+                    if (!form.checkValidity()) {
+                        form.classList.add('was-validated');
+                        return;
+                    }
+                    form.classList.add('was-validated');
+
+                    var data = {
+                        nombres: frm_new_ext_staff_names.val(),
+                        apellidos: frm_new_ext_staff_lastnames.val(),
+                        rut: frm_new_ext_staff_rut.val(),
+                        fono: frm_new_ext_staff_phone.val(),
+                        correo_electronico: frm_new_ext_staff_email.val(),
+                        id_proveedor: frm_new_ext_staff_company.val()
+                    };
+
+                    $.ajax({
+                        url: "{{ path('staff_create_external_ajax') }}",
+                        type: 'POST',
+                        data: data,
+                        dataType: "json",
+                        success: function(response) {
+                            if (response.mensaje_success) {
+                                $.notify(response.mensaje_success, {
+                                    style: 'bootstrap', className: 'success', position: "top right"
+                                });
+
+                                // Actualizar select directamente por ID (patrón legacy funcional)
+                                if (response.idStaff) {
+                                    var optionText = 'RUT: ' + data.rut + ' | ' + data.nombres + ' ' + data.apellidos;
+                                    var optionValue = 'e-' + response.idStaff;
+
+                                    // Actualizar select de lider trabajo (siempre existe)
+                                    var $selectLider = $("#frm_edit_reg-id_lider_trabajo_solicitante");
+                                    if ($selectLider.length && $selectLider.find('[value="' + optionValue + '"]').length === 0) {
+                                        $selectLider.append(new Option(optionText, optionValue));
+                                    }
+
+                                    // Seleccionar en el target correcto según contexto
+                                    var $targetSelect = $("#{{ selTarget|default('frm_edit_reg-id_lider_trabajo_solicitante') }}");
+                                    if ($targetSelect.length && $targetSelect.find('[value="' + optionValue + '"]').length > 0) {
+                                        $targetSelect.val(optionValue).trigger('change');
+                                    }
+
+                                    // Refresh TODOS los selectpickers
+                                    $('.selectpicker').selectpicker('refresh');
+                                }
+
+                                if (typeof closeAjaxFrmPopup === 'function') {
+                                    closeAjaxFrmPopup();
+                                }
+                            } else if (response.idStaff) {
+                                // Ya existe - aplicar misma lógica
+                                $.notify('El personal ya existe en el sistema', {
+                                    style: 'bootstrap', className: 'info', position: "top right"
+                                });
+
+                                var optionText = 'RUT: ' + data.rut + ' | ' + data.nombres + ' ' + data.apellidos;
+                                var optionValue = 'e-' + response.idStaff;
+
+                                // Actualizar select de lider trabajo
+                                var $selectLider = $("#frm_edit_reg-id_lider_trabajo_solicitante");
+                                if ($selectLider.length && $selectLider.find('[value="' + optionValue + '"]').length === 0) {
+                                    $selectLider.append(new Option(optionText, optionValue));
+                                }
+
+                                // Seleccionar en el target
+                                var $targetSelect = $("#{{ selTarget|default('frm_edit_reg-id_lider_trabajo_solicitante') }}");
+                                if ($targetSelect.length && $targetSelect.find('[value="' + optionValue + '"]').length > 0) {
+                                    $targetSelect.val(optionValue).trigger('change');
+                                }
+
+                                // Refresh TODOS los selectpickers
+                                $('.selectpicker').selectpicker('refresh');
+
+                                if (typeof closeAjaxFrmPopup === 'function') {
+                                    closeAjaxFrmPopup();
+                                }
+                            } else if (response.mensaje_error) {
+                                $.notify(response.mensaje_error, {
+                                    style: 'bootstrap', className: 'error', position: "top right"
+                                });
+                            }
+                        },
+                        error: function() {
+                            $.notify('Ha ocurrido un error al procesar la solicitud', {
+                                style: 'bootstrap', className: 'error', position: "top right"
+                            });
+                        }
+                    });
+                });
+            })();
+        </script>
+    </div>
+</div>

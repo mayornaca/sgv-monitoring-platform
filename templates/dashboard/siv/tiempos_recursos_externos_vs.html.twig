@@ -1,0 +1,592 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block title %}Tiempos de Atención Recursos Externos{% endblock %}
+
+{% block content_title %}{% endblock %}
+
+{% block content_top_header %}
+    <div class="d-flex align-items-center gap-2">
+        <h5 class="m-0">
+            <i class="fas fa-clock" style="color: var(--color-primary, #5368d5);"></i>
+            Tiempos de Atención Recursos Externos
+        </h5>
+    </div>
+    {{ parent() }}
+{% endblock %}
+
+{% block head_stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-table@1.22.1/dist/bootstrap-table.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@eonasdan/tempus-dominus@6/dist/css/tempus-dominus.min.css">
+    <style>
+        .export-section { margin-top: 10px; }
+        .table-responsive { margin-top: 20px; }
+        .badge { padding: 5px 10px; }
+        .download-buttons { margin: 20px 0; }
+    </style>
+{% endblock %}
+
+{% block configured_head_contents %}
+    {{ parent() }}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@eonasdan/tempus-dominus@6/dist/js/tempus-dominus.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.22.1/dist/bootstrap-table.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.22.1/dist/locale/bootstrap-table-es-ES.min.js"></script>
+{% endblock %}
+
+{% block page_content %}
+    <div id="main-wrapper" class="container-fluid">
+        <!-- Barra de acciones -->
+        <div class="mb-3">
+            <div class="btn-group">
+                <button class="btn btn-info" type="button">
+                    Total registros: <span id="total" class="badge bg-light text-dark">{{ data_table|length|default(0) }}</span>
+                </button>
+                <button id="toggle_task_bar" type="button" class="btn btn-secondary" data-bs-toggle="collapse" data-bs-target="#filter-panel">
+                    <i class="fas fa-filter"></i> Filtros & Opciones
+                </button>
+                {% if data_table|length > 0 %}
+                <button id="btn_generate_report" class="btn btn-primary" style="display: none;">
+                    <i class="fas fa-play-circle"></i> Generar reporte
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Panel de filtros -->
+        <div class="mb-3" onmouseover="stopTimerToggleTaskBar();">
+            <div id="filter-panel" class="filter-panel collapse show">
+                <div class="card">
+                    <div class="card-body">
+                        <form id="report_params" class="row g-3" action="" method="get">
+                            <input type="hidden" value="1" id="ci" name="ci">
+
+                            <div class="col-12">
+                                <div class="alert alert-info" role="alert">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Seleccione los registros ficha accidente y haga clic en <strong>"Generar reporte"</strong> para visualizar el resultado
+                                </div>
+                            </div>
+
+                            <!-- Fecha (Month Picker) -->
+                            <div class="col-md-4">
+                                <label for="fechaInicio" class="form-label">
+                                    <i class="fas fa-calendar-alt me-1"></i>Mes y Año
+                                </label>
+                                <div class="input-group" id="dtpFechaInicio">
+                                    <input type="text" id="fechaInicio" name="fechaInicio" class="form-control"
+                                           placeholder="MM-YYYY" value="{{ fechaInicio }}">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-calendar"></i>
+                                    </span>
+                                </div>
+                                <input id="fra_ids" type="hidden" name="fra_ids" value="{{ fra_ids }}" autocomplete="off">
+                            </div>
+
+                            <!-- Botón Buscar -->
+                            <div class="col-md-8 d-flex align-items-end">
+                                <button id="btn_submit" type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-search me-2"></i>Buscar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de Descarga -->
+        {% if return_file_name_excel or return_file_name_pdf %}
+        <div class="download-buttons">
+            <div class="alert alert-success" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                <strong>Archivos generados exitosamente</strong>
+            </div>
+
+            {% if return_file_name_excel %}
+            <button type="button" class="btn btn-success me-2" id="btn-download-excel" onclick="downloadFileExcel()">
+                <i class="fas fa-file-excel me-2"></i>Descargar Excel
+            </button>
+            {% endif %}
+
+            {% if return_file_name_pdf %}
+            <button type="button" class="btn btn-danger" id="btn-download-pdf" onclick="downloadFilePdf()">
+                <i class="fas fa-file-pdf me-2"></i>Descargar PDF
+            </button>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Tabla de resultados -->
+        {% if data_table is defined and data_table|length > 0 %}
+            <div class="table-responsive">
+                <table id="tbl_tiempos"
+                       class="table table-striped table-hover table-sm table-bordered">
+                    <thead>
+                        {# Headers generados automáticamente por Bootstrap Table desde config columns #}
+                    </thead>
+                    <tbody>
+                        {# Datos cargados vía JavaScript por Bootstrap Table #}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info text-center">
+                <i class="fas fa-info-circle fa-2x mb-3"></i>
+                <h5>No se encontraron datos</h5>
+                <p>Seleccione un mes/año y genere el reporte</p>
+            </div>
+        {% endif %}
+
+        <!-- Footer con logos -->
+        <div class="row mt-4">
+            <div class="col-6 text-start">
+                <img src="{{ asset('images/concessions/vs_logo.png') }}" alt="Logo Vespucio Sur" style="height: 60px;">
+            </div>
+            <div class="col-6 text-end">
+                <img src="{{ asset('images/coordinacion_concesiones_obras_publicas.jpg') }}" alt="Logo MOP" style="height: 80px;">
+            </div>
+        </div>
+
+        {# Modal para visualizar reporte detallado (legacy pattern línea 291-350) #}
+        <div id="ajaxreport" class="modal fade" tabindex="-1" role="dialog" style="display:none;" aria-hidden="true">
+            <div class="modal-dialog modal-fullscreen">
+                <div class="modal-content">
+                    <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+                        <div class="container-fluid">
+                            <span class="navbar-brand mb-0 h1">
+                                <i class="fas fa-chart-bar me-2"></i>Visor de reporte
+                            </span>
+                            <div class="d-flex">
+                                <button class="btn btn-success me-2" id="btn-modal-download-excel" onclick="downloadExcelBySelectedAccident()">
+                                    <i class="fas fa-file-excel me-2"></i>Descargar Excel
+                                </button>
+                                <button class="btn btn-danger me-2" id="btn-modal-download-pdf" onclick="downloadPdfBySelectedAccident()">
+                                    <i class="fas fa-file-pdf me-2"></i>Descargar PDF
+                                </button>
+                                <button type="button" class="btn-close" onclick="closeReportModal()" aria-label="Close"></button>
+                            </div>
+                        </div>
+                    </nav>
+                    <div id="report_trea_table_container" class="p-3" style="overflow-y: auto; height: calc(100vh - 70px);"></div>
+                </div>
+            </div>
+        </div>
+        <div id="dialog-bg" class="modal-backdrop fade" style="display: none;"></div>
+    </div>
+{% endblock %}
+
+{% block body_javascript %}
+    {{ parent() }}
+    <script src="/js/report-loader.js"></script>
+    <script>
+        // Definir funciones globales PRIMERO (antes de document.ready)
+        var timer_toggle_task_bar;
+        var stoped = false;
+
+        function stopTimerToggleTaskBar() {
+            if (!stoped) {
+                clearTimeout(timer_toggle_task_bar);
+                stoped = true;
+            }
+        }
+
+
+        // Función de descarga Excel con blob y loader
+        {% if return_file_name_excel %}
+        function downloadFileExcel() {
+            ReportLoader.show('#btn-download-excel', 'Descargando...');
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (xhttp.readyState === 4) {
+                    ReportLoader.hide('#btn-download-excel');
+                    if (xhttp.status === 200) {
+                        var a = document.createElement('a');
+                        a.href = window.URL.createObjectURL(xhttp.response);
+                        a.download = "{{ return_file_name_excel }}";
+                        a.style.display = 'none';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    }
+                }
+            };
+            xhttp.open("GET", '/downloads/{{ return_file_name_excel }}');
+            xhttp.responseType = 'blob';
+            xhttp.send();
+        }
+        {% endif %}
+
+        // Función de descarga PDF con blob y loader
+        {% if return_file_name_pdf %}
+        function downloadFilePdf() {
+            ReportLoader.show('#btn-download-pdf', 'Descargando...');
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (xhttp.readyState === 4) {
+                    ReportLoader.hide('#btn-download-pdf');
+                    if (xhttp.status === 200) {
+                        var a = document.createElement('a');
+                        a.href = window.URL.createObjectURL(xhttp.response);
+                        a.download = "{{ return_file_name_pdf }}";
+                        a.style.display = 'none';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    }
+                }
+            };
+            xhttp.open("GET", '/downloads/{{ return_file_name_pdf }}');
+            xhttp.responseType = 'blob';
+            xhttp.send();
+        }
+        {% endif %}
+
+        jQuery(document).ready(function() {
+            // Configuración Tempus Dominus 6 para month picker (legacy pattern)
+            const monthPickerOptions = {
+                display: {
+                    components: {
+                        calendar: true,
+                        date: false,      // Ocultar días (month picker)
+                        month: true,
+                        year: true,
+                        decades: true,
+                        clock: false,     // Sin reloj
+                        hours: false,
+                        minutes: false,
+                        seconds: false
+                    },
+                    viewMode: 'months',  // Vista de meses directamente
+                    icons: {
+                        date: 'fas fa-calendar',
+                        up: 'fas fa-arrow-up',
+                        down: 'fas fa-arrow-down',
+                        previous: 'fas fa-chevron-left',
+                        next: 'fas fa-chevron-right',
+                        today: 'fas fa-calendar-check',
+                        clear: 'fas fa-trash',
+                        close: 'fas fa-times'
+                    }
+                },
+                localization: {
+                    locale: 'es',
+                    format: 'MM-yyyy',   // Formato mes-año (Tempus Dominus 6 usa uppercase M para mes)
+                    hourCycle: 'h23'
+                }
+            };
+
+            // Inicializar Tempus Dominus en el contenedor (no en el input)
+            const pickerInicio = new tempusDominus.TempusDominus(
+                document.getElementById('dtpFechaInicio'),
+                monthPickerOptions
+            );
+
+            // Cargar valor default DESPUÉS de inicializar (legacy pattern)
+            {% if fechaInicio %}
+            $('#fechaInicio').val('{{ fechaInicio }}');
+            {% endif %}
+
+            // Loader en submit del formulario
+            jQuery('#report_params').on('submit', function() {
+                ReportLoader.show('#btn_submit', 'Generando...');
+            });
+
+            // Auto-collapse panel después de 600ms
+            timer_toggle_task_bar = setTimeout(function() {
+                $("#toggle_task_bar").trigger("click");
+            }, 600);
+
+            // Bootstrap Table: Configuración completa con datos vía JavaScript (método correcto)
+            var $bs_table = $('#tbl_tiempos');
+            var selections = [];
+
+            {% if data_table_json is defined and data_table|length > 0 %}
+            // Cargar datos desde JSON (backend)
+            var dataTable = {{ data_table_json|raw }};
+
+            // Inicializar Bootstrap Table con datos y columnas
+            $bs_table.bootstrapTable({
+                data: dataTable,
+                idField: 'incidente_r',
+                maintainMetaData: false,
+                checkboxHeader: true,
+                search: true,
+                showRefresh: true,
+                showColumns: true,
+                showFullscreen: true,
+                iconsPrefix: 'fa',
+                icons: {
+                    refresh: 'fa-sync',
+                    columns: 'fa-columns',
+                    fullscreen: 'fa-expand'
+                },
+                columns: [{
+                    checkbox: true
+                }, {
+                    field: 'incidente_r',
+                    title: 'Incidente',
+                    sortable: true
+                }, {
+                    field: 'desc_tipo_evento_r',
+                    title: 'Tipo',
+                    sortable: true
+                }, {
+                    field: 'eje_r',
+                    title: 'Eje',
+                    sortable: true
+                }, {
+                    field: 'pk_r',
+                    title: 'PK',
+                    sortable: true,
+                    class: 'text-center'
+                }, {
+                    field: 'fechahora_r',
+                    title: 'Fecha/Hora',
+                    sortable: true,
+                    class: 'text-center'
+                }, {
+                    field: 'a_r',
+                    title: 'Ambulancia externa',
+                    sortable: true,
+                    class: 'text-center',
+                    formatter: function(value) {
+                        return value === '1' ? 'X' : '';
+                    }
+                }, {
+                    field: 'b_r',
+                    title: 'Bomberos',
+                    sortable: true,
+                    class: 'text-center',
+                    formatter: function(value) {
+                        return value === '1' ? 'X' : '';
+                    }
+                }, {
+                    field: 'c_r',
+                    title: 'Carabineros',
+                    sortable: true,
+                    class: 'text-center',
+                    formatter: function(value) {
+                        return value === '1' ? 'X' : '';
+                    }
+                }, {
+                    field: 's_r',
+                    title: 'Servicio Médico Legal',
+                    sortable: true,
+                    class: 'text-center',
+                    formatter: function(value) {
+                        return value === '1' ? 'X' : '';
+                    }
+                }]
+            });
+            {% endif %}
+
+            // Limpiar campo hidden para empezar sin selecciones
+            $('#fra_ids').val('');
+            $('#btn_generate_report').hide();
+
+            // Event handlers para checkboxes
+            $bs_table.on('check.bs.table uncheck.bs.table check-all.bs.table uncheck-all.bs.table',
+                function () {
+                    // Obtener IDs seleccionados
+                    selections = getIdSelections();
+                    // Guardar en campo hidden
+                    $('#fra_ids').val(selections.join(','));
+
+                    // Mostrar/ocultar botón "Generar reporte"
+                    if(selections.length > 0){
+                        $('#btn_generate_report').show();
+                    } else {
+                        $('#btn_generate_report').hide();
+                    }
+                });
+
+            function getIdSelections() {
+                return $.map($bs_table.bootstrapTable('getSelections'), function (row) {
+                    return row.incidente_r
+                })
+            }
+
+            // Event listener para botón "Generar reporte" (legacy pattern línea 600-605)
+            $('#btn_generate_report').on('click', function(e) {
+                e.preventDefault();
+                if (selections.length > 0) {
+                    ReportLoader.show('#btn_generate_report', 'Generando reporte...');
+                    getReportTREA();
+                } else {
+                    $.notify('Seleccione al menos un registro', {
+                        style: 'bootstrap',
+                        className: 'warn'
+                    });
+                }
+            });
+        });
+
+        // Función para generar y mostrar reporte en modal (legacy pattern línea 371-426)
+        function getReportTREA() {
+            const fra_ids = $('#fra_ids').val();
+            const fechaInicio = $('#fechaInicio').val();
+
+            if (!fra_ids || fra_ids.trim() === '') {
+                $.notify('Seleccione al menos un registro', {
+                    style: 'bootstrap',
+                    className: 'warn'
+                });
+                return;
+            }
+
+            $.ajax({
+                url: '{{ path("admin_siv_dashboard_report_tiempos_recursos_externos_vs") }}',
+                type: 'POST',
+                cache: false,  // Deshabilitar caché de jQuery
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache'
+                },
+                data: {
+                    action: 'preview',
+                    fra_ids: fra_ids,
+                    fechaInicio: fechaInicio,
+                    _t: new Date().getTime()  // Timestamp único para evitar caché del navegador
+                },
+                beforeSend: function() {
+                    $('#report_trea_table_container').html('<div class="text-center p-5"><i class="fas fa-spinner fa-spin fa-3x"></i><p class="mt-3">Generando reporte...</p></div>');
+                    $('#ajaxreport').modal('show');
+                    $('#dialog-bg').addClass('show').show();
+                },
+                success: function(html) {
+                    $('#report_trea_table_container').html(html);
+                },
+                error: function(xhr, status, error) {
+                    $('#report_trea_table_container').html('<div class="alert alert-danger m-3"><i class="fas fa-exclamation-triangle me-2"></i>Error al generar el reporte: ' + error + '</div>');
+                },
+                complete: function() {
+                    ReportLoader.hide('#btn_generate_report');
+                }
+            });
+        }
+
+        // Función para descargar Excel desde modal con XHR en segundo plano
+        function downloadExcelBySelectedAccident() {
+            const fra_ids = $('#fra_ids').val();
+            const fechaInicio = $('#fechaInicio').val();
+
+            if (!fra_ids || fra_ids.trim() === '') {
+                $.notify('No hay registros seleccionados', {
+                    style: 'bootstrap',
+                    className: 'warn'
+                });
+                return;
+            }
+
+            ReportLoader.show('#btn-modal-download-excel', 'Descargando...');
+
+            const formData = new FormData();
+            formData.append('action', 'excel');
+            formData.append('fra_ids', fra_ids);
+            formData.append('fechaInicio', fechaInicio);
+            formData.append('_t', new Date().getTime());
+
+            const xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (xhttp.readyState === 4) {
+                    ReportLoader.hide('#btn-modal-download-excel');
+                    if (xhttp.status === 200) {
+                        var filename = 'Tiempos_Recursos_Externos_VS_' + new Date().getTime() + '.xlsx';
+                        var disposition = xhttp.getResponseHeader('Content-Disposition');
+                        if (disposition && disposition.indexOf('attachment') !== -1) {
+                            var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                            var matches = filenameRegex.exec(disposition);
+                            if (matches != null && matches[1]) {
+                                filename = matches[1].replace(/['"]/g, '');
+                            }
+                        }
+
+                        const a = document.createElement('a');
+                        a.href = window.URL.createObjectURL(xhttp.response);
+                        a.download = filename;
+                        a.style.display = 'none';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(a.href);
+                    } else {
+                        alert('Error al descargar el archivo Excel');
+                    }
+                }
+            };
+            xhttp.onerror = function() {
+                ReportLoader.hide('#btn-modal-download-excel');
+                alert('Error al descargar el archivo Excel');
+            };
+            xhttp.open('POST', '{{ path("admin_siv_dashboard_report_tiempos_recursos_externos_vs") }}');
+            xhttp.responseType = 'blob';
+            xhttp.send(formData);
+        }
+
+        // Función para descargar PDF desde modal con XHR en segundo plano
+        function downloadPdfBySelectedAccident() {
+            const fra_ids = $('#fra_ids').val();
+            const fechaInicio = $('#fechaInicio').val();
+
+            if (!fra_ids || fra_ids.trim() === '') {
+                $.notify('No hay registros seleccionados', {
+                    style: 'bootstrap',
+                    className: 'warn'
+                });
+                return;
+            }
+
+            ReportLoader.show('#btn-modal-download-pdf', 'Descargando...');
+
+            const formData = new FormData();
+            formData.append('action', 'pdf');
+            formData.append('fra_ids', fra_ids);
+            formData.append('fechaInicio', fechaInicio);
+            formData.append('_t', new Date().getTime());
+
+            const xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (xhttp.readyState === 4) {
+                    ReportLoader.hide('#btn-modal-download-pdf');
+                    if (xhttp.status === 200) {
+                        var filename = 'Tiempos_Recursos_Externos_VS_' + new Date().getTime() + '.pdf';
+                        var disposition = xhttp.getResponseHeader('Content-Disposition');
+                        if (disposition && disposition.indexOf('attachment') !== -1) {
+                            var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                            var matches = filenameRegex.exec(disposition);
+                            if (matches != null && matches[1]) {
+                                filename = matches[1].replace(/['"]/g, '');
+                            }
+                        }
+
+                        const a = document.createElement('a');
+                        a.href = window.URL.createObjectURL(xhttp.response);
+                        a.download = filename;
+                        a.style.display = 'none';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(a.href);
+                    } else {
+                        alert('Error al descargar el archivo PDF');
+                    }
+                }
+            };
+            xhttp.onerror = function() {
+                ReportLoader.hide('#btn-modal-download-pdf');
+                alert('Error al descargar el archivo PDF');
+            };
+            xhttp.open('POST', '{{ path("admin_siv_dashboard_report_tiempos_recursos_externos_vs") }}');
+            xhttp.responseType = 'blob';
+            xhttp.send(formData);
+        }
+
+        // Función para cerrar modal
+        function closeReportModal() {
+            $('#ajaxreport').modal('hide');
+            $('#dialog-bg').removeClass('show').hide();
+        }
+    </script>
+{% endblock %}

@@ -1,0 +1,149 @@
+{% extends 'base_dashboard.html.twig' %}
+
+{% block title %}Editar ficha de colaborador{% endblock %}
+
+{% block body %}
+    {# Flash messages #}
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="alert alert-{{ label == 'mensaje' ? 'success' : label }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endfor %}
+
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Editar Colaborador: {{ staff.nombres }} {{ staff.apellidos }}</h5>
+            <div>
+                <a href="{{ path('staff_index') }}" class="btn btn-secondary btn-sm">
+                    <i class="fa fa-arrow-left"></i> Volver a la lista
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            {{ form_start(form, {'attr': {'novalidate': 'novalidate', 'id': 'frm_staff'}}) }}
+
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="border-bottom pb-2 mb-3">Datos Personales</h6>
+                    {{ form_row(form.nombres) }}
+                    {{ form_row(form.apellidos) }}
+                    {{ form_row(form.rut) }}
+                    {{ form_row(form.correoElectronico) }}
+                    {{ form_row(form.fono) }}
+                    {{ form_row(form.anexo) }}
+                    {{ form_row(form.photo) }}
+
+                    {% if staff.photo %}
+                        <div class="mb-3">
+                            <label class="form-label">Foto Actual</label>
+                            <div>
+                                <img src="{{ asset('uploads/staff/' ~ staff.photo) }}" alt="Foto" class="img-thumbnail" style="max-width: 200px;">
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6">
+                    <h6 class="border-bottom pb-2 mb-3">Organización</h6>
+                    {{ form_row(form.parent) }}
+                    {{ form_row(form.idConcesionaria) }}
+                    {{ form_row(form.idCentroDeCosto) }}
+                    {{ form_row(form.idArea) }}
+                    {{ form_row(form.autorizaOt) }}
+                </div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-12">
+                    <h6 class="border-bottom pb-2 mb-3">Licencias de Conducir</h6>
+                </div>
+                <div class="col-md-6">
+                    {{ form_row(form.fechaEmisionLicencia) }}
+                    {{ form_row(form.fechaVencimientoLicencia) }}
+                    {{ form_row(form.estadoLicenciaConducir) }}
+                </div>
+                <div class="col-md-6">
+                    {{ form_row(form.fechaInicioEstadoLicenciaConducir) }}
+                    {{ form_row(form.fechaTerminoEstadoLicenciaConducir) }}
+
+                    <div class="mb-3">
+                        <label class="form-label">Tipos de Licencia</label>
+                        {% if licencias is defined %}
+                            <div class="d-flex flex-wrap gap-3">
+                                {% for licencia in licencias %}
+                                    <div class="form-check">
+                                        <input class="form-check-input select-unselect-licence" type="checkbox"
+                                               value="{{ licencia.idLicencia }}"
+                                               id="licence_{{ licencia.idLicencia }}">
+                                        <label class="form-check-label" for="licence_{{ licencia.idLicencia }}">
+                                            {{ licencia.nombreLicencia }} ({{ licencia.aliasLicencia }})
+                                        </label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    {{ form_row(form.licenciasConducir) }}
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="d-flex gap-2 justify-content-end">
+                        <a href="{{ path('staff_index') }}" class="btn btn-secondary">
+                            <i class="fa fa-times"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-success" id="frm_staff_save">
+                            <i class="fa fa-save"></i> Guardar Cambios
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {{ form_end(form) }}
+        </div>
+    </div>
+
+    <script>
+        jQuery(document).ready(function() {
+            // Sincronizar checkboxes de licencias con campo hidden
+            function sincronizarLicencias() {
+                var licencesSelected = [];
+                $('.select-unselect-licence:checked').each(function() {
+                    licencesSelected.push($(this).val());
+                });
+                $('#{{ form.licenciasConducir.vars.id }}').val(licencesSelected.join(','));
+            }
+
+            // Cargar licencias seleccionadas desde el campo hidden
+            function cargarLicencias() {
+                var licences = $('#{{ form.licenciasConducir.vars.id }}').val();
+                if (licences) {
+                    licences.split(',').forEach(function(licenceId) {
+                        $('#licence_' + licenceId).prop('checked', true);
+                    });
+                }
+            }
+
+            // Eventos de licencias
+            $('.select-unselect-licence').on('change', sincronizarLicencias);
+            cargarLicencias();
+
+            // Validación básica del formulario
+            $('#frm_staff').on('submit', function(e) {
+                var nombres = $('#{{ form.nombres.vars.id }}').val().trim();
+                var apellidos = $('#{{ form.apellidos.vars.id }}').val().trim();
+                var rut = $('#{{ form.rut.vars.id }}').val().trim();
+
+                if (!nombres || !apellidos || !rut) {
+                    e.preventDefault();
+                    alert('Por favor complete los campos obligatorios: Nombres, Apellidos y RUT');
+                    return false;
+                }
+            });
+        });
+    </script>
+{% endblock %}

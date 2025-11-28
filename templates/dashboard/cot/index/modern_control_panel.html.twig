@@ -1,0 +1,1165 @@
+<!-- Modern Control Panel for COT System - Context Aware -->
+{% set current_route = app.request.attributes.get('_route') %}
+{% set route_params = app.request.attributes.all %}
+
+<!-- Mobile Collapsible Control Panel -->
+<div class="w-100" id="modern-control-panel" data-route="{{ current_route }}">
+    <!-- Mobile Toggle Button - Only visible on small screens -->
+    <button class="btn btn-primary w-100 d-md-none mb-2" type="button"
+            data-bs-toggle="collapse" data-bs-target="#controlPanelContent"
+            aria-expanded="false" aria-controls="controlPanelContent"
+            style="position: sticky; top: 0; z-index: 1000;">
+        <i class="fas fa-sliders-h me-2"></i>Panel de Control
+        <i class="fas fa-chevron-down float-end"></i>
+    </button>
+
+    <!-- Collapsible Content - Collapsed by default on mobile, always visible on desktop -->
+    <div class="collapse d-md-block show" id="controlPanelContent">
+        <div class="bg-body-tertiary border-bottom">
+            <div class="container-fluid px-2 py-1">
+                <!-- Main Controls Row - Context Aware -->
+                <div class="row g-2 align-items-center">
+
+            {# Controls for Monitor View #}
+            {% if current_route in ['cot_index', 'cot_monitor', 'admin_cot_monitor', 'admin_cot_galibos', 'admin_cot_sosindex', 'admin_vs_index', 'app_dashboard_cot_index', 'cot_galibos', 'cot_sosindex','admin_cot_spires'] %}
+            <!-- Device Type Filter - Hidden in Galibos mode -->
+{#            {% if not (app_mode is defined and app_mode in ['galibos','sos_sensors_monitor','spires'])  %}#}
+            {% if (app_mode is defined and app_mode == 'index')  %}
+            <div class="col-md-2 mb-2 mb-md-0">
+                <label for="device-type-select" class="form-label fw-semibold d-none d-md-block">Tipo de Dispositivo</label>
+                <select id="device-type-select" class="form-select form-select-sm" data-choices>
+                    <option value="0">Todos los tipos</option>
+                    {% for tipo in tipos_dispositivos %}
+                        <option value="{{ tipo.id }}" {% if tipo.id == id_device_type_fr %}selected{% endif %}>
+                            {{ tipo.tipo }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <!-- Status Filter -->
+            <div class="col-sm-2">
+                <label for="status-filter" class="form-label fw-semibold d-none d-md-block">Estado</label>
+                <select id="status-filter" class="form-select form-select-sm" data-choices>
+                    <option value="all">Todos</option>
+                    <option value="device_active">✓ Activos</option>
+                    <option value="device_unactive">✗ Inactivos</option>
+                </select>
+            </div>
+
+            <!-- Search - Hidden on mobile, narrower on tablet+ -->
+            <div class="col-sm-2 d-none d-md-block">
+                <label for="device-search" class="form-label fw-semibold d-none d-md-block">Buscar</label>
+                <div class="input-group input-group-sm" style="max-width: 220px;">
+                    <input type="search" id="device-search" class="form-control"
+                           placeholder="Buscar..." maxlength="50">
+                    <button class="btn btn-outline-secondary btn-sm" type="button" id="clear-search">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Compact Options - more space on desktop -->
+            <div class="col-sm-2">
+                <label class="form-label fw-semibold d-none d-md-block">Opciones</label>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="contract-ui-toggle">
+                    <label class="form-check-label small" for="contract-ui-toggle">
+                        Compacto
+                    </label>
+                </div>
+            </div>
+
+            {# Controls for Network View #}
+            {% elseif current_route in ['cot_network_index', 'network_index'] %}
+            <!-- Network Zoom Controls -->
+            <div class="col-lg-3 col-md-4">
+                <label class="form-label fw-semibold">Control de Vista</label>
+                <div class="btn-group w-100" role="group">
+                    <button type="button" class="btn btn-outline-secondary" onclick="if(typeof zoomOut !== 'undefined') zoomOut()">
+                        <i class="fas fa-search-minus"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="if(typeof zoomToFit !== 'undefined') zoomToFit()">
+                        <i class="fas fa-expand"></i> Ajustar
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="if(typeof zoomIn !== 'undefined') zoomIn()">
+                        <i class="fas fa-search-plus"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Network Export -->
+            <div class="col-lg-3 col-md-4">
+                <label class="form-label fw-semibold">Exportar</label>
+                <button type="button" class="btn btn-outline-primary w-100" onclick="if(typeof exportDiagram !== 'undefined') exportDiagram()">
+                    <i class="fas fa-download"></i> Exportar Diagrama
+                </button>
+            </div>
+
+            <!-- Network Refresh -->
+            <div class="col-lg-3 col-md-4">
+                <label class="form-label fw-semibold">Actualizar</label>
+                <button type="button" class="btn btn-outline-success w-100" onclick="if(typeof refreshDiagram !== 'undefined') refreshDiagram()">
+                    <i class="fas fa-sync-alt"></i> Actualizar Red
+                </button>
+            </div>
+
+            {# Controls for Dashboard View #}
+            {% elseif current_route in ['cot_dashboard', 'dashboard'] %}
+            <!-- Dashboard Period Selector -->
+            <div class="col-lg-3 col-md-4">
+                <label for="dashboard-period" class="form-label fw-semibold">Período</label>
+                <select class="form-select" id="dashboard-period">
+                    <option value="today">Hoy</option>
+                    <option value="week">Última Semana</option>
+                    <option value="month">Último Mes</option>
+                    <option value="year">Último Año</option>
+                </select>
+            </div>
+
+            <!-- Dashboard Export -->
+            <div class="col-lg-3 col-md-4">
+                <label class="form-label fw-semibold">Exportar Reporte</label>
+                <div class="btn-group w-100" role="group">
+                    <button type="button" class="btn btn-outline-danger">
+                        <i class="fas fa-file-pdf"></i> PDF
+                    </button>
+                    <button type="button" class="btn btn-outline-success">
+                        <i class="fas fa-file-excel"></i> Excel
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dashboard Refresh Interval -->
+            <div class="col-lg-3 col-md-4">
+                <label class="form-label fw-semibold">Auto-actualización</label>
+                <div class="input-group">
+                    <input type="range" class="form-range" id="dashboard-interval" min="10" max="300" value="60">
+                    <span class="input-group-text">60s</span>
+                </div>
+            </div>
+
+            {% endif %}
+
+            {% if not (app_mode is defined and app_mode == 'index')  %}
+            <div class="col-sm-2 col-lg-offset-2"></div>
+            {% endif %}
+            <!-- Advanced Options Toggle Button -->
+            <div class="col-sm-2 text-end mt-2 offset-2">
+                <button class="btn btn-sm btn-outline-secondary" type="button" id="advanced-options-toggle">
+                    <i class="fas fa-cog"></i> Opciones Avanzadas
+                </button>
+            </div>
+        </div>
+
+        <!-- Advanced Options Panel (Collapsible) -->
+        <div class="collapse mt-3" id="advanced-options">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <!-- Update Settings -->
+                        <div class="col-lg-3 col-md-6">
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                Actualización
+                            </h6>
+                            <div class="mb-2">
+                                <label for="update-interval" class="form-label small">
+                                    Intervalo (segundos)
+                                </label>
+                                <input type="range" class="form-range" id="update-interval"
+                                       min="10" max="600" value="10" step="10">
+                                <div class="d-flex justify-content-between small text-muted">
+                                    <span>10s</span>
+                                    <span id="interval-display">10s</span>
+                                    <span>10m</span>
+                                </div>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="auto-update" checked>
+                                <label class="form-check-label small" for="auto-update">
+                                    Actualización automática
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- View Settings -->
+                        <div class="col-lg-3 col-md-6">
+                            <h6 class="card-subtitle mb-2 text-muted d-none">
+                                <i class="fas fa-eye"></i> Visualización
+                            </h6>
+                            <div class="mb-2 d-none">
+                                <label for="grid-width" class="form-label small">Ancho de columnas</label>
+                                <select id="grid-width" class="form-select form-select-sm">
+                                    <option value="1">Muy angosto</option>
+                                    <option value="2" selected>Normal</option>
+                                    <option value="3">Ancho</option>
+                                    <option value="4">Muy ancho</option>
+                                </select>
+                            </div>
+                            <div class="form-check form-switch d-none">
+                                <input class="form-check-input" type="checkbox" id="masonry-layout" checked>
+                                <label class="form-check-label small" for="masonry-layout">
+                                    Layout dinámico
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Export Settings -->
+                        <div class="col-lg-3 col-md-6">
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                Exportar
+                            </h6>
+                            <div class="mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="export-format"
+                                           id="export-pdf" value="pdf" checked>
+                                    <label class="form-check-label small" for="export-pdf">
+                                        PDF
+                                    </label>
+                                </div>
+                                <div class="form-check d-none">
+                                    <input class="form-check-input" type="radio" name="export-format"
+                                           id="export-excel" value="excel">
+                                    <label class="form-check-label small" for="export-excel">
+                                        Excel/CSV
+                                    </label>
+                                </div>
+                            </div>
+                            <button class="btn btn-success btn-sm w-100" id="generate-report">
+                                <i class="fas fa-file-export"></i> Generar Reporte
+                            </button>
+                        </div>
+
+                        <!-- Quick Actions -->
+                        <div class="col-lg-3 col-md-6">
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                Acciones Rápidas
+                            </h6>
+                            <div class="d-grid gap-1">
+                                <button class="btn btn-outline-secondary btn-sm" id="refresh-now">
+                                    <i class="fas fa-sync-alt"></i> Actualizar Ahora
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm" id="reset-filters">
+                                    <i class="fas fa-times"></i> Limpiar Filtros
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm" id="fullscreen-toggle">
+                                    <i class="fas fa-expand"></i> Pantalla Completa
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm" id="copy-videowall-url">
+                                    <i class="fas fa-link"></i> Copiar URL
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+</div>
+
+<script>
+// Initialize Modern Control Panel with Choices.js
+document.addEventListener('DOMContentLoaded', function() {
+    // Wait for Choices.js to be available
+    if (typeof Choices !== 'undefined') {
+        window.modernControlPanel = new ModernControlPanel();
+    } else {
+        // If Choices isn't loaded yet, wait a bit
+        setTimeout(function() {
+            if (typeof Choices !== 'undefined') {
+                window.modernControlPanel = new ModernControlPanel();
+            } else {
+                console.error('Choices.js not loaded');
+            }
+        }, 100);
+    }
+});
+
+class ModernControlPanel {
+    constructor() {
+        this.choicesInstances = new Map();
+        this.localStorageKey = 'cot_panel_config';
+        this.urlParams = new URLSearchParams(window.location.search);
+        this.init();
+    }
+
+    init() {
+        this.initializeConfig();
+        this.initChoices();
+        this.bindEvents();
+        this.loadSettings();
+    }
+
+    initializeConfig() {
+        // Initialize cot_index_ui_config if it doesn't exist
+        if (typeof window.cot_index_ui_config === 'undefined') {
+            window.cot_index_ui_config = {};
+        }
+
+        // Define defaults for resilience
+        const defaults = {
+            device_status: 'all',
+            input_device_finder: '',
+            contract_ui: false,
+            grid_items_width: '2',
+            masonry: true,
+            videowall: false,
+            id_type: 0
+        };
+
+        // Priority: URL params > localStorage > existing config > defaults
+        const savedConfig = this.getStoredConfig();
+        const urlConfig = this.getUrlConfig();
+
+        // Merge configurations with priority
+        window.cot_index_ui_config = {
+            ...defaults,                     // Defaults first
+            ...window.cot_index_ui_config,  // Existing from backend
+            ...savedConfig,                  // localStorage overrides
+            ...urlConfig                     // URL params have highest priority
+        };
+    }
+
+    getUrlConfig() {
+        const config = {};
+
+        // Parse URL parameters
+        if (this.urlParams.has('device_status')) {
+            config.device_status = this.urlParams.get('device_status');
+        }
+        if (this.urlParams.has('input_device_finder')) {
+            config.input_device_finder = this.urlParams.get('input_device_finder');
+        }
+        if (this.urlParams.has('contract_ui')) {
+            config.contract_ui = this.urlParams.get('contract_ui') === 'true';
+        }
+        if (this.urlParams.has('grid_items_width')) {
+            config.grid_items_width = this.urlParams.get('grid_items_width');
+        }
+        if (this.urlParams.has('masonry')) {
+            config.masonry = this.urlParams.get('masonry') === 'true';
+        }
+        if (this.urlParams.has('videowall')) {
+            config.videowall = this.urlParams.get('videowall') === 'true';
+        }
+
+        // Device type from URL path
+        const pathMatch = window.location.pathname.match(/\/(\d+)$/);
+        if (pathMatch) {
+            config.id_type = parseInt(pathMatch[1]);
+        }
+
+        return config;
+    }
+
+    getStoredConfig() {
+        try {
+            const stored = localStorage.getItem(this.localStorageKey);
+            return stored ? JSON.parse(stored) : {};
+        } catch (e) {
+            console.error('Error loading stored config:', e);
+            return {};
+        }
+    }
+
+    saveConfig() {
+        try {
+            // Save current config to localStorage
+            localStorage.setItem(this.localStorageKey, JSON.stringify(window.cot_index_ui_config));
+        } catch (e) {
+            console.error('Error saving config:', e);
+        }
+    }
+
+    updateUrl(preserveAll = true) {
+        const url = new URL(window.location);
+
+        if (preserveAll) {
+            // Preserve all existing parameters and update with current config
+            if (window.cot_index_ui_config.device_status) {
+                url.searchParams.set('device_status', window.cot_index_ui_config.device_status);
+            }
+            if (window.cot_index_ui_config.input_device_finder) {
+                url.searchParams.set('input_device_finder', window.cot_index_ui_config.input_device_finder);
+            } else {
+                url.searchParams.delete('input_device_finder');
+            }
+            if (window.cot_index_ui_config.contract_ui !== undefined) {
+                url.searchParams.set('contract_ui', window.cot_index_ui_config.contract_ui.toString());
+            }
+            if (window.cot_index_ui_config.grid_items_width) {
+                url.searchParams.set('grid_items_width', window.cot_index_ui_config.grid_items_width);
+            }
+            if (window.cot_index_ui_config.masonry !== undefined) {
+                url.searchParams.set('masonry', window.cot_index_ui_config.masonry.toString());
+            }
+
+            // Update URL without reload
+            window.history.replaceState({}, '', url.toString());
+        }
+
+        return url.toString();
+    }
+
+    initChoices() {
+        // Initialize Choices.js for device type select
+        const deviceTypeEl = document.getElementById('device-type-select');
+        if (deviceTypeEl) {
+            this.choicesInstances.set('deviceType', new Choices(deviceTypeEl, {
+                searchEnabled: true,
+                searchPlaceholderValue: 'Buscar...',
+                itemSelectText: '',
+                removeItemButton: false,
+                shouldSort: false,
+                placeholder: true,
+                placeholderValue: 'Seleccionar...'
+            }));
+        }
+
+        // Initialize Choices.js for status filter
+        const statusEl = document.getElementById('status-filter');
+        if (statusEl) {
+            this.choicesInstances.set('status', new Choices(statusEl, {
+                searchEnabled: false,
+                itemSelectText: '',
+                removeItemButton: false,
+                shouldSort: false
+            }));
+        }
+    }
+
+    bindEvents() {
+        console.log('bindEvents: Starting to bind events...');
+
+        // Advanced options toggle
+        const advancedToggle = document.getElementById('advanced-options-toggle');
+        console.log('Advanced toggle found?', !!advancedToggle);
+        if (advancedToggle) {
+            advancedToggle.addEventListener('click', () => {
+                new bootstrap.Collapse(document.getElementById('advanced-options')).toggle();
+            });
+        }
+
+        // Search functionality
+        const searchInput = document.getElementById('device-search');
+        if (searchInput) {
+            let searchTimeout;
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    // Update global config and save
+                    if (typeof cot_index_ui_config !== 'undefined') {
+                        cot_index_ui_config.input_device_finder = e.target.value;
+                        this.saveConfig();
+                        this.updateUrl();
+                    }
+                    this.performSearch(e.target.value);
+                }, 300);
+            });
+        }
+
+        // Clear search
+        const clearButton = document.getElementById('clear-search');
+        if (clearButton && searchInput) {
+            clearButton.addEventListener('click', () => {
+                searchInput.value = '';
+                // Clear from config and save
+                if (typeof cot_index_ui_config !== 'undefined') {
+                    cot_index_ui_config.input_device_finder = '';
+                    this.saveConfig();
+                    this.updateUrl();
+                }
+                this.performSearch('');
+            });
+        }
+
+        // Interval range slider
+        const intervalSlider = document.getElementById('update-interval');
+        const intervalDisplay = document.getElementById('interval-display');
+        if (intervalSlider && intervalDisplay) {
+            intervalSlider.addEventListener('input', (e) => {
+                const value = parseInt(e.target.value);
+                intervalDisplay.textContent = value < 60 ? `${value}s` : `${Math.round(value/60)}m`;
+                this.updateTimerInterval(value);
+            });
+        }
+
+        // Contract UI toggle
+        const contractToggle = document.getElementById('contract-ui-toggle');
+        if (contractToggle) {
+            contractToggle.addEventListener('change', (e) => {
+                this.toggleContractUI(e.target.checked);
+            });
+        }
+
+        // Auto-update toggle
+        const autoUpdateToggle = document.getElementById('auto-update');
+        if (autoUpdateToggle) {
+            autoUpdateToggle.addEventListener('change', (e) => {
+                this.toggleAutoUpdate(e.target.checked);
+            });
+        }
+
+        // Quick actions
+        const refreshButton = document.getElementById('refresh-now');
+        if (refreshButton) {
+            refreshButton.addEventListener('click', () => {
+                console.log('Botón de actualización manual clickeado');
+                if (typeof getDevicesStatus === 'function') {
+                    console.log('Llamando a getDevicesStatus()...');
+                    getDevicesStatus();
+                } else {
+                    console.error('getDevicesStatus no está definida');
+                }
+            });
+        }
+
+        const resetButton = document.getElementById('reset-filters');
+        if (resetButton) {
+            resetButton.addEventListener('click', () => {
+                this.resetAllFilters();
+            });
+        }
+
+        const fullscreenButton = document.getElementById('fullscreen-toggle');
+        if (fullscreenButton) {
+            fullscreenButton.addEventListener('click', () => {
+                this.toggleFullscreen();
+            });
+        }
+
+        // Copy videowall URL button
+        const copyUrlButton = document.getElementById('copy-videowall-url');
+        if (copyUrlButton) {
+            copyUrlButton.addEventListener('click', () => {
+                this.copyVideowallUrl();
+            });
+        }
+
+        // Generate report
+        const generateReportButton = document.getElementById('generate-report');
+        if (generateReportButton) {
+            generateReportButton.addEventListener('click', () => {
+                generarReporteDispositivos();
+            });
+        }
+
+        // Grid width change
+        const gridWidthSelect = document.getElementById('grid-width');
+        if (gridWidthSelect) {
+            gridWidthSelect.addEventListener('change', (e) => {
+                this.updateGridWidth(parseInt(e.target.value));
+            });
+        }
+
+        // Masonry layout toggle
+        const masonryToggle = document.getElementById('masonry-layout');
+        if (masonryToggle) {
+            masonryToggle.addEventListener('change', (e) => {
+                this.toggleMasonryLayout(e.target.checked);
+            });
+        }
+
+        // Choices.js events
+        const deviceTypeChoice = this.choicesInstances.get('deviceType');
+        if (deviceTypeChoice) {
+            document.getElementById('device-type-select').addEventListener('change', (e) => {
+                this.handleDeviceTypeChange(e.target.value);
+            });
+        }
+
+        const statusChoice = this.choicesInstances.get('status');
+        if (statusChoice) {
+            document.getElementById('status-filter').addEventListener('change', (e) => {
+                this.handleStatusFilterChange(e.target.value);
+            });
+        }
+    }
+
+    performSearch(searchTerm) {
+        // Update legacy search input field
+        const legacyInput = document.getElementById('input_device_finder');
+        if (legacyInput) {
+            legacyInput.value = searchTerm;
+        }
+
+        // Update global config
+        if (typeof cot_index_ui_config !== 'undefined') {
+            cot_index_ui_config.input_device_finder = searchTerm;
+            // Save to localStorage and update URL
+            this.saveConfig();
+            this.updateUrl();
+        }
+
+        // Implement search logic directly (adapted from original elementsFinder)
+        if (searchTerm.length >= 2) {
+            const searchLower = searchTerm.toLowerCase();
+            const statusSelect = document.getElementById('status-filter');
+            const currentStatus = statusSelect ? statusSelect.value : 'all';
+
+            document.querySelectorAll('.cot_device_container, .opc_device_container').forEach(device => {
+                const nombre = String(device.dataset.nombre || '');
+                const descripcion = String(device.dataset.descripcion || '');
+                const ip = String(device.dataset.ip || '');
+
+                const matchesSearch =
+                    nombre.toLowerCase().indexOf(searchLower) >= 0 ||
+                    descripcion.toLowerCase().indexOf(searchLower) >= 0 ||
+                    ip.toLowerCase().indexOf(searchLower) >= 0;
+
+                if (matchesSearch) {
+                    // Show if matches search AND passes status filter
+                    if (currentStatus === "all") {
+                        device.style.display = '';
+                    } else {
+                        device.style.display = device.classList.contains(currentStatus) ? '' : 'none';
+                    }
+                } else {
+                    device.style.display = 'none';
+                }
+            });
+        } else if (searchTerm.length === 0) {
+            // No search term - show all devices that pass status filter
+            const statusSelect = document.getElementById('status-filter');
+            this.handleStatusFilterChange(statusSelect ? statusSelect.value : 'all');
+        } else {
+            // 1 character - apply status filter only
+            const statusSelect = document.getElementById('status-filter');
+            this.handleStatusFilterChange(statusSelect ? statusSelect.value : 'all');
+        }
+
+        // Save configuration
+        if (typeof saveUiConfig === 'function') {
+            saveUiConfig();
+        }
+    }
+
+    handleDeviceTypeChange(typeId) {
+        // Update legacy select
+        const legacySelect = document.getElementById('id_device_type_fr');
+        if (legacySelect) {
+            legacySelect.value = typeId;
+        }
+
+        // Update global config
+        if (typeof cot_index_ui_config !== 'undefined') {
+            cot_index_ui_config.id_type = parseInt(typeId);
+        }
+
+        // Always navigate to the new URL with the selected type ID
+        // If typeId is '0', it will show all devices; otherwise, it filters by that type
+        const currentPath = window.location.pathname;
+        const newPath = currentPath.replace(/\/\d+$/, '/' + typeId);
+        const fullUrl = newPath + window.location.search;
+
+        // Only navigate if the path actually changed to avoid unnecessary reloads
+        if (newPath !== currentPath) {
+            window.location.replace(fullUrl);
+        }
+    }
+
+    handleStatusFilterChange(status) {
+        // Update global config
+        if (typeof cot_index_ui_config !== 'undefined') {
+            cot_index_ui_config.device_status = status;
+            // Save to localStorage and update URL
+            this.saveConfig();
+            this.updateUrl();
+        }
+
+        // Apply filter directly (adapted from original filterState logic)
+        const inputFinder = document.getElementById('input_device_finder');
+        if (inputFinder && inputFinder.value.length >= 2) {
+            // If there's a search term, call elementsFinder instead
+            if (typeof elementsFinder === 'function') {
+                elementsFinder();
+            }
+        } else {
+            // Apply status filter directly
+            const devices = document.querySelectorAll('.cot_device_container, .opc_device_container');
+
+            if (status === "all") {
+                devices.forEach(device => device.style.display = '');
+            } else {
+                devices.forEach(device => {
+                    if (device.classList.contains(status)) {
+                        device.style.display = '';
+                    } else {
+                        device.style.display = 'none';
+                    }
+                });
+            }
+        }
+
+        // Save configuration
+        if (typeof saveUiConfig === 'function') {
+            saveUiConfig();
+        }
+    }
+
+    toggleContractUI(enabled) {
+        // Update global config
+        if (typeof cot_index_ui_config !== 'undefined') {
+            cot_index_ui_config.contract_ui = enabled;
+            // Save to localStorage and update URL
+            this.saveConfig();
+            this.updateUrl();
+        }
+
+        // Call existing contract UI function (now uses #contract-ui-toggle directly)
+        if (typeof contractUi === 'function') {
+            contractUi();
+        }
+    }
+
+    toggleAutoUpdate(enabled) {
+        // Update legacy checkbox
+        const legacyCheckbox = document.getElementById('actualizacionAutomatica');
+        if (legacyCheckbox) {
+            legacyCheckbox.checked = enabled;
+        }
+
+        // Update auto-refresh status in footer
+        if (window.modernStatusFooter) {
+            window.modernStatusFooter.updateAutoRefreshStatus(enabled);
+        }
+
+        // Restart or stop timer based on setting
+        if (enabled && typeof SetCotDevicesTimer === 'function') {
+            SetCotDevicesTimer();
+        } else if (!enabled && typeof cot_devices_timer_interval !== 'undefined') {
+            clearInterval(cot_devices_timer_interval);
+        }
+    }
+
+    updateTimerInterval(seconds) {
+        // Update legacy slider if exists
+        const legacySlider = document.getElementById('timer-range-ajax-update');
+        if (legacySlider) {
+            legacySlider.value = seconds;
+        }
+
+        // Clear existing timer and restart with new interval
+        if (typeof cot_devices_timer_interval !== 'undefined') {
+            clearInterval(cot_devices_timer_interval);
+        }
+
+        if (typeof SetCotDevicesTimer === 'function') {
+            SetCotDevicesTimer();
+        }
+    }
+
+    resetAllFilters() {
+        // Reset all filters to default state
+        const deviceTypeChoice = this.choicesInstances.get('deviceType');
+        if (deviceTypeChoice) {
+            deviceTypeChoice.setChoiceByValue('0');
+        }
+        const statusChoice = this.choicesInstances.get('status');
+        if (statusChoice) {
+            statusChoice.setChoiceByValue('all');
+        }
+        document.getElementById('device-search').value = '';
+        this.performSearch('');
+    }
+
+    toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+        } else {
+            document.exitFullscreen();
+        }
+    }
+
+    updateGridWidth(width) {
+        // Update config
+        if (typeof cot_index_ui_config !== 'undefined') {
+            cot_index_ui_config.grid_items_width = width.toString();
+            this.saveConfig();
+        }
+        // Update URL parameters for grid width and reload
+        const url = new URL(window.location);
+        url.searchParams.set('grid_items_width', width);
+        window.location.replace(url.toString());
+    }
+
+    toggleMasonryLayout(enabled) {
+        // Update config
+        if (typeof cot_index_ui_config !== 'undefined') {
+            cot_index_ui_config.masonry = enabled;
+            this.saveConfig();
+        }
+
+        // Update URL parameters for masonry
+        const url = new URL(window.location);
+        url.searchParams.set('masonry', enabled ? 'true' : 'false');
+        this.updateUrl();
+
+        // Apply immediately if masonry is disabled
+        if (!enabled && typeof $grid !== 'undefined') {
+            $grid.isotope('destroy');
+        } else if (enabled && typeof masonryLayout === 'function') {
+            masonryLayout();
+        }
+    }
+
+    loadSettings() {
+        // Load from existing global config (already merged with URL and localStorage)
+        if (typeof cot_index_ui_config !== 'undefined') {
+            // Set device type
+            if (cot_index_ui_config.id_type !== undefined && cot_index_ui_config.id_type !== null) {
+                const deviceTypeChoice = this.choicesInstances.get('deviceType');
+                if (deviceTypeChoice) {
+                    try {
+                        deviceTypeChoice.setChoiceByValue(cot_index_ui_config.id_type.toString());
+                    } catch(e) {
+                        console.log('Could not set device type:', e);
+                    }
+                }
+            }
+
+            // Set status filter with default
+            const statusValue = cot_index_ui_config.device_status || 'all';
+            const statusChoice = this.choicesInstances.get('status');
+            if (statusChoice) {
+                try {
+                    statusChoice.setChoiceByValue(statusValue);
+                } catch(e) {
+                    console.log('Could not set status:', e);
+                }
+            }
+
+            // Set search term
+            if (cot_index_ui_config.input_device_finder) {
+                const searchInput = document.getElementById('device-search');
+                if (searchInput) {
+                    searchInput.value = cot_index_ui_config.input_device_finder;
+                }
+            }
+
+            // Set contract UI with default false
+            const contractToggle = document.getElementById('contract-ui-toggle');
+            if (contractToggle) {
+                contractToggle.checked = cot_index_ui_config.contract_ui === true;
+                // Apply contract UI state immediately if enabled
+                if (cot_index_ui_config.contract_ui === true && typeof contractUi === 'function') {
+                    contractUi();
+                }
+            }
+
+            // Set grid width if present
+            if (cot_index_ui_config.grid_items_width) {
+                const gridSelect = document.getElementById('grid-width');
+                if (gridSelect) {
+                    gridSelect.value = cot_index_ui_config.grid_items_width;
+                }
+            }
+
+            // Set masonry layout
+            const masonryToggle = document.getElementById('masonry-layout');
+            if (masonryToggle) {
+                masonryToggle.checked = cot_index_ui_config.masonry !== false;
+            }
+
+            // Apply filters after loading settings - wait for devices to be present
+            const applyStoredFilters = () => {
+                const devices = document.querySelectorAll('.cot_device_container, .opc_device_container');
+
+                // If devices aren't loaded yet, wait and retry
+                if (devices.length === 0) {
+                    setTimeout(applyStoredFilters, 500);
+                    return;
+                }
+
+                // Detect if device type changed to avoid applying invalid filters
+                const deviceTypeSelect = document.getElementById('device-type-select');
+                const currentDeviceType = deviceTypeSelect ? deviceTypeSelect.value : 0;
+                const storedDeviceType = cot_index_ui_config.id_type;
+
+                // If device type changed, reset status filter to 'all'
+                if (currentDeviceType && storedDeviceType && currentDeviceType != storedDeviceType) {
+                    console.log('Device type changed from', storedDeviceType, 'to', currentDeviceType, '- resetting status filter');
+                    cot_index_ui_config.device_status = 'all';
+                    this.saveConfig();
+                }
+
+                // Apply status filter only if set (and now validated above)
+                if (cot_index_ui_config.device_status && cot_index_ui_config.device_status !== 'all') {
+                    this.handleStatusFilterChange(cot_index_ui_config.device_status);
+                }
+
+                // Apply search filter (always valid across device types)
+                if (cot_index_ui_config.input_device_finder && cot_index_ui_config.input_device_finder.length > 0) {
+                    this.performSearch(cot_index_ui_config.input_device_finder);
+                }
+            };
+
+            // Start checking after a small initial delay
+            setTimeout(applyStoredFilters, 300);
+        }
+    }
+
+    saveSettings() {
+        // Save current settings
+        this.saveConfig();
+        this.updateUrl();
+
+        // Call legacy save function if exists
+        if (typeof saveUiConfig === 'function') {
+            saveUiConfig();
+        }
+    }
+
+    generateVideowallUrl() {
+        // Generate complete URL for videowall integration
+        const url = new URL(window.location.origin + window.location.pathname);
+
+        // Add all current configuration as URL params
+        if (cot_index_ui_config.device_status) {
+            url.searchParams.set('device_status', cot_index_ui_config.device_status);
+        }
+        if (cot_index_ui_config.input_device_finder) {
+            url.searchParams.set('input_device_finder', cot_index_ui_config.input_device_finder);
+        }
+        if (cot_index_ui_config.contract_ui !== undefined) {
+            url.searchParams.set('contract_ui', cot_index_ui_config.contract_ui.toString());
+        }
+        if (cot_index_ui_config.grid_items_width) {
+            url.searchParams.set('grid_items_width', cot_index_ui_config.grid_items_width);
+        }
+        if (cot_index_ui_config.masonry !== undefined) {
+            url.searchParams.set('masonry', cot_index_ui_config.masonry.toString());
+        }
+        // Add videowall flag
+        url.searchParams.set('videowall', 'true');
+        url.searchParams.set('fixed', 'true');
+
+        return url.toString();
+    }
+
+    copyVideowallUrl() {
+        const url = this.generateVideowallUrl();
+
+        // Create temporary input element
+        const tempInput = document.createElement('input');
+        tempInput.value = url;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+
+        try {
+            // Try to copy to clipboard
+            document.execCommand('copy');
+
+            // Show success message
+            const button = document.getElementById('copy-videowall-url');
+            if (button) {
+                const originalHtml = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-check"></i> ¡Copiado!';
+                button.classList.remove('btn-outline-primary');
+                button.classList.add('btn-success');
+
+                setTimeout(() => {
+                    button.innerHTML = originalHtml;
+                    button.classList.remove('btn-success');
+                    button.classList.add('btn-outline-primary');
+                }, 2000);
+            }
+
+            console.log('URL copiada para videowall:', url);
+        } catch (err) {
+            console.error('Error al copiar URL:', err);
+            alert('URL para videowall:\n' + url);
+        } finally {
+            document.body.removeChild(tempInput);
+        }
+    }
+}
+</script>
+
+<style>
+/* Modern Control Panel Styles - EasyAdmin compliant */
+#modern-control-panel {
+    padding: 0.75rem 1rem;
+    background-color: var(--body-bg);
+}
+
+/* Choices.js customization for EasyAdmin + Bootstrap 5 - Fully Responsive */
+.choices {
+    font-size: var(--bs-body-font-size, 0.875rem);
+    font-weight: 400;
+    margin-bottom: 0;
+}
+
+.choices__inner {
+    background-color: var(--bs-body-bg, #fff);
+    border: 1px solid var(--bs-border-color, #dee2e6);
+    border-radius: var(--bs-border-radius, 0.375rem);
+    min-height: calc(1.5em + 0.75rem + 2px); /* Match EasyAdmin form-control height */
+    padding: 0 0 0 0 !important; /* Match Bootstrap 5 form-control padding */
+    font-size: inherit;
+    display: flex;
+    align-items: center;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    min-height: 31px !important;
+}
+
+.choices__inner:focus-within {
+    border-color: #86b7fe;
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Remove gray background that makes it look cheap */
+.choices[data-type*="select-multiple"] .choices__inner,
+.choices[data-type*="select-one"] .choices__inner {
+    background-color: #fff;
+    cursor: pointer;
+}
+
+/* Dark mode support */
+body.ea-dark-scheme .choices__inner {
+    background-color: var(--bs-dark-bg-subtle, #1a1d20);
+    border-color: var(--bs-dark-border-subtle, #495057);
+    color: var(--bs-dark, #adb5bd);
+}
+
+.choices__list--multiple .choices__item {
+    background-color: var(--bs-primary, #0d6efd);
+    border: 1px solid var(--bs-primary, #0d6efd);
+    color: #fff;
+    font-size: 0.875rem;
+    border-radius: 0.25rem;
+    padding: 0.1rem 0.5rem;
+    margin: 0.125rem;
+}
+
+.choices__list--dropdown {
+    background-color: var(--bs-body-bg, #fff);
+    border: 1px solid var(--bs-border-color, #dee2e6);
+    border-radius: var(--bs-border-radius, 0.375rem);
+    margin-top: 2px;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    z-index: 1050;
+}
+
+.choices__list--dropdown .choices__item--selectable {
+    padding: 0.5rem 0.75rem;
+    font-size: inherit;
+}
+
+.choices__list--dropdown .choices__item--selectable.is-highlighted {
+    background-color: var(--bs-primary, #0d6efd);
+    color: #fff;
+}
+{#
+/* Responsive adjustments for different screen sizes */
+
+/* HD/FHD/2K screens (1920px+) */
+@media (min-width: 1920px) {
+    .choices {
+        font-size: 1rem;
+    }
+    .choices__inner {
+        min-height: calc(1.5em + 1rem + 2px);
+        padding: 0 0 0 0;
+    }
+}
+
+/* Tablets (768px to 1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .choices__inner {
+        min-height: calc(1.5em + 0.75rem + 2px);
+        font-size: 0.9375rem;
+    }
+}
+
+/* Mobile devices (up to 767px) */
+@media (max-width: 767px) {
+    .choices {
+        font-size: 1rem; /* Larger for better touch */
+    }
+    .choices__inner {
+        min-height: 44px; /* iOS recommended touch target */
+    }
+
+    .choices__list--dropdown {
+        position: fixed !important;
+        left: 10px !important;
+        right: 10px !important;
+        width: auto !important;
+        max-width: none !important;
+    }
+
+    .choices__list--dropdown .choices__item--selectable {
+        padding: 0.75rem 1rem; /* Larger touch targets */
+        font-size: 1rem;
+    }
+}
+
+/* Small mobile devices (up to 575px) */
+@media (max-width: 575px) {
+    .choices__inner {
+        min-height: 38px; /* Even larger for small screens */
+    }
+
+    .choices__list--multiple .choices__item {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+}
+#}
+/* Ensure choices align with other form controls */
+.form-select,
+.form-control,
+.choices__inner {
+    height: auto;
+    line-height: 1.5;
+}
+
+/* Fix alignment in input groups */
+.input-group .choices {
+    flex: 1 1 auto;
+    width: 1%;
+    min-width: 0;
+}
+
+.input-group .choices__inner {
+    border-radius: 0;
+}
+
+.input-group > .choices:not(:last-child) .choices__inner {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.input-group > .choices:not(:first-child) .choices__inner {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.form-range {
+    height: 1.5rem;
+}
+
+.card {
+    border-radius: 0.5rem;
+}
+
+.btn {
+    border-radius: 0.375rem;
+}
+
+@media (max-width: 768px) {
+    #modern-control-panel .container-fluid {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .d-none.d-sm-inline {
+        display: none !important;
+    }
+}
+</style>

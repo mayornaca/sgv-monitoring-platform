@@ -1,0 +1,113 @@
+<div>
+    <div id="pt_table_container" class="table-responsive">
+
+
+        <div id="toolbar">
+            <div class="btn-group no_pdf_render">
+                <button id="total-records" class="btn btn-info" type="button">
+                    {% trans %}Total registros: {% endtrans %} <span id="total" class="badge bg-light text-dark"> {{ data_table|json_decode|length }} </span>
+                </button>
+                <button id="toggle_task_bar" type="button" class="btn btn-secondary"> <!--		style="float: right;"		-->
+                    <i class="fas fa-filter"></i> Filtros & Opciones
+                </button>
+                <button id="get_pdf_report" type="button" class="btn btn-danger" onclick="downloadPtList();">
+                    <i class="fas fa-file-pdf"></i> PDF
+                </button>
+                {# TODO: Sistema de permisos granulares - ntty_46 = TblBt01Bitacora (CREATE) #}
+                {# {% if is_granted('CREATE', classId('ntty_46')) %} #}
+                    <button id="new-bs" class="btn btn-primary" onclick="addRegBinnacleScada();">
+                        <i class="fas fa-plus-circle"></i> Crear registro
+                    </button>
+                {# {% endif %} #}
+            </div>
+        </div>
+        <div id="subToolbar" class="mb-2" onmouseover="stopTimerToggleTaskBar();">
+            <!-- Inicio form de filtros y opciones  -->
+            <div id="filter-panel" class="collapse">
+                <div class="card">
+                    <div class="card-body">
+                        <!-- Nuevo Formulario de Control -->
+                        <form id="report_params" role="form" action="" method="get">
+                            <input type="hidden" value="1" id="ci" name="ci">
+                            <div class="row g-3">
+                                <div class="col-md-2">
+                                    <div class="mb-3">
+                                        <label for="fechaInicio" class="form-label">Fecha de inicio</label>
+                                        <div class="input-group" id="dtpFechaInicio">
+                                            <input type="text" id="fechaInicio" name="fechaInicio" class="form-control form-control-sm filter_panel_control" placeholder="Fecha de inicio" value="{{ fechaInicio }}">
+                                            <span class="input-group-text form-control-sm">
+                                                <i class="fas fa-calendar"></i>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="fechaTermino" class="form-label">Fecha de término</label>
+                                        <div class="input-group" id="dtpFechaTermino">
+                                            <input type="text" id="fechaTermino" name="fechaTermino" class="form-control form-control-sm filter_panel_control" placeholder="Fecha de término" value="{{ fechaTermino }}">
+                                            <span class="input-group-text form-control-sm">
+                                                <i class="fas fa-calendar"></i>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <input id="fra_ids" type="text" name="fra_ids" class="d-none">
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="mb-3">
+                                        <label for="ccbRowsPerPage" class="form-label">Filas por página</label>
+                                        <select class="form-select form-select-sm filter_panel_control" id="ccbRowsPerPage" name="rowsPerPage">
+                                            <option selected="selected" value="10">10</option>
+                                            <option value="25">25</option>
+                                            <option value="50">50</option>
+                                            <option value="100">100</option>
+                                            <option value="500">500</option>
+                                            <option value="All">Todos</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="regStatus" class="form-label">Estado de Registros</label>
+                                        <select class="selectpicker filter_panel_control" id="regStatus" name="regStatus[]" multiple data-selected-text-format="count > 3" data-actions-box="true" data-select-all-text="Todos" data-deselect-all-text="Ninguno">
+                                            <optgroup label="Estado">
+                                                <option value="active">Activos</option>
+                                                <option value="trash">Eliminados</option>
+                                                <option value="featured">Destacados</option>
+                                            </optgroup>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <label for="searchTxt" class="form-label">Buscar en todos los registros</label>
+                                        <input type="text" name="searchTxt" class="form-control form-control-sm filter_panel_control" id="searchTxt" value="{{ searchTxt }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="mb-3">
+                                        <label class="form-label">&nbsp;</label>
+                                        <button type="button" id="btn-refresh" class="btn btn-info w-100" onclick="getBinacleScadaData();">
+                                            <i class="fas fa-search"></i> Buscar
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 d-none">
+                                    <div class="mb-3">
+                                        <label class="form-label">Actualización Automática</label>
+                                        <div class="form-check form-switch">
+                                            <input type="checkbox" name="actualizacionAutomatica" class="form-check-input" id="actualizacionAutomatica">
+                                            <label class="form-check-label" for="actualizacionAutomatica">Activar</label>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label"><i class="fas fa-clock"></i> Intervalo (segundos)</label>
+                                        <input class="form-control form-control-sm filter_panel_control" id="timer-range-ajax-update" type="text" min="5" max="180" value="{% if autoUpdateInterval %}{{ autoUpdateInterval }}{% endif %}" name="points" step="5">
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <!-- Fin form de filtros -->
+        </div>
+        {{ include('dashboard/siv/bitacora/tabla.html.twig') }}
+    </div>
+</div>
