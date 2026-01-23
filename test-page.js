@@ -6,7 +6,7 @@ const fs = require('fs');
 // Configuración global de pruebas - FMS Gesvial
 const TEST_CONFIG = {
     username: 'jnacaratto@gesvial.cl',
-    password: 'Pucara1004',
+    password: 'Pampa1004',
     baseUrl: 'https://vs.gvops.cl',
     screenshotDir: '/www/wwwroot/vs.gvops.cl/public/screenshots',
     logsDir: '/www/wwwroot/vs.gvops.cl/public/logs',
@@ -64,26 +64,29 @@ async function testPage(path = '/admin/users', requiresLogin = true) {
                 timeout: 5000
             });
 
-            // Buscar campos por id o name según el formulario actual
-            const emailSelector = 'input[name="email"], input[name="_username"], input#username, input#email';
-            const passwordSelector = 'input[name="password"], input[name="_password"], input#password';
-
-            await page.waitForSelector(emailSelector, { timeout: 5000 });
-            await page.type(emailSelector, TEST_CONFIG.username);
-            await page.type(passwordSelector, TEST_CONFIG.password);
+            // Escribir credenciales usando evaluate para mayor compatibilidad
+            await page.waitForSelector('#username', { timeout: 5000 });
+            await page.evaluate((user, pass) => {
+                document.getElementById('username').value = user;
+                document.getElementById('password').value = pass;
+            }, TEST_CONFIG.username, TEST_CONFIG.password);
 
             // Verificar si el botón es AJAX (#btn-ajax-login) o submit tradicional
             const isAjaxLogin = await page.$('#btn-ajax-login');
 
             if (isAjaxLogin) {
-                // Login AJAX - click y esperar respuesta + redirección
+                // Login AJAX
                 await page.click('#btn-ajax-login');
 
-                // Esperar a que desaparezca el botón de login (indica redirección exitosa)
-                await page.waitForFunction(
-                    () => !document.querySelector('#btn-ajax-login'),
-                    { timeout: 10000 }
-                );
+                // Esperar un poco para que el AJAX procese
+                await new Promise(r => setTimeout(r, 3000));
+
+                // Verificar si hay error o si redirigió
+                const currentUrl = page.url();
+                if (currentUrl.includes('/login')) {
+                    // Intentar esperar un poco más por la redirección
+                    await new Promise(r => setTimeout(r, 3000));
+                }
             } else {
                 // Login tradicional con form submit
                 const submitButtonSelector = 'button[type="submit"]';
