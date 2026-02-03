@@ -1,5 +1,11 @@
 {% extends '@EasyAdmin/page/content.html.twig' %}
 
+{% set current_route = app.request.attributes.get('_route') %}
+{% set is_vs = false %}
+{% if 'vs' in current_route %}
+    {% set is_vs = true %}
+{% endif %}
+
 {% block title %}Estados Diarios de Espiras - COT {% endblock %}
 
 {% block content_top_header %}
@@ -78,7 +84,7 @@
         </div>
         <div id="filter-panel" class="collapse show">
             <div class="card-body">
-                <form id="report_params" action="{{ path('cot_spire_general_status') }}" method="get">
+                <form id="report_params" action="{% if is_vs %}{{ path('cot_spire_general_status_vs') }}{% else %}{{  path('cot_spire_general_status')  }}{% endif %}" method="get">
                     <input type="hidden" value="1" id="ci" name="ci">
 
                     <div class="row">
@@ -153,7 +159,9 @@
                             <button type="submit" class="btn btn-success">
                                 <i class="fas fa-search"></i> Consultar
                             </button>
-                            <a href="{{ path('admin_spire_history', {spires: sel_spires}) }}" class="btn btn-primary">
+
+
+                            <a href="{% if is_vs %}{{ path('admin_spire_history_vs_min', {spires: sel_spires}) }}{% else %}{{ path('admin_spire_history', {spires: sel_spires}) }}{% endif %}" class="btn btn-primary">
                                 <i class="fas fa-history"></i> Historial
                             </a>
                         </div>
@@ -182,15 +190,15 @@
         </div>
         <div class="card-body">
             {% if arr_status_spires is empty %}
-                <div class="alert alert-warning">
-                    <i class="fas fa-info-circle"></i> No hay datos disponibles para la fecha seleccionada.
-                    <details class="mt-2">
-                        <summary>Ver SQL ejecutado</summary>
-                        <pre class="bg-dark text-light p-2 mt-2" style="font-size: 11px;">Fecha procesada: {{ debug_fecha }}
+{#                <div class="alert alert-warning">#}
+{#                    <i class="fas fa-info-circle"></i> No hay datos disponibles para la fecha seleccionada.#}
+{#                    <details class="mt-2">#}
+{#                        <summary>Ver SQL ejecutado</summary>#}
+{#                        <pre class="bg-dark text-light p-2 mt-2" style="font-size: 11px;">Fecha procesada: {{ debug_fecha }}#}
 
-{{ debug_sql }}</pre>
-                    </details>
-                </div>
+{#{{ debug_sql }}</pre>#}
+{#                    </details>#}
+{#                </div>#}
             {% else %}
                 <figure class="highcharts-figure">
                     <div id="container"></div>

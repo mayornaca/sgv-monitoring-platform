@@ -3,292 +3,136 @@
 namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Validator\Constraints as Assert;
 
-/**
- * Tbl07CentroDeCosto
- *
- * @ORM\HasLifecycleCallbacks()
- */
 #[ORM\Table(name: "tbl_07_centro_de_costo")]
 #[ORM\Entity]
+#[ORM\HasLifecycleCallbacks]
 class Tbl07CentroDeCosto
 {
-    /**
-     * @var integer
-     */
-    #[ORM\Column(name: "id_centro_de_costo", type: "integer", nullable: false)]
+    #[ORM\Column(name: "id_centro_de_costo", type: "integer")]
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "IDENTITY")]
-    private $idCentroDeCosto;
+    private ?int $idCentroDeCosto = null;
 
-    /**
-     * @var string
-     *
-     * #[ORM\Column(name="nombre_centro_de_costo", type="string", length=30, nullable=false)]
-     *      */
-    private $nombreCentroDeCosto;
+    #[ORM\Column(name: "nombre_centro_de_costo", type: "string", length: 30)]
+    private ?string $nombreCentroDeCosto = null;
 
-    /**
-     * @var boolean
-     *
-     * #[ORM\Column(name: "reg_status", type: "boolean")]
-     */
-    private $regStatus;
+    #[ORM\Column(name: "reg_status", type: "boolean", nullable: true)]
+    private ?bool $regStatus = null;
 
-    /**
-     * @var \DateTime
-     *
-     * #[ORM\Column(name: "created_at", type: "datetime")]
-     */
-    private $createdAt;
+    #[ORM\Column(name: "created_at", type: "datetime", nullable: true)]
+    private ?\DateTime $createdAt = null;
 
-    /**
-     * @var integer
-     *
-     * #[ORM\Column(name: "created_by", type: "integer", nullable: false)]
-     */
-    private $createdBy;
+    #[ORM\Column(name: "created_by", type: "integer", nullable: true)]
+    private ?int $createdBy = null;
 
-    /**
-     * @var \DateTime
-     *
-     * #[ORM\Column(name: "updated_at", type: "datetime")]
-     */
-    private $updatedAt;
+    #[ORM\Column(name: "updated_at", type: "datetime", nullable: true)]
+    private ?\DateTime $updatedAt = null;
 
-    /**
-     * @var integer
-     *
-     * #[ORM\Column(name: "updated_by", type: "integer", nullable: true)]
-     */
-    private $updatedBy;
+    #[ORM\Column(name: "updated_by", type: "integer", nullable: true)]
+    private ?int $updatedBy = null;
 
-    /**
-     * @var \DateTime
-     *
-     * #[ORM\Column(name: "deleted_restored_at", type: "datetime")]
-     */
-    private $deletedRestoredAt;
+    #[ORM\Column(name: "deleted_restored_at", type: "datetime", nullable: true)]
+    private ?\DateTime $deletedRestoredAt = null;
 
-    /**
-     * @var integer
-     *
-     * #[ORM\Column(name: "deleted_restored_by", type: "integer", nullable: true)]
-     */
-    private $deletedRestoredBy;
-    //--------------------------------------------------------------------------------
+    #[ORM\Column(name: "deleted_restored_by", type: "integer", nullable: true)]
+    private ?int $deletedRestoredBy = null;
 
-    /**
-     * Get idCentroDeCosto
-     *
-     * @return integer
-     */
-    public function getIdCentroDeCosto()
+    public function getIdCentroDeCosto(): ?int
     {
         return $this->idCentroDeCosto;
     }
 
-    /**
-     * String representation for EasyAdmin
-     *
-     * @return string
-     */
     public function __toString(): string
     {
         return $this->nombreCentroDeCosto ?? 'Sin nombre';
     }
 
-    /**
-     * Set nombreCentroDeCosto
-     *
-     * @param string $nombreCentroDeCosto
-     * @return Tbl07CentroDeCosto
-     */
-    public function setNombreCentroDeCosto($nombreCentroDeCosto)
+    public function setNombreCentroDeCosto(?string $nombreCentroDeCosto): self
     {
         $this->nombreCentroDeCosto = $nombreCentroDeCosto;
-
         return $this;
     }
 
-    /**
-     * Get nombreCentroDeCosto
-     *
-     * @return string 
-     */
-    public function getNombreCentroDeCosto()
+    public function getNombreCentroDeCosto(): ?string
     {
         return $this->nombreCentroDeCosto;
     }
 
-    //-   -   -   -   -   -   -   -   -   -   -   -   -   -
-
-    /**
-     * Set regStatus
-     *
-     * @param boolean $regStatus
-     * @return Tbl07CentroDeCosto
-     */
-    public function setRegStatus($regStatus)
+    public function setRegStatus(?bool $regStatus): self
     {
         $this->regStatus = $regStatus;
-
         return $this;
     }
 
-    /**
-     * Get regStatus
-     *
-     * @return boolean
-     */
-    public function getRegStatus()
+    public function getRegStatus(): ?bool
     {
         return $this->regStatus;
     }
 
-    //-   -   -   -   -   -   -   -   -   -   -   -   -   -
-
-    /**
-     * Set createdAt
-     *
-     * @param \DateTime $createdAt
-     * @return Tbl07CentroDeCosto
-     */
-    public function setCreatedAt($createdAt)
+    public function setCreatedAt(?\DateTime $createdAt): self
     {
         $this->createdAt = $createdAt;
-
         return $this;
     }
 
-    /**
-     * Get createdAt
-     *
-     * @return \DateTime
-     */
-    public function getCreatedAt()
+    public function getCreatedAt(): ?\DateTime
     {
         return $this->createdAt;
     }
 
-    /**
-     * Set createdBy
-     *
-     * @param integer $createdBy
-     * @return Tbl07CentroDeCosto
-     */
-    public function setCreatedBy($createdBy)
+    public function setCreatedBy(?int $createdBy): self
     {
         $this->createdBy = $createdBy;
-
         return $this;
     }
 
-    /**
-     * Get createdBy
-     *
-     * @return integer
-     */
-    public function getCreatedBy()
+    public function getCreatedBy(): ?int
     {
         return $this->createdBy;
     }
 
-    //-   -   -   -   -   -   -   -   -   -   -   -   -   -
-
-    /**
-     * Set updatedAt
-     *
-     * @param \DateTime $updatedAt
-     * @return Tbl07CentroDeCosto
-     */
-    public function setUpdatedAt($updatedAt)
+    public function setUpdatedAt(?\DateTime $updatedAt): self
     {
         $this->updatedAt = $updatedAt;
-
         return $this;
     }
 
-    /**
-     * Get updatedAt
-     *
-     * @return \DateTime
-     */
-    public function getUpdatedAt()
+    public function getUpdatedAt(): ?\DateTime
     {
         return $this->updatedAt;
     }
 
-    /**
-     * Set updatedBy
-     *
-     * @param integer $updatedBy
-     * @return Tbl07CentroDeCosto
-     */
-    public function setUpdatedBy($updatedBy)
+    public function setUpdatedBy(?int $updatedBy): self
     {
         $this->updatedBy = $updatedBy;
-
         return $this;
     }
 
-    /**
-     * Get updatedBy
-     *
-     * @return integer
-     */
-    public function getUpdatedBy()
+    public function getUpdatedBy(): ?int
     {
         return $this->updatedBy;
     }
 
-    //-   -   -   -   -   -   -   -   -   -   -   -   -   -
-
-    /**
-     * Set deletedRestoredAt
-     *
-     * @param \DateTime $deletedRestoredAt
-     * @return Tbl07CentroDeCosto
-     */
-    public function setDeletedRestoredAt($deletedRestoredAt)
+    public function setDeletedRestoredAt(?\DateTime $deletedRestoredAt): self
     {
         $this->deletedRestoredAt = $deletedRestoredAt;
-
         return $this;
     }
 
-    /**
-     * Get deletedRestoredAt
-     *
-     * @return \DateTime
-     */
-    public function getDeletedRestoredAt()
+    public function getDeletedRestoredAt(): ?\DateTime
     {
         return $this->deletedRestoredAt;
     }
 
-    /**
-     * Set deletedRestoredBy
-     *
-     * @param integer deletedRestoredBy
-     * @return Tbl07CentroDeCosto
-     */
-    public function setDeletedRestoredBy($deletedRestoredBy)
+    public function setDeletedRestoredBy(?int $deletedRestoredBy): self
     {
         $this->deletedRestoredBy = $deletedRestoredBy;
-
         return $this;
     }
 
-    /**
-     * Get deletedRestoredBy
-     *
-     * @return integer
-     */
-    public function getDeletedRestoredBy()
+    public function getDeletedRestoredBy(): ?int
     {
         return $this->deletedRestoredBy;
     }
-
 }

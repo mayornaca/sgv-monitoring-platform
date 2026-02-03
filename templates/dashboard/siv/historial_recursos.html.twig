@@ -30,7 +30,7 @@
         }
 
         #timeline1 svg {
-            /*max-width: 100%;*/
+            max-width: 100%;
         }
 
         .y-tick {
@@ -139,6 +139,13 @@
                                         <i class="fas fa-play-circle"></i> Generar reporte
                                     </button>
                                 </div>
+                                {% if return_file_name_excel is defined and return_file_name_excel %}
+                                <div class="mt-2">
+                                    <button type="button" id="btn-exp-excel" class="btn btn-success w-100">
+                                        <i class="fas fa-file-excel"></i> Descargar Excel
+                                    </button>
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
                     </form>
@@ -187,7 +194,7 @@
     <!-- Bootstrap Select JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/i18n/defaults-es_ES.min.js"></script>
-    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="{{ asset('js/vendor/d3.v4.min.js') }}"></script>
     <!-- TimelinesChart Legacy (compatible con el sistema) -->
     <script src="{{ asset('js/timelines-chart-legacy.js') }}"></script>
 
@@ -425,5 +432,39 @@
                 });
             }
         });
+
+        {% if return_file_name_excel is defined and return_file_name_excel %}
+        // Descarga del archivo Excel
+        $('#btn-exp-excel').click(function() {
+            var $btn = $(this);
+            if ($btn.prop('disabled')) return;
+
+            // Guardar contenido original y mostrar loader
+            var originalHtml = $btn.html();
+            $btn.prop('disabled', true)
+                .html('<i class="fas fa-spinner fa-spin"></i> Descargando...');
+
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (xhttp.readyState === 4) {
+                    if (xhttp.status === 200) {
+                        var a = document.createElement('a');
+                        a.href = window.URL.createObjectURL(xhttp.response);
+                        a.download = "{{ return_file_name_excel }}";
+                        a.style.display = 'none';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    }
+                    // Restaurar botón
+                    $btn.prop('disabled', false).html(originalHtml);
+                }
+            };
+            xhttp.open("GET", '{{ path('admin_siv_download_files', { path_name_file: return_file_name_excel }) }}');
+            xhttp.setRequestHeader("Content-Type", "application/json");
+            xhttp.responseType = 'blob';
+            xhttp.send();
+        });
+        {% endif %}
     </script>
 {% endblock %}

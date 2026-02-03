@@ -56,6 +56,8 @@
                         <span id="server-time" class="badge bg-secondary ms-1">{{ "now"|date("H:i:s") }}</span>
                     </div>
 
+                    {% if not is_vs_monitor %}
+                    {# Mostrar solo para CN #}
                     <!-- IP update time -->
                     <div class="d-flex align-items-center">
                         <i class="fas fa-sync-alt text-info me-1 d-none" id="refresh-icon"></i>
@@ -69,6 +71,8 @@
                         <small>Act. Stentofon:</small>
                         <span id="stentofon-time" class="badge bg-info ms-1">{{ StentofonLastUpdateDateTime|default('25-09-2024 14:17:12') }}</span>
                     </div>
+                    {% endif %}
+
                 </div>
             </div>
         </div>

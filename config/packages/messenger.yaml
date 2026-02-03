@@ -1,0 +1,23 @@
+framework:
+    messenger:
+        # Dead letter queue for failed messages after max retries
+        failure_transport: failed
+
+        transports:
+            # Main async transport - uses MESSENGER_TRANSPORT_DSN from .env
+            # sync:// = synchronous processing (dev/debug)
+            # doctrine://default = async processing via database (production)
+            async:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                retry_strategy:
+                    max_retries: 3
+                    delay: 1000          # 1 second initial delay
+                    multiplier: 2        # Exponential: 1s, 2s, 4s
+                    max_delay: 60000     # Max 1 minute between retries
+
+            # Failed messages storage (dead letter queue)
+            failed: 'doctrine://default?queue_name=failed'
+
+        routing:
+            # Route webhook messages to async transport
+            'App\Message\ProcessWebhookMessage': async

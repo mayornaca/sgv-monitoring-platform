@@ -851,20 +851,21 @@ class SivController extends AbstractController
                     $objDrawing->setWorksheet($sheet);
                 }
 
-                $logoPath2 = $projectDir . '/public/images/coordinacion_concesiones_obras_publicas.jpg';
-                if (file_exists($logoPath2)) {
-                    $gdImageF1 = imagecreatefromjpeg($logoPath2);
-                    $objDrawingF1 = new MemoryDrawing();
-                    $objDrawingF1->setName('Logo MOP');
-                    $objDrawingF1->setDescription('Logo MOP');
-                    $objDrawingF1->setImageResource($gdImageF1);
-                    $objDrawingF1->setRenderingFunction(MemoryDrawing::RENDERING_JPEG);
-                    $objDrawingF1->setMimeType(MemoryDrawing::MIMETYPE_JPEG);
-                    $objDrawingF1->setResizeProportional(true);
-                    $objDrawingF1->setHeight(87);
-                    $objDrawingF1->setCoordinates('L28');
-                    $objDrawingF1->setWorksheet($sheet);
-                }
+/// JN 13-01-2026 se comenta logo para evitar confusiones con origen de datos no MOP
+//                $logoPath2 = $projectDir . '/public/images/coordinacion_concesiones_obras_publicas.jpg';
+//                if (file_exists($logoPath2)) {
+//                    $gdImageF1 = imagecreatefromjpeg($logoPath2);
+//                    $objDrawingF1 = new MemoryDrawing();
+//                    $objDrawingF1->setName('Logo MOP');
+//                    $objDrawingF1->setDescription('Logo MOP');
+//                    $objDrawingF1->setImageResource($gdImageF1);
+//                    $objDrawingF1->setRenderingFunction(MemoryDrawing::RENDERING_JPEG);
+//                    $objDrawingF1->setMimeType(MemoryDrawing::MIMETYPE_JPEG);
+//                    $objDrawingF1->setResizeProportional(true);
+//                    $objDrawingF1->setHeight(87);
+//                    $objDrawingF1->setCoordinates('L28');
+//                    $objDrawingF1->setWorksheet($sheet);
+//                }
             } catch (\Exception $e) {
                 // Continue without images if error
             }
@@ -1860,7 +1861,8 @@ class SivController extends AbstractController
                 ]);
                 $fichas = $result->fetchAllAssociative();
             } catch (\Exception $e) {
-                $this->addFlash('error', 'Error al obtener fichas: ' . $e->getMessage());
+                $this->logger->error('Error al obtener fichas', ['exception' => $e->getMessage()]);
+                $this->addFlash('error', 'Error al obtener fichas. Por favor, contacte al administrador.');
             }
         }
 
@@ -1960,7 +1962,8 @@ class SivController extends AbstractController
                 $conn->commit();
             } catch (\Exception $e) {
                 $conn->rollBack();
-                $this->addFlash('error', 'Error: ' . $e->getMessage());
+                $this->logger->error('Error en operación', ['exception' => $e->getMessage()]);
+                $this->addFlash('error', 'Error al procesar la solicitud. Por favor, contacte al administrador.');
             }
         }
 
@@ -2516,7 +2519,7 @@ class SivController extends AbstractController
 
             } catch (\Exception $e) {
                 $this->logger->error('Error generating Excel: ' . $e->getMessage());
-                return new Response("Error al generar el archivo Excel: " . $e->getMessage(), 500);
+                return new Response("Error al generar el archivo. Por favor, contacte al administrador.", 500);
             }
         }
         // Acción: pdf (legacy línea 2606-2657)
@@ -2559,7 +2562,7 @@ class SivController extends AbstractController
 
             } catch (\Exception $e) {
                 $this->logger->error('Error generating PDF: ' . $e->getMessage());
-                return new Response("Error al generar el archivo PDF: " . $e->getMessage(), 500);
+                return new Response("Error al generar el archivo. Por favor, contacte al administrador.", 500);
             }
         }
 
@@ -3032,7 +3035,7 @@ class SivController extends AbstractController
 
             } catch (\Exception $e) {
                 $this->logger->error('[VS] Error generando Excel: ' . $e->getMessage());
-                return new Response("Error al generar el archivo Excel: " . $e->getMessage(), 500);
+                return new Response("Error al generar el archivo. Por favor, contacte al administrador.", 500);
             }
         }
         elseif ($action == 'pdf') {
@@ -3075,7 +3078,7 @@ class SivController extends AbstractController
 
             } catch (\Exception $e) {
                 $this->logger->error('[VS] Error generando PDF: ' . $e->getMessage());
-                return new Response("Error al generar el archivo PDF: " . $e->getMessage(), 500);
+                return new Response("Error al generar el archivo. Por favor, contacte al administrador.", 500);
             }
         }
 
@@ -3329,7 +3332,7 @@ class SivController extends AbstractController
                     return $response;
 
                 } catch (\Exception $e) {
-                    return new Response("Error al generar el archivo Excel: " . $e->getMessage(), 500);
+                    return new Response("Error al generar el archivo. Por favor, contacte al administrador.", 500);
                 }
             }
         }
@@ -3593,7 +3596,7 @@ class SivController extends AbstractController
                     return $response;
 
                 } catch (\Exception $e) {
-                    return new Response("Error al generar el archivo Excel: " . $e->getMessage(), 500);
+                    return new Response("Error al generar el archivo. Por favor, contacte al administrador.", 500);
                 }
             }
         }
@@ -3801,15 +3804,14 @@ class SivController extends AbstractController
                     $idx_rw = $idx_rw_titles + 1;
                     for ($i = 0; $i < $total_count_rows_data_table; $i++) {
                         if ($data_table[$i]['num_incidente_r'] != '999999') {
-                            // Mapeo EXACTO del legacy
                             $sheet->setCellValue('B' . $idx_rw, $data_table[$i]['num_incidente_r'] ?? '')
                                 ->setCellValue('C' . $idx_rw, $data_table[$i]['fecha_creacion_r'] ?? '')
                                 ->setCellValue('D' . $idx_rw, $data_table[$i]['pk_r'] ?? '')
                                 ->setCellValue('E' . $idx_rw, $data_table[$i]['sentido_r'] ?? '')
                                 ->setCellValue('F' . $idx_rw, $data_table[$i]['eje_r'] ?? '')
-                                ->setCellValue('G' . $idx_rw, $data_table[$i]['calzada_r'] ?? '')
-                                ->setCellValue('H' . $idx_rw, $data_table[$i]['descripcion_r'] ?? '')
-                                ->setCellValue('I' . $idx_rw, $data_table[$i]['nombre_recurso_r'] ?? 'N/A')
+                                ->setCellValue('G' . $idx_rw, $data_table[$i]['zona_r'] ?? '')
+                                ->setCellValue('H' . $idx_rw, $data_table[$i]['calzada_r'] ?? '')
+                                ->setCellValue('I' . $idx_rw, $data_table[$i]['descripcion_r'] ?? '')
                                 ->setCellValue('J' . $idx_rw, $data_table[$i]['fecha_hora_r'] ?? '')
                                 ->setCellValue('K' . $idx_rw, $data_table[$i]['fecha_hora_inicio_r'] ?? '')
                                 ->setCellValue('L' . $idx_rw, $data_table[$i]['fecha_hora_fin_r'] ?? '')
@@ -3835,7 +3837,7 @@ class SivController extends AbstractController
 
                     return $response;
                 } catch (\Exception $e) {
-                    return new Response("Error al generar el archivo Excel: " . $e->getMessage(), 500);
+                    return new Response("Error al generar el archivo. Por favor, contacte al administrador.", 500);
                 }
             }
         }
@@ -4052,16 +4054,16 @@ class SivController extends AbstractController
                                 ->setCellValue('D' . $idx_rw, $data_table[$i]['pk_r'] ?? '')
                                 ->setCellValue('E' . $idx_rw, $data_table[$i]['sentido_r'] ?? '')
                                 ->setCellValue('F' . $idx_rw, $data_table[$i]['eje_r'] ?? '')
-                                ->setCellValue('G' . $idx_rw, $data_table[$i]['calzada_r'] ?? '')
-                                ->setCellValue('H' . $idx_rw, $data_table[$i]['descripcion_r'] ?? '')
-                                ->setCellValue('I' . $idx_rw, $data_table[$i]['nombre_recurso_r'] ?? 'N/A')
+                                ->setCellValue('G' . $idx_rw, $data_table[$i]['zona_r'] ?? '')
+                                ->setCellValue('H' . $idx_rw, $data_table[$i]['calzada_r'] ?? '')
+                                ->setCellValue('I' . $idx_rw, $data_table[$i]['descripcion_r'] ?? '')
                                 ->setCellValue('J' . $idx_rw, $data_table[$i]['fecha_hora_r'] ?? '')
                                 ->setCellValue('K' . $idx_rw, $data_table[$i]['fecha_hora_inicio_r'] ?? '')
                                 ->setCellValue('L' . $idx_rw, $data_table[$i]['fecha_hora_fin_r'] ?? '')
                                 ->setCellValue('M' . $idx_rw, $data_table[$i]['plan_contingencia_r'] ?? '')
                                 ->setCellValue('N' . $idx_rw, $data_table[$i]['comentario_ini_r'] ?? '')
                                 ->setCellValue('O' . $idx_rw, $data_table[$i]['comentario_fin_r'] ?? '');
-
+                            
                             $idx_rw++;
                         }
                     }
@@ -4079,7 +4081,7 @@ class SivController extends AbstractController
 
                     return $response;
                 } catch (\Exception $e) {
-                    return new Response("Error al generar el archivo Excel: " . $e->getMessage(), 500);
+                    return new Response("Error al generar el archivo. Por favor, contacte al administrador.", 500);
                 }
             }
         }
@@ -4122,6 +4124,7 @@ class SivController extends AbstractController
 
         $arrRegItems = '[]';
         $dataTable = [];
+        $returnFileNameExcel = null;
 
         if ($fechaInicio && $fechaTermino) {
             $fechaInicioDate = $this->getDate($fechaInicio);
@@ -4147,6 +4150,11 @@ class SivController extends AbstractController
                         $dataTable = $data['v_json_excel'];
                     }
                 }
+
+                // Generar Excel si hay datos
+                if (!empty($dataTable)) {
+                    $returnFileNameExcel = $this->generateHistorialRecursosExcel($dataTable);
+                }
             } catch (\Exception $e) {
                 // Log el error real - NO mock data
                 $this->logger->error('Error en fn_historial_cambios_estado_recursos: ' . $e->getMessage());
@@ -4171,8 +4179,102 @@ class SivController extends AbstractController
             'itemsSelected' => $itemsSelected,
             'fechaInicio' => $fechaInicio,
             'fechaTermino' => $fechaTermino,
-            'data_table' => $dataTable
+            'data_table' => $dataTable,
+            'return_file_name_excel' => $returnFileNameExcel
         ]);
+    }
+
+    /**
+     * Genera archivo Excel con historial de recursos
+     */
+    private function generateHistorialRecursosExcel(array $dataTable): ?string
+    {
+        try {
+            $templatePath = $this->getParameter('siv_templates_directory');
+            $templateFile = $templatePath . '/rpt_historial_de_recursos.xlsx';
+
+            $spreadsheet = IOFactory::load($templateFile);
+            $sheet = $spreadsheet->getActiveSheet();
+
+            $laTime = new \DateTimeZone('America/Santiago');
+            $strToDay = (new \DateTime('now', $laTime))->format('d-m-Y H:i:s');
+            $rptTitle = 'Historial de Recursos CN';
+
+            $idxRw = 3; // Empezar en fila 3 (después de encabezados)
+            foreach ($dataTable as $row) {
+                $sheet->setCellValue('A' . $idxRw, $row['sensor'] ?? '')
+                    ->setCellValue('B' . $idxRw, $row['recurso'] ?? '')
+                    ->setCellValue('C' . $idxRw, $row['estado'] ?? '');
+
+                if (!empty($row['fecha_inicio'])) {
+                    $fechaInicio = new \DateTime($row['fecha_inicio']);
+                    $fechaInicio->setTimezone($laTime);
+                    $fechaInicioExcel = \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel($fechaInicio);
+                    $sheet->getStyle('D' . $idxRw)->getNumberFormat()->setFormatCode('dd-mm-yyyy hh:mm');
+                    $sheet->setCellValueExplicit('D' . $idxRw, $fechaInicioExcel, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
+                } else {
+                    $sheet->setCellValue('D' . $idxRw, '');
+                }
+
+                if (!empty($row['fecha_fin'])) {
+                    $fechaFin = new \DateTime($row['fecha_fin']);
+                    $fechaFin->setTimezone($laTime);
+                    $fechaFinExcel = \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel($fechaFin);
+                    $sheet->getStyle('E' . $idxRw)->getNumberFormat()->setFormatCode('dd-mm-yyyy hh:mm');
+                    $sheet->setCellValueExplicit('E' . $idxRw, $fechaFinExcel, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
+                } else {
+                    $sheet->setCellValue('E' . $idxRw, '');
+                }
+
+                $idxRw++;
+            }
+
+            $sheet->setCellValue('C1', $rptTitle)
+                ->setCellValue('G1', $strToDay);
+            $sheet->setTitle($rptTitle);
+            $spreadsheet->setActiveSheetIndex(0);
+
+            $outputPath = $this->getParameter('cot_devices_directory');
+            $returnFileName = $rptTitle . ' [' . uniqid('rev', false) . '].xlsx';
+
+            $writer = IOFactory::createWriter($spreadsheet, 'Xlsx');
+            $writer->save($outputPath . '/' . $returnFileName);
+
+            return $returnFileName;
+        } catch (\Exception $e) {
+            $this->logger->error('Error generando Excel historial recursos: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Descarga archivos generados desde /public/downloads
+     */
+    #[AdminRoute('/download/{path_name_file}', name: 'siv_download_files')]
+    public function downloadSivFilesAction(string $path_name_file): Response
+    {
+        $path_name_file = urldecode($path_name_file);
+
+        if (empty($path_name_file)) {
+            throw $this->createNotFoundException('Archivo no especificado');
+        }
+
+        $path = $this->getParameter('cot_devices_directory');
+        $pathFile = $path . '/' . $path_name_file;
+
+        if (!file_exists($pathFile)) {
+            throw $this->createNotFoundException('Archivo no encontrado: ' . $path_name_file);
+        }
+
+        $response = new BinaryFileResponse($pathFile);
+        $response->headers->set('Content-Type', mime_content_type($pathFile) . '; charset=utf-8');
+        $response->setContentDisposition(
+            ResponseHeaderBag::DISPOSITION_ATTACHMENT,
+            $path_name_file
+        );
+        $response->headers->set('Cache-Control', 'no-store');
+
+        return $response;
     }
 
     #[AdminRoute('/lista_permisos_trabajos', name: 'siv_dashboard_lista_permisos_trabajos')]
@@ -4842,7 +4944,7 @@ class SivController extends AbstractController
             $this->logger->error('Error in setPermisosOtAction: ' . $e->getMessage());
             return $this->json([
                 'msg_type' => 'error',
-                'msg' => 'Error al procesar la solicitud: ' . $e->getMessage()
+                'msg' => 'Error al procesar la solicitud. Por favor, contacte al administrador.'
             ]);
         }
     }
@@ -5406,7 +5508,7 @@ class SivController extends AbstractController
                 $this->logger->error('Error al subir archivo: ' . $e->getMessage());
                 return new Response(
                     json_encode([
-                        'error' => $clientOriginalName . ': Error al guardar archivo: ' . $e->getMessage()
+                        'error' => $clientOriginalName . ': Error al guardar archivo'
                     ]),
                     500,
                     ['Content-Type' => 'application/json']
@@ -5477,7 +5579,7 @@ class SivController extends AbstractController
 
             } catch (\Exception $e) {
                 return new Response(
-                    json_encode(['error' => 'Error al eliminar archivo: ' . $e->getMessage()]),
+                    json_encode(['error' => 'Error al eliminar archivo']),
                     500,
                     ['Content-Type' => 'application/json']
                 );

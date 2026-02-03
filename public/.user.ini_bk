@@ -1,3 +1,1 @@
-open_basedir=/www/wwwroot/vs.gvops.cl/:/tmp/:/proc/:/www/php_session/vs.gvops.cl/
-session.save_path=/www/php_session/vs.gvops.cl/
-session.save_handler = files
+open_basedir=/www/wwwroot/vs.gvops.cl/:/tmp/

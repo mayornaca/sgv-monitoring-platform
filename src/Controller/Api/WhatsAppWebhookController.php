@@ -93,6 +93,7 @@ class WhatsAppWebhookController extends AbstractController
     
     /**
      * Procesa las notificaciones del webhook
+     * Encola para procesamiento async y responde inmediatamente
      */
     private function handleNotification(Request $request): Response
     {
@@ -101,7 +102,6 @@ class WhatsAppWebhookController extends AbstractController
         // Log del payload completo para debugging
         $this->logger->info('WhatsApp webhook notification received', [
             'payload_size' => strlen($content),
-            'headers' => $request->headers->all()
         ]);
 
         // Detectar tipo de webhook primero para el logging
@@ -120,47 +120,18 @@ class WhatsAppWebhookController extends AbstractController
             return new Response('OK', 200);
         }
 
-        // Marcar como en procesamiento
-        $this->webhookLogService->markAsProcessing($webhookLog);
+        // Log estructurado
+        $this->logger->info('WhatsApp webhook queued', [
+            'webhook_id' => $webhookLog->getId(),
+            'webhook_type' => $webhookType,
+            'concession' => $webhookLog->getConcessionCode()
+        ]);
 
-        try {
-            $data = $webhookLog->getParsedData();
+        // PASO 2: Dispatch para procesamiento async
+        $this->webhookLogService->dispatchForProcessing($webhookLog);
 
-            // Log estructurado del payload
-            $this->logger->info('WhatsApp webhook payload parsed', [
-                'object' => $data['object'] ?? null,
-                'entry_count' => count($data['entry'] ?? []),
-                'webhook_id' => $webhookLog->getId(),
-                'webhook_type' => $webhookType,
-                'concession' => $webhookLog->getConcessionCode()
-            ]);
-
-            // Procesar el webhook usando el servicio
-            $this->webhookService->processWebhook($data);
-
-            // Marcar como completado
-            $this->webhookLogService->markAsCompleted($webhookLog, [
-                'object' => $data['object'] ?? null,
-                'entry_count' => count($data['entry'] ?? []),
-                'type' => $webhookType
-            ]);
-
-            // Responder 200 OK inmediatamente para evitar reintentos
-            return new Response('OK', 200);
-
-        } catch (\Exception $e) {
-            $this->logger->error('Error processing WhatsApp webhook', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'webhook_id' => $webhookLog->getId()
-            ]);
-
-            // Marcar como fallido
-            $this->webhookLogService->markAsFailed($webhookLog, $e->getMessage());
-
-            // Aún así responder 200 para evitar reintentos infinitos
-            return new Response('OK', 200);
-        }
+        // Responder 200 OK inmediatamente - Meta requiere respuesta rápida
+        return new Response('OK', 200);
     }
 
     /**

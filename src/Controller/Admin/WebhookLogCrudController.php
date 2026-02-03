@@ -148,13 +148,13 @@ class WebhookLogCrudController extends AbstractCrudController
         // Show raw payload on detail page
         if ($pageName === Crud::PAGE_DETAIL) {
             $fields[] = CodeEditorField::new('rawPayload', 'Payload Raw')
-                ->setLanguage('json')
+                ->setLanguage('js')
                 ->setNumOfRows(20)
                 ->hideOnIndex()
                 ->hideOnForm();
 
             $fields[] = CodeEditorField::new('headersJson', 'Headers')
-                ->setLanguage('json')
+                ->setLanguage('js')
                 ->setNumOfRows(5)
                 ->hideOnIndex()
                 ->hideOnForm()
@@ -163,7 +163,7 @@ class WebhookLogCrudController extends AbstractCrudController
                 });
 
             $fields[] = CodeEditorField::new('processingResultJson', 'Resultado')
-                ->setLanguage('json')
+                ->setLanguage('js')
                 ->setNumOfRows(10)
                 ->hideOnIndex()
                 ->hideOnForm()
@@ -199,6 +199,8 @@ class WebhookLogCrudController extends AbstractCrudController
             ->add(ChoiceFilter::new('concessionCode', 'Concesión')->setChoices($concessionChoices))
             ->add(TextFilter::new('metaMessageId', 'Meta Message ID'))
             ->add(TextFilter::new('errorMessage', 'Error'))
-            ->add(DateTimeFilter::new('createdAt', 'Fecha'));
+            ->add(DateTimeFilter::new('createdAt', 'Fecha'))
+            ->add(TextFilter::new('relatedEntityType', 'Tipo Entidad'))
+            ->add(TextFilter::new('relatedEntityId', 'ID Entidad'));
     }
 }

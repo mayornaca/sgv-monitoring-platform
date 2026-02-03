@@ -20,7 +20,7 @@
     {% set id_route_params = 5 %}
     {# Use grid_items_width from the selector to determine device widths #}
     {% if grid_items_width is defined %}
-        {% set basicWidth = grid_items_width %}io sur,
+        {% set basicWidth = grid_items_width %}
         {% set alertWidth = grid_items_width %}
     {% else %}
         {% set basicWidth = 2 %}
@@ -115,9 +115,9 @@
                                      data-nombre="{{ dispositivo.nombre }}"
                                      data-descripcion="{{ dispositivo.descripcion }}"
                                      data-km="{{ dispositivo.km|number_format(3, ',', '.') }}"
-                                     data-eje="{{ dispositivo.eje.nombre ?? '' }}"
-                                     data-tramo="{{ dispositivo.tramo.cod ?? '' }} {{ dispositivo.tramo.nombre ?? '' }}"
-                                     data-orientacion="{{ dispositivo.orientacion }}"
+                                     data-eje="{{ dispositivo.eje.nombre ?? '-' }}"
+                                     data-tramo="{{ dispositivo.tramo.nombre ?? '-' }}"
+                                     data-orientacion="{{ dispositivo.orientacion ?? '-' }}"
                                      data-estado="{{ dispositivo.estado }}"
                                      data-supervisado=""
                                      data-concesionaria=""
@@ -152,9 +152,9 @@
                                      data-nombre="{{ dispositivo.nombre }}"
                                      data-descripcion="{{ dispositivo.descripcion }}"
                                      data-km="{{ dispositivo.km|number_format(3, ',', '.') }}"
-                                     data-eje="{{ dispositivo.eje.nombre ?? '' }}"
-                                     data-tramo="{{ dispositivo.tramo.cod ?? '' }} {{ dispositivo.tramo.nombre ?? '' }}"
-                                     data-orientacion="{{ dispositivo.orientacion }}"
+                                     data-eje="{{ dispositivo.eje.nombre ?? '-' }}"
+                                     data-tramo="{{ dispositivo.tramo.nombre ?? '-' }}"
+                                     data-orientacion="{{ dispositivo.orientacion ?? '-' }}"
                                      data-estado="{{ dispositivo.estado }}"
                                      data-supervisado=""
                                      data-concesionaria=""
@@ -208,9 +208,9 @@
                                      data-nombre="{{ dispositivo.nombre }}"
                                      data-descripcion="{{ dispositivo.descripcion }}"
                                      data-km="{{ dispositivo.km|number_format(3, ',', '.') }}"
-                                     data-eje="{{ dispositivo.eje.nombre ?? '' }}"
-                                     data-tramo="{{ dispositivo.tramo.cod ?? '' }} {{ dispositivo.tramo.nombre ?? '' }}"
-                                     data-orientacion="{{ dispositivo.orientacion }}"
+                                     data-eje="{{ dispositivo.eje.nombre ?? '-' }}"
+                                     data-tramo="{{ dispositivo.tramo.nombre ?? '-' }}"
+                                     data-orientacion="{{ dispositivo.orientacion ?? '-' }}"
                                      data-estado="{{ dispositivo.estado }}"
                                      data-supervisado=""
                                      data-concesionaria=""

@@ -40,7 +40,7 @@ class DebugWebhookTokenCommand extends Command
         );
 
         // Test comparison
-        $testToken = 'sgv_monitor_2025';
+        $testToken = $_ENV['CRON_AUTH_TOKEN'] ?? 'test_token_not_configured';
         $io->section('Test Comparison');
         $io->writeln(sprintf('Test token matches: %s', $testToken === $this->whatsappWebhookVerifyToken ? 'YES' : 'NO'));
         $io->writeln(sprintf('Test token length: %d', strlen($testToken)));

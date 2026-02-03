@@ -29,7 +29,7 @@ class TestWhatsAppCommand extends Command
     protected function configure(): void
     {
         $this
-            ->addOption('phone', 'p', InputOption::VALUE_REQUIRED, 'Phone number to send to (with country code)', '+56972126016')
+            ->addOption('phone', 'p', InputOption::VALUE_REQUIRED, 'Phone number to send to (with country code, e.g. +56900000000)')
             ->addOption('template', 't', InputOption::VALUE_REQUIRED, 'Template to use', 'prometheus_alert_firing')
             ->addOption('message', 'm', InputOption::VALUE_OPTIONAL, 'Message to send (for text messages)')
         ;

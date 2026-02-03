@@ -4,8 +4,12 @@ framework:
         paths:
             - assets/
         missing_import_mode: strict
+        # Disable external CDN polyfill to avoid firewall blocks
+        importmap_polyfill: false
 
 when@prod:
     framework:
         asset_mapper:
             missing_import_mode: warn
+            # Disable external CDN polyfill to avoid firewall blocks
+            importmap_polyfill: false

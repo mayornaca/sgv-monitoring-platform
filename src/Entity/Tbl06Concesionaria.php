@@ -3,413 +3,180 @@
 namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Validator\Constraints as Assert;
-use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use App\Repository\Tbl06ConcesionariaRepository;
 
-
-/**
- * Tbl06Concesionaria
- *
- * @UniqueEntity(
- *     fields={"nombre"},
- *     errorPath="nombre",
- *     message="Este nombre de concesionaria ya ha sido registrado, por favor intente con otro valor."
- * )
- *
- * @ORM\HasLifecycleCallbacks()
- */
-// JN 21-12-2016 se quita de las anotaciones de  Tbl06Concesionaria
-// * @UniqueEntity(
-// *     fields={"rutConcesionaria"},
-// *     errorPath="rutConcesionaria",
-// *     message="Este RUT de concesionaria ya ha sido registrado, por favor intente con otro valor."
-// * )
 #[ORM\Table(name: "tbl_06_concesionaria")]
-#[ORM\Entity(repositoryClass: "App\Repository\Tbl06ConcesionariaRepository")]
+#[ORM\Entity(repositoryClass: Tbl06ConcesionariaRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class Tbl06Concesionaria
 {
-    /**
-     * @var smallint
-     */
-    #[ORM\Column(name: "id_concesionaria", type: "smallint", nullable: false)]
+    #[ORM\Column(name: "id_concesionaria", type: "smallint")]
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "IDENTITY")]
-    private $idConcesionaria;
+    private ?int $idConcesionaria = null;
 
-    /**
-     * @var string
-     */
-    #[ORM\Column(name: "nombre", type: "string", length: 50, nullable: false, unique: true)]
-    private $nombre;
+    #[ORM\Column(name: "nombre", type: "string", length: 50, unique: true)]
+    private ?string $nombre = null;
 
-    /**
-     * @var string
-     *
-     * #[ORM\Column(name="rut_concesionaria", type="string", length=10, nullable=false)]
-     *      */
-    private $rutConcesionaria;// JN 21-12-2016 se elimina (, unique=true)
+    #[ORM\Column(name: "rut_concesionaria", type: "string", length: 10, nullable: true)]
+    private ?string $rutConcesionaria = null;
 
-    /**
-     * @var string
-     *
-     * #[ORM\Column(name="direccion_concesionaria", type="text", length=65535, nullable=false)]
-     *      */
-    private $direccionConcesionaria;
+    #[ORM\Column(name: "direccion_concesionaria", type: "text", nullable: true)]
+    private ?string $direccionConcesionaria = null;
 
-    /**
-     * @var \Tbl14Personal
-     *
-     */
-    #[ORM\ManyToOne(targetEntity: "App\Entity\Tbl14Personal")]
+    #[ORM\ManyToOne(targetEntity: Tbl14Personal::class)]
     #[ORM\JoinColumn(name: "encargado", referencedColumnName: "id_personal")]
-    private $encargado;
+    private ?Tbl14Personal $encargado = null;
 
-    /**
-     * #[ORM\Column(type="string")]
-     *
-     *      *///    private $logo;
+    #[ORM\Column(name: "reg_status", type: "boolean", nullable: true)]
+    private ?bool $regStatus = null;
 
-    /**
-     * @var boolean
-     *
-     * #[ORM\Column(name: "reg_status", type: "boolean")]
-     */
-    private $regStatus;
+    #[ORM\Column(name: "created_at", type: "datetime", nullable: true)]
+    private ?\DateTime $createdAt = null;
 
-    /**
-     * @var \DateTime
-     *
-     * #[ORM\Column(name: "created_at", type: "datetime")]
-     */
-    private $createdAt;
+    #[ORM\Column(name: "created_by", type: "integer", nullable: true)]
+    private ?int $createdBy = null;
 
-    /**
-     * @var integer
-     *
-     * #[ORM\Column(name: "created_by", type: "integer", nullable: false)]
-     */
-    private $createdBy;
+    #[ORM\Column(name: "updated_at", type: "datetime", nullable: true)]
+    private ?\DateTime $updatedAt = null;
 
-    /**
-     * @var \DateTime
-     *
-     * #[ORM\Column(name: "updated_at", type: "datetime")]
-     */
-    private $updatedAt;
+    #[ORM\Column(name: "updated_by", type: "integer", nullable: true)]
+    private ?int $updatedBy = null;
 
-    /**
-     * @var integer
-     *
-     * #[ORM\Column(name: "updated_by", type: "integer", nullable: true)]
-     */
-    private $updatedBy;
+    #[ORM\Column(name: "deleted_restored_at", type: "datetime", nullable: true)]
+    private ?\DateTime $deletedRestoredAt = null;
 
-    /**
-     * @var \DateTime
-     *
-     * #[ORM\Column(name: "deleted_restored_at", type: "datetime")]
-     */
-    private $deletedRestoredAt;
+    #[ORM\Column(name: "deleted_restored_by", type: "integer", nullable: true)]
+    private ?int $deletedRestoredBy = null;
 
-    /**
-     * @var integer
-     *
-     * #[ORM\Column(name: "deleted_restored_by", type: "integer", nullable: true)]
-     */
-    private $deletedRestoredBy;
-
-    //--------------------------------------------------------------------------------
-
-    /**
-     * Get idConcesionaria
-     *
-     * @return boolean
-     */
-    public function getIdConcesionaria()
+    public function getIdConcesionaria(): ?int
     {
         return $this->idConcesionaria;
     }
 
-    /**
-     * String representation for EasyAdmin
-     *
-     * @return string
-     */
     public function __toString(): string
     {
         return $this->nombre ?? 'Sin nombre';
     }
 
-    /**
-     * Set nombre
-     *
-     * @param string $nombre
-     * @return Tbl06Concesionaria
-     */
-    public function setNombre($nombre)
+    public function setNombre(?string $nombre): self
     {
         $this->nombre = $nombre;
-
         return $this;
     }
 
-    /**
-     * Get nombre
-     *
-     * @return string 
-     */
-    public function getNombre()
+    public function getNombre(): ?string
     {
         return $this->nombre;
     }
 
-    /**
-     * Set rutConcesionaria
-     *
-     * @param string $rutConcesionaria
-     * @return Tbl06Concesionaria
-     */
-    public function setRutConcesionaria($rutConcesionaria)
+    public function setRutConcesionaria(?string $rutConcesionaria): self
     {
         $this->rutConcesionaria = $rutConcesionaria;
-
         return $this;
     }
 
-    /**
-     * Get rutConcesionaria
-     *
-     * @return string 
-     */
-    public function getRutConcesionaria()
+    public function getRutConcesionaria(): ?string
     {
         return $this->rutConcesionaria;
     }
 
-    /**
-     * Set direccionConcesionaria
-     *
-     * @param string $direccionConcesionaria
-     * @return Tbl06Concesionaria
-     */
-    public function setDireccionConcesionaria($direccionConcesionaria)
+    public function setDireccionConcesionaria(?string $direccionConcesionaria): self
     {
         $this->direccionConcesionaria = $direccionConcesionaria;
-
         return $this;
     }
 
-    /**
-     * Get direccionConcesionaria
-     *
-     * @return string 
-     */
-    public function getDireccionConcesionaria()
+    public function getDireccionConcesionaria(): ?string
     {
         return $this->direccionConcesionaria;
     }
 
-    /**
-     * Set encargado
-     *
-     * @param \sgv\DashboardBundle\Entity\Tbl14Personal $encargado
-     * @return Tbl06Concesionaria
-     */
-    public function setEncargado(\sgv\DashboardBundle\Entity\Tbl14Personal $encargado = null)
+    public function setEncargado(?Tbl14Personal $encargado): self
     {
         $this->encargado = $encargado;
-
         return $this;
     }
 
-    /**
-     * Get encargado
-     *
-     * @return \sgv\DashboardBundle\Entity\Tbl14Personal
-     */
-    public function getEncargado()
+    public function getEncargado(): ?Tbl14Personal
     {
         return $this->encargado;
     }
 
-    public function getLogo()
-    {
-        return $this->logo;
-    }
-
-    public function setLogo($logo)
-    {
-        $this->logo = $logo;
-
-        return $this;
-    }
-    //-   -   -   -   -   -   -   -   -   -   -   -   -   -
-
-    /**
-     * Set regStatus
-     *
-     * @param boolean $regStatus
-     * @return Tbl06Concesionaria
-     */
-    public function setRegStatus($regStatus)
+    public function setRegStatus(?bool $regStatus): self
     {
         $this->regStatus = $regStatus;
-
         return $this;
     }
 
-    /**
-     * Get regStatus
-     *
-     * @return boolean
-     */
-    public function getRegStatus()
+    public function getRegStatus(): ?bool
     {
         return $this->regStatus;
     }
 
-    //-   -   -   -   -   -   -   -   -   -   -   -   -   -
-
-    /**
-     * Set createdAt
-     *
-     * @param \DateTime $createdAt
-     * @return Tbl06Concesionaria
-     */
-    public function setCreatedAt($createdAt)
+    public function setCreatedAt(?\DateTime $createdAt): self
     {
         $this->createdAt = $createdAt;
-
         return $this;
     }
 
-    /**
-     * Get createdAt
-     *
-     * @return \DateTime
-     */
-    public function getCreatedAt()
+    public function getCreatedAt(): ?\DateTime
     {
         return $this->createdAt;
     }
 
-    /**
-     * Set createdBy
-     *
-     * @param integer $createdBy
-     * @return Tbl06Concesionaria
-     */
-    public function setCreatedBy($createdBy)
+    public function setCreatedBy(?int $createdBy): self
     {
         $this->createdBy = $createdBy;
-
         return $this;
     }
 
-    /**
-     * Get createdBy
-     *
-     * @return integer
-     */
-    public function getCreatedBy()
+    public function getCreatedBy(): ?int
     {
         return $this->createdBy;
     }
 
-    //-   -   -   -   -   -   -   -   -   -   -   -   -   -
-
-    /**
-     * Set updatedAt
-     *
-     * @param \DateTime $updatedAt
-     * @return Tbl06Concesionaria
-     */
-    public function setUpdatedAt($updatedAt)
+    public function setUpdatedAt(?\DateTime $updatedAt): self
     {
         $this->updatedAt = $updatedAt;
-
         return $this;
     }
 
-    /**
-     * Get updatedAt
-     *
-     * @return \DateTime
-     */
-    public function getUpdatedAt()
+    public function getUpdatedAt(): ?\DateTime
     {
         return $this->updatedAt;
     }
 
-    /**
-     * Set updatedBy
-     *
-     * @param integer $updatedBy
-     * @return Tbl06Concesionaria
-     */
-    public function setUpdatedBy($updatedBy)
+    public function setUpdatedBy(?int $updatedBy): self
     {
         $this->updatedBy = $updatedBy;
-
         return $this;
     }
 
-    /**
-     * Get updatedBy
-     *
-     * @return integer
-     */
-    public function getUpdatedBy()
+    public function getUpdatedBy(): ?int
     {
         return $this->updatedBy;
     }
 
-    //-   -   -   -   -   -   -   -   -   -   -   -   -   -
-
-    /**
-     * Set deletedRestoredAt
-     *
-     * @param \DateTime $deletedRestoredAt
-     * @return Tbl06Concesionaria
-     */
-    public function setDeletedRestoredAt($deletedRestoredAt)
+    public function setDeletedRestoredAt(?\DateTime $deletedRestoredAt): self
     {
         $this->deletedRestoredAt = $deletedRestoredAt;
-
         return $this;
     }
 
-    /**
-     * Get deletedRestoredAt
-     *
-     * @return \DateTime
-     */
-    public function getDeletedRestoredAt()
+    public function getDeletedRestoredAt(): ?\DateTime
     {
         return $this->deletedRestoredAt;
     }
 
-    /**
-     * Set deletedRestoredBy
-     *
-     * @param integer deletedRestoredBy
-     * @return Tbl06Concesionaria
-     */
-    public function setDeletedRestoredBy($deletedRestoredBy)
+    public function setDeletedRestoredBy(?int $deletedRestoredBy): self
     {
         $this->deletedRestoredBy = $deletedRestoredBy;
-
         return $this;
     }
 
-    /**
-     * Get deletedRestoredBy
-     *
-     * @return integer
-     */
-    public function getDeletedRestoredBy()
+    public function getDeletedRestoredBy(): ?int
     {
         return $this->deletedRestoredBy;
     }
-
 }

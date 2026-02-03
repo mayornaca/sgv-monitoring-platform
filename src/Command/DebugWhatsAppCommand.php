@@ -27,8 +27,10 @@ class DebugWhatsAppCommand extends Command
     protected function configure(): void
     {
         $this
-            ->addOption('phone', 'p', InputOption::VALUE_REQUIRED, 'Phone number (with or without +)', '56972126016')
-            ->addOption('template', 't', InputOption::VALUE_REQUIRED, 'Template name', 'prometheus_alert_firing')
+            ->addOption('phone', 'p', InputOption::VALUE_REQUIRED, 'Phone number (with or without +)')
+            ->addOption('template', null, InputOption::VALUE_REQUIRED, 'Template name', 'prometheus_alert_firing')
+            ->addOption('token', 't', InputOption::VALUE_OPTIONAL, 'WhatsApp access token (default: env var WHATSAPP_ACCESS_TOKEN)')
+            ->addOption('phone-id', null, InputOption::VALUE_OPTIONAL, 'WhatsApp phone number ID (default: env var WHATSAPP_PHONE_NUMBER_ID)')
         ;
     }
     
@@ -36,9 +38,13 @@ class DebugWhatsAppCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
         
-        // Credenciales del proyecto antiguo
-        $accessToken = 'EAAR912L41MoBOx95sDl6qhXCcT9oqyvbl1ibxSmC7BG1YUHiU6BSyqtYL3fWFZC8CbVWPtToH2ara3ASrClorj3Grqg5FrkNyfyqZBSN5YPxAeToXFNCpUqerqZCueJuJC1i0t0E3BZA0gpVfrZCu7z4cuW77Up0cCG3ndAzGcopWuaQqUiG1CrhsMhwWqvBPZAwZDZD';
-        $phoneNumberId = '651420641396348';
+        $accessToken = $input->getOption('token') ?? $_ENV['WHATSAPP_ACCESS_TOKEN'] ?? null;
+        $phoneNumberId = $input->getOption('phone-id') ?? $_ENV['WHATSAPP_PHONE_NUMBER_ID'] ?? null;
+
+        if (!$accessToken || !$phoneNumberId) {
+            $io->error('Configurar WHATSAPP_ACCESS_TOKEN y WHATSAPP_PHONE_NUMBER_ID en .env o usar --token/--phone-id');
+            return Command::FAILURE;
+        }
         $apiUrl = sprintf('https://graph.facebook.com/v22.0/%s/messages', $phoneNumberId);
         
         $phone = $input->getOption('phone');

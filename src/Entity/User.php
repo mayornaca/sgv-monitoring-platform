@@ -374,4 +374,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
         return $this;
     }
+
+    /**
+     * Obtiene teléfono del staff asociado (proxy para OTP por WhatsApp)
+     * Extensible para login con teléfono en futuro
+     */
+    public function getPhone(): ?string
+    {
+        return $this->idStaff?->getFono();
+    }
 }

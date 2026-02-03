@@ -351,6 +351,15 @@ class WebhookLog
     }
 
     /**
+     * Marca el webhook como encolado para procesamiento async
+     */
+    public function markAsQueued(): static
+    {
+        $this->processingStatus = self::STATUS_QUEUED;
+        return $this;
+    }
+
+    /**
      * Verifica si el webhook puede ser reintentado
      */
     public function canRetry(int $maxRetries = 3): bool

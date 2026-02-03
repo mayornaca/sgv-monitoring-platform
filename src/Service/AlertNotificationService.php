@@ -347,28 +347,26 @@ class AlertNotificationService
         };
     }
 
-    // TODO(human): Implement recipient configuration methods
     private function getEmailRecipients(Alert $alert): array
     {
-        // Default recipients - should be configurable
-        return ['admin@gesvial.cl', 'sgv@gesvial.cl'];
+        $emails = $_ENV['ALERT_ADMIN_EMAILS'] ?? 'admin@gesvial.cl,sgv@gesvial.cl';
+        return array_map('trim', explode(',', $emails));
     }
 
     private function getSmsRecipients(Alert $alert): array
     {
-        // Default SMS recipients - should be configurable
-        return ['+56972126016'];
+        $phones = $_ENV['ALERT_ADMIN_PHONES'] ?? '';
+        return $phones ? array_map('trim', explode(',', $phones)) : [];
     }
 
     private function getDeviceTokens(Alert $alert): array
     {
-        // Should get device tokens from user preferences/database
         return [];
     }
 
     private function getWhatsAppRecipients(Alert $alert): array
     {
-        // Default WhatsApp recipients - should be configurable
-        return ['56972126016'];
+        $phones = $_ENV['ALERT_WHATSAPP_PHONES'] ?? '';
+        return $phones ? array_map('trim', explode(',', $phones)) : [];
     }
 }

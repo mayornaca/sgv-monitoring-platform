@@ -1787,35 +1787,55 @@
         });
 
         // Context menu para dispositivos (click derecho)
+        // Usa build: para construir el menú dinámicamente según el tipo de dispositivo
         $.contextMenu({
             selector: '.cot_device_container, .opc_device_container',
-            callback: function(key, options) {
-                var device = this;
-                switch(key) {
-                    case "details":
-                        showDeviceDetails(device);
-                        break;
-                    case "edit":
-                        editDevice(device);
-                        break;
-                    case "report":
-                        generateDeviceReport(device);
-                        break;
+            build: function($trigger, e) {
+                var deviceData = $trigger.data();
+                var idTipo = parseInt(deviceData.id_tipo || 0);
+                var deviceId = deviceData.id;
+
+                // Items base para todos los dispositivos
+                var items = {
+                    "details": {
+                        name: "Detalles",
+                        icon: "fa-info-circle",
+                        callback: function() { showDeviceDetails($trigger); }
+                    },
+                    "edit": {
+                        name: "Editar",
+                        icon: "fa-edit",
+                        callback: function() { editDevice($trigger); }
+                    }
+                };
+
+                // Agregar "Ver Historial" solo para espiras (tipo 4=CN, tipo 13=VS)
+                if (idTipo === 4 || idTipo === 13) {
+                    var historyUrl = (idTipo === 13) ? "{{ path('admin_spire_history_vs_min') }}" : "{{ path('admin_spire_history') }}";
+
+                    items["sep1"] = "---------";
+                    items["viewhistory"] = {
+                        name: "Ver Historial",
+                        icon: "fa-tasks",
+                        callback: function() {
+                            var params = $.param({spires: [deviceId]});
+                            window.open(historyUrl + '?' + params, '_blank');
+                        }
+                    };
+
+                    var dailystatehistoryUrl = (idTipo === 13) ? "{{ path('cot_spire_general_status_vs') }}" : "{{ path('cot_spire_general_status') }}";
+
+                    items["viewdailystate"] = {
+                        name: "Ver Estado Diario",
+                        icon: "fa-tasks",
+                        callback: function() {
+                            var params = $.param({spires: [deviceId]});
+                            window.open(dailystatehistoryUrl + '?' + params, '_blank');
+                        }
+                    };
                 }
-            },
-            items: {
-                "details": {
-                    name: "Detalles",
-                    icon: "fa-info-circle"
-                },
-                "edit": {
-                    name: "Editar",
-                    icon: "fa-edit"
-                },
-                "report": {
-                    name: "Generar Reporte",
-                    icon: "fa-file-pdf-o"
-                }
+
+                return { items: items };
             }
         });
 
@@ -1917,14 +1937,6 @@
                         callback: function() {
                             editDevice(targetObjDevice);
                             return true; // Close modal
-                        }
-                    },
-                    report: {
-                        label: 'Reporte',
-                        className: 'btn-info',
-                        callback: function() {
-                            generateDeviceReport(targetObjDevice);
-                            return false; // Keep modal open
                         }
                     },
                     close: {

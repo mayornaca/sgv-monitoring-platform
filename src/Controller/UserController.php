@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -24,8 +25,11 @@ class UserController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'app_user_edit')]
-    public function edit(User $user, Request $request, EntityManagerInterface $em): Response
-    {
+    public function edit(
+        #[MapEntity(id: 'id')] User $user,
+        Request $request,
+        EntityManagerInterface $em
+    ): Response {
         if ($request->isMethod('POST')) {
             $user->setEmail($request->request->get('email'));
             $user->setUsername($request->request->get('username'));
@@ -51,8 +55,8 @@ class UserController extends AbstractController
 
     #[Route('/{id}/change-password', name: 'app_user_change_password')]
     public function changePassword(
-        User $user, 
-        Request $request, 
+        #[MapEntity(id: 'id')] User $user,
+        Request $request,
         UserPasswordHasherInterface $passwordHasher,
         EntityManagerInterface $em
     ): Response {
@@ -84,8 +88,10 @@ class UserController extends AbstractController
     }
 
     #[Route('/{id}/toggle-active', name: 'app_user_toggle_active', methods: ['POST'])]
-    public function toggleActive(User $user, EntityManagerInterface $em): Response
-    {
+    public function toggleActive(
+        #[MapEntity(id: 'id')] User $user,
+        EntityManagerInterface $em
+    ): Response {
         $user->setIsActive(!$user->isActive());
         $em->flush();
         
@@ -96,8 +102,10 @@ class UserController extends AbstractController
     }
 
     #[Route('/{id}/delete', name: 'app_user_delete', methods: ['POST'])]
-    public function delete(User $user, EntityManagerInterface $em): Response
-    {
+    public function delete(
+        #[MapEntity(id: 'id')] User $user,
+        EntityManagerInterface $em
+    ): Response {
         // Prevent deleting yourself
         if ($user === $this->getUser()) {
             $this->addFlash('error', 'No puedes eliminar tu propio usuario');

@@ -4,15 +4,10 @@ doctrine:
         connections:
             default:
                 url: '%env(resolve:DATABASE_URL)%'
+                server_version: '8.0'
                 mapping_types:
                     enum: string
                 schema_filter: ~^(?!tbl_)~  # Removed vi_ exclusion to allow views
-                profiling_collect_backtrace: '%kernel.debug%'
-                use_savepoints: true
-            sistek:
-                url: '%env(resolve:DATABASE_SISTEK_URL)%'
-                mapping_types:
-                    enum: string
                 profiling_collect_backtrace: '%kernel.debug%'
                 use_savepoints: true
             siv:
@@ -22,6 +17,7 @@ doctrine:
                 user: '%env(DATABASE_SIV_USER)%'
                 password: '%env(DATABASE_SIV_PASSWORD)%'
                 driver: 'pdo_pgsql'
+                server_version: '15.0'
                 charset: utf8
                 profiling_collect_backtrace: '%kernel.debug%'
                 use_savepoints: true
@@ -32,24 +28,7 @@ doctrine:
                 user: '%env(DATABASE_SIV_VS_USER)%'
                 password: '%env(DATABASE_SIV_VS_PASSWORD)%'
                 driver: 'pdo_pgsql'
-                charset: utf8
-                profiling_collect_backtrace: '%kernel.debug%'
-                use_savepoints: true
-            dev:
-                url: '%env(resolve:DATABASE_DEV_URL)%'
-                mapping_types:
-                    enum: string
-                profiling_collect_backtrace: '%kernel.debug%'
-                use_savepoints: true
-            db_espiras_vs:
-                url: '%env(resolve:DATABASE_ESPIRAS_VS_URL)%'
-                driver: 'pdo_pgsql'
-                charset: utf8
-                profiling_collect_backtrace: '%kernel.debug%'
-                use_savepoints: true
-            db_adq_espiras_vs:
-                url: '%env(resolve:DATABASE_ADQ_ESPIRAS_URL)%'
-                driver: 'pdo_pgsql'
+                server_version: '15.0'
                 charset: utf8
                 profiling_collect_backtrace: '%kernel.debug%'
                 use_savepoints: true
@@ -58,6 +37,9 @@ doctrine:
         default_entity_manager: default
         auto_generate_proxy_classes: true
         enable_lazy_ghost_objects: true
+        enable_native_lazy_objects: true
+        controller_resolver:
+            auto_mapping: false
         entity_managers:
             default:
                 connection: default

@@ -14,7 +14,7 @@ use Psr\Log\LoggerInterface;
  * DSN format: meta-whatsapp://ACCESS_TOKEN@default?phone_number_id=PHONE_ID&template=TEMPLATE_NAME
  * 
  * Example:
- * meta-whatsapp://EAAR912L41Mo...@default?phone_number_id=651420641396348&template=prometheus_alert_firing
+ * meta-whatsapp://YOUR_ACCESS_TOKEN@default?phone_number_id=YOUR_PHONE_NUMBER_ID&template=prometheus_alert_firing
  */
 final class MetaWhatsAppTransportFactory extends AbstractTransportFactory
 {

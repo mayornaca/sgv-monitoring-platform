@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px 8px 0 0;
+            text-align: center;
+        }
+        .content {
+            background: #f9fafb;
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+            border-radius: 0 0 8px 8px;
+        }
+        .summary {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            border-left: 4px solid #dc2626;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            margin: 15px 0;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        th {
+            background: #374151;
+            color: white;
+            padding: 12px 8px;
+            text-align: left;
+            font-size: 13px;
+        }
+        td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 13px;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        tr:nth-child(even) {
+            background: #f9fafb;
+        }
+        .diff-warning {
+            color: #dc2626;
+            font-weight: bold;
+        }
+        .diff-excess {
+            color: #059669;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            color: #6b7280;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Alerta NVR - Grabación</h1>
+    </div>
+
+    <div class="content">
+        <div class="summary">
+            <strong>Fecha:</strong> {{ timestamp|date('d/m/Y H:i:s') }}<br>
+            <strong>Camaras afectadas:</strong> {{ total }}
+        </div>
+
+        <h3>Detalle</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Camara</th>
+                    <th>IP</th>
+                    <th>Bloque</th>
+                    <th>Esperados</th>
+                    <th>Reales</th>
+                    <th>Dif.</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for camera in cameras %}
+                <tr>
+                    <td>{{ camera.nombre_camara ?? camera.id_camara }}</td>
+                    <td>{{ camera.ip_camara ?? '-' }}</td>
+                    <td>{{ camera.bloque }}</td>
+                    <td>{{ camera.q_archivos_esperados }}</td>
+                    <td>{{ camera.q_real }}</td>
+                    <td class="{{ camera.q_real < camera.q_archivos_esperados ? 'diff-warning' : 'diff-excess' }}">
+                        {% if camera.q_real < camera.q_archivos_esperados %}
+                            -{{ camera.diferencia }}
+                        {% else %}
+                            +{{ camera.diferencia }}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <p><small>
+            <strong>Nota:</strong> Diferencia negativa indica archivos faltantes.
+            Diferencia positiva indica archivos adicionales (posible fragmentacion: grabación menor a 5 minutos ) .
+        </small></p>
+    </div>
+
+    <div class="footer">
+        <p>SGV<br>
+        Este es un mensaje automatico, por favor no responder.</p>
+    </div>
+</body>
+</html>

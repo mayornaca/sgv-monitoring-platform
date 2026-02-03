@@ -2,669 +2,292 @@
 
 namespace App\Entity;
 
-use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Validator\Constraints as Assert;
-use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\ORM\Mapping as ORM;
 
-/**
- * Tbl18DispositivosGps
- *
- * #[ORM\Table(name: "tbl_18_dispositivos_gps")]
- * #[ORM\Entity]
- */
+#[ORM\Table(name: "tbl_18_dispositivos_gps")]
+#[ORM\Entity]
 class Tbl18DispositivosGps
 {
-    /**
-     * #[ORM\OneToMany(targetEntity="App\Entity\Tbl19GpsTrackLog", mappedBy="Tbl18DispositivosGps")]
-     */
-    protected $Tbl19GpsTrackLog;
-
-    /**
-     * @var integer
-     *
-     * #[ORM\Column(name: "id_dispositivo_gps", type: "smallint", nullable: false)]
-     */
+    #[ORM\Column(name: "id_dispositivo_gps", type: "smallint")]
     #[ORM\Id]
-        #[ORM\GeneratedValue(strategy: "IDENTITY")]
-        private $idDispositivoGps;
+    #[ORM\GeneratedValue(strategy: "IDENTITY")]
+    private ?int $idDispositivoGps = null;
 
-    /**
-     * @var string
-     *
-     * #[ORM\Column(name="imei", type="string", length=15, nullable=false)]
-     */
-    private $imei;
+    #[ORM\Column(name: "imei", type: "string", length: 15, nullable: true)]
+    private ?string $imei = null;
 
-    /**
-     * @var string
-     *
-     * #[ORM\Column(name="nro_celular_sim", type="string", length=10, nullable=false)]
-     */
-    private $nroCelularSim;
+    #[ORM\Column(name: "nro_celular_sim", type: "string", length: 10, nullable: true)]
+    private ?string $nroCelularSim = null;
 
-    /**
-     * @var boolean
-     *
-     * #[ORM\Column(name: "estado", type: "boolean", nullable: false)]
-     */
-    private $estado;
+    #[ORM\Column(name: "estado", type: "boolean", nullable: true)]
+    private ?bool $estado = null;
 
-    /**
-     * @var string
-     *
-     * #[ORM\Column(name: "marca", type: "string", nullable: false)]
-     */
-    private $marca;
+    #[ORM\Column(name: "marca", type: "string", nullable: true)]
+    private ?string $marca = null;
 
-    /**
-     * @var string
-     *
-     * #[ORM\Column(name: "modelo", type: "string", nullable: false)]
-     */
-    private $modelo;
+    #[ORM\Column(name: "modelo", type: "string", nullable: true)]
+    private ?string $modelo = null;
 
-    /**
-     * @var \DateTime
-     *
-     * #[ORM\Column(name: "fecha_hora_posicion", type: "datetime", nullable: false)]
-     */
-    private $fechaHoraPosicion;
+    #[ORM\Column(name: "fecha_hora_posicion", type: "datetime", nullable: true)]
+    private ?\DateTime $fechaHoraPosicion = null;
 
-    /**
-     * @var float
-     *
-     * #[ORM\Column(name="latitud", type="float", precision=10, scale=0, nullable=false)]
-     */
-    private $latitud;
+    #[ORM\Column(name: "latitud", type: "float", nullable: true)]
+    private ?float $latitud = null;
 
-    /**
-     * @var float
-     *
-     * #[ORM\Column(name="longitud", type="float", precision=10, scale=0, nullable=false)]
-     */
-    private $longitud;
+    #[ORM\Column(name: "longitud", type: "float", nullable: true)]
+    private ?float $longitud = null;
 
-    /**
-     * @var integer
-     *
-     * #[ORM\Column(name: "altitud", type: "smallint", nullable: false)]
-     */
-    private $altitud;
+    #[ORM\Column(name: "altitud", type: "smallint", nullable: true)]
+    private ?int $altitud = null;
 
-    /**
-     * @var integer
-     *
-     * #[ORM\Column(name: "velocidad", type: "smallint", nullable: false)]
-     */
-    private $velocidad;
+    #[ORM\Column(name: "velocidad", type: "smallint", nullable: true)]
+    private ?int $velocidad = null;
 
-    /**
-     * @var string
-     *
-     * #[ORM\Column(name="curso", type="string", length=4, nullable=false)]
-     */
-    private $curso;
+    #[ORM\Column(name: "curso", type: "string", length: 4, nullable: true)]
+    private ?string $curso = null;
 
-    /**
-     * @var string
-     *
-     * #[ORM\Column(name="gps_info_alarm", type="string", length=30, nullable=false)]
-     */
-    private $gpsInfoAlarm;
+    #[ORM\Column(name: "gps_info_alarm", type: "string", length: 30, nullable: true)]
+    private ?string $gpsInfoAlarm = null;
 
-    /**
-     * @var boolean
-     *
-     * #[ORM\Column(name: "reg_status", type: "boolean")]
-     */
-    private $regStatus;
+    #[ORM\Column(name: "reg_status", type: "boolean", nullable: true)]
+    private ?bool $regStatus = null;
 
-    /**
-     * @var \DateTime
-     *
-     * #[ORM\Column(name: "created_at", type: "datetime")]
-     */
-    private $createdAt;
+    #[ORM\Column(name: "created_at", type: "datetime", nullable: true)]
+    private ?\DateTime $createdAt = null;
 
-    /**
-     * @var integer
-     *
-     * #[ORM\Column(name: "created_by", type: "integer", nullable: false)]
-     */
-    private $createdBy;
+    #[ORM\Column(name: "created_by", type: "integer", nullable: true)]
+    private ?int $createdBy = null;
 
-    /**
-     * @var \DateTime
-     *
-     * #[ORM\Column(name: "updated_at", type: "datetime")]
-     */
-    private $updatedAt;
+    #[ORM\Column(name: "updated_at", type: "datetime", nullable: true)]
+    private ?\DateTime $updatedAt = null;
 
-    /**
-     * @var integer
-     *
-     * #[ORM\Column(name: "updated_by", type: "integer", nullable: true)]
-     */
-    private $updatedBy;
+    #[ORM\Column(name: "updated_by", type: "integer", nullable: true)]
+    private ?int $updatedBy = null;
 
-    /**
-     * @var \DateTime
-     *
-     * #[ORM\Column(name: "deleted_restored_at", type: "datetime")]
-     */
-    private $deletedRestoredAt;
+    #[ORM\Column(name: "deleted_restored_at", type: "datetime", nullable: true)]
+    private ?\DateTime $deletedRestoredAt = null;
 
-    /**
-     * @var integer
-     *
-     * #[ORM\Column(name: "deleted_restored_by", type: "integer", nullable: true)]
-     */
-    private $deletedRestoredBy;
+    #[ORM\Column(name: "deleted_restored_by", type: "integer", nullable: true)]
+    private ?int $deletedRestoredBy = null;
 
-    //--------------------------------------------------------------------------------
-
-    /**
-     * Constructor
-     */
-    public function __construct()
-    {
-        $this->Tbl19GpsTrackLog = new ArrayCollection();
-    }
-    //-----------------------------------------------
-
-    /**
-     * Add Tbl19GpsTrackLog
-     *
-     * @param \sgv\DashboardBundle\Entity\Tbl19GpsTrackLog $tbl19GpsTrackLog
-     * @return Tbl18DispositivosGps
-     */
-    public function addTbl19GpsTrackLog(\sgv\DashboardBundle\Entity\Tbl19GpsTrackLog $tbl19GpsTrackLog)
-    {
-        $this->Tbl19GpsTrackLog[] = $tbl19GpsTrackLog;
-
-        return $this;
-    }
-
-    /**
-     * Remove Tbl19GpsTrackLog
-     *
-     * @param \sgv\DashboardBundle\Entity\Tbl19GpsTrackLog $tbl19GpsTrackLog
-     */
-    public function removeTbl19GpsTrackLog(\sgv\DashboardBundle\Entity\Tbl19GpsTrackLog $tbl19GpsTrackLog)
-    {
-        $this->Tbl19GpsTrackLog->removeElement($tbl19GpsTrackLog);
-    }
-
-    /**
-     * Get Tbl19GpsTrackLog
-     *
-     * @return \Doctrine\Common\Collections\Collection
-     */
-    public function getTbl19GpsTrackLog()
-    {
-        return $this->Tbl19GpsTrackLog;
-    }
-
-    //-----------------------------------------------
-    /**
-     * Get idDispositivoGps
-     *
-     * @return integer 
-     */
-    public function getIdDispositivoGps()
+    public function getIdDispositivoGps(): ?int
     {
         return $this->idDispositivoGps;
     }
 
-    /**
-     * Set imei
-     *
-     * @param string $imei
-     * @return Tbl18DispositivosGps
-     */
-    public function setImei($imei)
+    public function setImei(?string $imei): self
     {
         $this->imei = $imei;
-
         return $this;
     }
 
-    /**
-     * Get imei
-     *
-     * @return string 
-     */
-    public function getImei()
+    public function getImei(): ?string
     {
         return $this->imei;
     }
 
-    /**
-     * Set nroCelularSim
-     *
-     * @param string $nroCelularSim
-     * @return Tbl18DispositivosGps
-     */
-    public function setNroCelularSim($nroCelularSim)
+    public function setNroCelularSim(?string $nroCelularSim): self
     {
         $this->nroCelularSim = $nroCelularSim;
-
         return $this;
     }
 
-    /**
-     * Get nroCelularSim
-     *
-     * @return string 
-     */
-    public function getNroCelularSim()
+    public function getNroCelularSim(): ?string
     {
         return $this->nroCelularSim;
     }
 
-    /**
-     * Set estado
-     *
-     * @param boolean $estado
-     * @return Tbl18DispositivosGps
-     */
-    public function setEstado($estado)
+    public function setEstado(?bool $estado): self
     {
         $this->estado = $estado;
-
         return $this;
     }
 
-    /**
-     * Get estado
-     *
-     * @return boolean 
-     */
-    public function getEstado()
+    public function getEstado(): ?bool
     {
         return $this->estado;
     }
 
-    /**
-     * Set marca
-     *
-     * @param string $marca
-     * @return Tbl18DispositivosGps
-     */
-    public function setMarca($marca)
+    public function setMarca(?string $marca): self
     {
         $this->marca = $marca;
-
         return $this;
     }
 
-    /**
-     * Get marca
-     *
-     * @return string
-     */
-    public function getMarca()
+    public function getMarca(): ?string
     {
         return $this->marca;
     }
 
-    /**
-     * Set modelo
-     *
-     * @param string $modelo
-     * @return Tbl18DispositivosGps
-     */
-    public function setModelo($modelo)
+    public function setModelo(?string $modelo): self
     {
         $this->modelo = $modelo;
-
         return $this;
     }
 
-    /**
-     * Get modelo
-     *
-     * @return string
-     */
-    public function getModelo()
+    public function getModelo(): ?string
     {
         return $this->modelo;
     }
 
-    /**
-     * Set fechaHoraPosicion
-     *
-     * @param \DateTime $fechaHoraPosicion
-     * @return Tbl18DispositivosGps
-     */
-    public function setFechaHoraPosicion($fechaHoraPosicion)
+    public function setFechaHoraPosicion(?\DateTime $fechaHoraPosicion): self
     {
         $this->fechaHoraPosicion = $fechaHoraPosicion;
-
         return $this;
     }
 
-    /**
-     * Get fechaHoraPosicion
-     *
-     * @return \DateTime 
-     */
-    public function getFechaHoraPosicion()
+    public function getFechaHoraPosicion(): ?\DateTime
     {
         return $this->fechaHoraPosicion;
     }
 
-    /**
-     * Set latitud
-     *
-     * @param float $latitud
-     * @return Tbl18DispositivosGps
-     */
-    public function setLatitud($latitud)
+    public function setLatitud(?float $latitud): self
     {
         $this->latitud = $latitud;
-
         return $this;
     }
 
-    /**
-     * Get latitud
-     *
-     * @return float 
-     */
-    public function getLatitud()
+    public function getLatitud(): ?float
     {
         return $this->latitud;
     }
 
-    /**
-     * Set longitud
-     *
-     * @param float $longitud
-     * @return Tbl18DispositivosGps
-     */
-    public function setLongitud($longitud)
+    public function setLongitud(?float $longitud): self
     {
         $this->longitud = $longitud;
-
         return $this;
     }
 
-    /**
-     * Get longitud
-     *
-     * @return float 
-     */
-    public function getLongitud()
+    public function getLongitud(): ?float
     {
         return $this->longitud;
     }
 
-    public function getPosition()
+    public function getPosition(): string
     {
-        return $this->latitud . "," .$this->longitud;
+        return $this->latitud . "," . $this->longitud;
     }
-    /**
-     * Set altitud
-     *
-     * @param integer $altitud
-     * @return Tbl18DispositivosGps
-     */
-    public function setAltitud($altitud)
+
+    public function setAltitud(?int $altitud): self
     {
         $this->altitud = $altitud;
-
         return $this;
     }
 
-    /**
-     * Get altitud
-     *
-     * @return integer 
-     */
-    public function getAltitud()
+    public function getAltitud(): ?int
     {
         return $this->altitud;
     }
 
-    /**
-     * Set velocidad
-     *
-     * @param integer $velocidad
-     * @return Tbl18DispositivosGps
-     */
-    public function setVelocidad($velocidad)
+    public function setVelocidad(?int $velocidad): self
     {
         $this->velocidad = $velocidad;
-
         return $this;
     }
 
-    /**
-     * Get velocidad
-     *
-     * @return integer
-     */
-    public function getVelocidad()
+    public function getVelocidad(): ?int
     {
         return $this->velocidad;
     }
 
-    /**
-     * Set curso
-     *
-     * @param string $curso
-     * @return Tbl18DispositivosGps
-     */
-    public function setCurso($curso)
+    public function setCurso(?string $curso): self
     {
         $this->curso = $curso;
-
         return $this;
     }
 
-    /**
-     * Get curso
-     *
-     * @return string 
-     */
-    public function getCurso()
+    public function getCurso(): ?string
     {
         return $this->curso;
     }
 
-    /**
-     * Set gpsInfoAlarm
-     *
-     * @param string $gpsInfoAlarm
-     * @return Tbl18DispositivosGps
-     */
-    public function setGpsInfoAlarm($gpsInfoAlarm)
+    public function setGpsInfoAlarm(?string $gpsInfoAlarm): self
     {
         $this->gpsInfoAlarm = $gpsInfoAlarm;
-
         return $this;
     }
 
-    /**
-     * Get gpsInfoAlarm
-     *
-     * @return string 
-     */
-    public function getGpsInfoAlarm()
+    public function getGpsInfoAlarm(): ?string
     {
         return $this->gpsInfoAlarm;
     }
 
-    //-   -   -   -   -   -   -   -   -   -   -   -   -   -
-
-    /**
-     * Set regStatus
-     *
-     * @param boolean $regStatus
-     * @return Tbl18DispositivosGps
-     */
-    public function setRegStatus($regStatus)
+    public function setRegStatus(?bool $regStatus): self
     {
         $this->regStatus = $regStatus;
-
         return $this;
     }
 
-    /**
-     * Get regStatus
-     *
-     * @return boolean
-     */
-    public function getRegStatus()
+    public function getRegStatus(): ?bool
     {
         return $this->regStatus;
     }
 
-    //-   -   -   -   -   -   -   -   -   -   -   -   -   -
-
-    /**
-     * Set createdAt
-     *
-     * @param \DateTime $createdAt
-     * @return Tbl18DispositivosGps
-     */
-    public function setCreatedAt($createdAt)
+    public function setCreatedAt(?\DateTime $createdAt): self
     {
         $this->createdAt = $createdAt;
-
         return $this;
     }
 
-    /**
-     * Get createdAt
-     *
-     * @return \DateTime
-     */
-    public function getCreatedAt()
+    public function getCreatedAt(): ?\DateTime
     {
         return $this->createdAt;
     }
 
-    /**
-     * Set createdBy
-     *
-     * @param integer $createdBy
-     * @return Tbl18DispositivosGps
-     */
-    public function setCreatedBy($createdBy)
+    public function setCreatedBy(?int $createdBy): self
     {
         $this->createdBy = $createdBy;
-
         return $this;
     }
 
-    /**
-     * Get createdBy
-     *
-     * @return integer
-     */
-    public function getCreatedBy()
+    public function getCreatedBy(): ?int
     {
         return $this->createdBy;
     }
 
-    //-   -   -   -   -   -   -   -   -   -   -   -   -   -
-
-    /**
-     * Set updatedAt
-     *
-     * @param \DateTime $updatedAt
-     * @return Tbl18DispositivosGps
-     */
-    public function setUpdatedAt($updatedAt)
+    public function setUpdatedAt(?\DateTime $updatedAt): self
     {
         $this->updatedAt = $updatedAt;
-
         return $this;
     }
 
-    /**
-     * Get updatedAt
-     *
-     * @return \DateTime
-     */
-    public function getUpdatedAt()
+    public function getUpdatedAt(): ?\DateTime
     {
         return $this->updatedAt;
     }
 
-    /**
-     * Set updatedBy
-     *
-     * @param integer $updatedBy
-     * @return Tbl18DispositivosGps
-     */
-    public function setUpdatedBy($updatedBy)
+    public function setUpdatedBy(?int $updatedBy): self
     {
         $this->updatedBy = $updatedBy;
-
         return $this;
     }
 
-    /**
-     * Get updatedBy
-     *
-     * @return integer
-     */
-    public function getUpdatedBy()
+    public function getUpdatedBy(): ?int
     {
         return $this->updatedBy;
     }
 
-    //-   -   -   -   -   -   -   -   -   -   -   -   -   -
-
-    /**
-     * Set deletedRestoredAt
-     *
-     * @param \DateTime $deletedRestoredAt
-     * @return Tbl18DispositivosGps
-     */
-    public function setDeletedRestoredAt($deletedRestoredAt)
+    public function setDeletedRestoredAt(?\DateTime $deletedRestoredAt): self
     {
         $this->deletedRestoredAt = $deletedRestoredAt;
-
         return $this;
     }
 
-    /**
-     * Get deletedRestoredAt
-     *
-     * @return \DateTime
-     */
-    public function getDeletedRestoredAt()
+    public function getDeletedRestoredAt(): ?\DateTime
     {
         return $this->deletedRestoredAt;
     }
 
-    /**
-     * Set deletedRestoredBy
-     *
-     * @param integer deletedRestoredBy
-     * @return Tbl18DispositivosGps
-     */
-    public function setDeletedRestoredBy($deletedRestoredBy)
+    public function setDeletedRestoredBy(?int $deletedRestoredBy): self
     {
         $this->deletedRestoredBy = $deletedRestoredBy;
-
         return $this;
     }
 
-    /**
-     * Get deletedRestoredBy
-     *
-     * @return integer
-     */
-    public function getDeletedRestoredBy()
+    public function getDeletedRestoredBy(): ?int
     {
         return $this->deletedRestoredBy;
     }
-
 }

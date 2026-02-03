@@ -2,7 +2,7 @@ scheb_two_factor:
     # Configuración para nuestro sistema de monitoreo
     email:
         enabled: true
-        sender_email: 'jnacaratto@gesvial.cl'
+        sender_email: '%env(MAILER_FROM)%'
         sender_name: 'SGV'
         digits: 6
         template: 'two_factor/email_code.html.twig'

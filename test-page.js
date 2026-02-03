@@ -64,12 +64,12 @@ async function testPage(path = '/admin/users', requiresLogin = true) {
                 timeout: 5000
             });
 
-            // Escribir credenciales usando evaluate para mayor compatibilidad
+            // Escribir credenciales con click + type
             await page.waitForSelector('#username', { timeout: 5000 });
-            await page.evaluate((user, pass) => {
-                document.getElementById('username').value = user;
-                document.getElementById('password').value = pass;
-            }, TEST_CONFIG.username, TEST_CONFIG.password);
+            await page.click('#username');
+            await page.type('#username', TEST_CONFIG.username, { delay: 30 });
+            await page.click('#password');
+            await page.type('#password', TEST_CONFIG.password, { delay: 30 });
 
             // Verificar si el botón es AJAX (#btn-ajax-login) o submit tradicional
             const isAjaxLogin = await page.$('#btn-ajax-login');

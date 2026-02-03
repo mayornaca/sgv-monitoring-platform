@@ -91,7 +91,7 @@ class TwoFactorController extends AbstractController
             }
 
         } catch (\Exception $e) {
-            $this->addFlash('error', 'Error: ' . $e->getMessage());
+            $this->addFlash('error', 'Error al procesar la solicitud. Por favor, intente nuevamente.');
         }
 
         return $this->redirectToRoute('app_2fa_choose');
@@ -153,7 +153,7 @@ class TwoFactorController extends AbstractController
                 }
 
             } catch (\Exception $e) {
-                $this->addFlash('error', 'Error al verificar el código: ' . $e->getMessage());
+                $this->addFlash('error', 'Error al verificar el código. Por favor, intente nuevamente.');
             }
         }
 
@@ -201,7 +201,7 @@ class TwoFactorController extends AbstractController
             }
 
         } catch (\Exception $e) {
-            $this->addFlash('error', 'Error: ' . $e->getMessage());
+            $this->addFlash('error', 'Error al procesar la solicitud. Por favor, intente nuevamente.');
         }
 
         return $this->redirectToRoute('app_2fa_verify');

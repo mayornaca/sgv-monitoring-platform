@@ -7,6 +7,7 @@ use App\Entity\DeviceType;
 use App\Entity\DeviceAlert;
 use App\Entity\Tbl06Concesionaria;
 use App\Entity\TblCot06AlarmasDispositivos;
+use App\Repository\DeviceTypeRepository;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
@@ -35,17 +36,20 @@ class CotController extends AbstractDashboardController
     protected ManagerRegistry $doctrine;
     private LoggerInterface $logger;
     private string $cronAuthToken;
+    private DeviceTypeRepository $deviceTypeRepository;
 
     public function __construct(
         EntityManagerInterface $entityManager,
         ManagerRegistry $doctrine,
         LoggerInterface $logger,
-        string $cronAuthToken
+        string $cronAuthToken,
+        DeviceTypeRepository $deviceTypeRepository
     ) {
         $this->entityManager = $entityManager;
         $this->doctrine = $doctrine;
         $this->logger = $logger;
         $this->cronAuthToken = $cronAuthToken;
+        $this->deviceTypeRepository = $deviceTypeRepository;
     }
 
     public function configureDashboard(): Dashboard
@@ -187,16 +191,16 @@ class CotController extends AbstractDashboardController
     
     
     /**
-     * Habilitar consulta de tipo de dispositivo OPC Daemon
+     * Activa flag consultar=1 para dispositivos OPC (metodo_monitoreo=3) de una concesionaria.
+     * El servicio OPC Daemon externo lee este flag para decidir qué dispositivos pollear.
+     * Usa UPDATE bulk via DeviceTypeRepository (1 query vs N del legacy).
      */
-    public function enableOpcDaemonDeviceType($id_type)
+    private function enableOpcPolling(?int $concesionaria = null): void
     {
-        $em = $this->entityManager;
-        $cot_device = $em->getRepository('App\Entity\TblCot01TiposDispositivos')->find($id_type);
-        if ($cot_device) {
-            $cot_device->setConsultar(1);
-            $em->persist($cot_device);
-            $em->flush();
+        try {
+            $this->deviceTypeRepository->enableOpcPolling($concesionaria);
+        } catch (\Exception $e) {
+            $this->logger->warning('Error activando OPC polling: ' . $e->getMessage());
         }
     }
     
@@ -316,6 +320,9 @@ class CotController extends AbstractDashboardController
 
             $tipos_dispositivos = $qb_tipos_dispositivos->getQuery()->getArrayResult();
             $arrIdsTiposDispositivos = array_column($tipos_dispositivos, 'id');
+
+            // Activar flag OPC Daemon para tipos con metodo_monitoreo=3
+            $this->enableOpcPolling($concession);
 
         } catch (\Exception $e) {
             $tipos_dispositivos = [];
@@ -852,8 +859,8 @@ class CotController extends AbstractDashboardController
             $fechaInicio_Date = $date->format('Y-m-d');
         } else {
             // Default: primer día del mes actual
-            $fechaInicio = date('d-m-Y', mktime(0, 0, 0, date('n'), 1, date('Y')));
-            $fechaInicio_Date = date('Y-m-d', mktime(0, 0, 0, date('n'), 1, date('Y')));
+            $fechaInicio = date('d-m-Y', mktime(0, 0, 0, date('n'), date('d'), date('Y')));
+            $fechaInicio_Date = date('Y-m-d', mktime(0, 0, 0, date('n'), date('d'), date('Y')));
         }
 
         // La fecha de término no se usa en este reporte
@@ -909,6 +916,141 @@ class CotController extends AbstractDashboardController
                         ROUND(AVG(t.rojo)*(100/1440),2) as roj
                         FROM tbl_cot_10_acumulado_resumen_espiras t
                         LEFT JOIN tbl_cot_02_dispositivos tcd on t.id_espira = tcd.id
+                        $sql_where
+                        GROUP BY t.id_espira
+                        $sql_sort";
+
+        try {
+            $stmt = $conn->prepare($sql_reg_pt);
+            $result = $stmt->executeQuery();
+            $arr_reg = $result->fetchAllAssociative();
+
+            if (!$arr_reg) {
+                $arr_reg = [];
+            }
+        } catch (\Exception $e) {
+            $this->logger->error('Error en consulta de estados diarios: ' . $e->getMessage());
+            $arr_reg = [];
+        }
+
+        // Generar PDF si se solicita
+        $return_file_name = null;
+        if ($generatePdf && !empty($arr_reg)) {
+            // TODO: Implementar generación de PDF con KnpSnappy cuando esté disponible
+            $pre_file_name = 'Estado operativo de espiras ' . $fechaInicio . ' [ID-' . uniqid('', true) . ']';
+            $return_file_name = $pre_file_name . '.pdf';
+        }
+
+        // Renderizar vista
+        return $this->render('dashboard/cot/spire_general_status.html.twig', [
+            'arr_status_spires' => $arr_reg,
+            'fechaInicio' => $fechaInicio,
+            'fechaTermino' => $fechaTermino,
+            'all_spires' => $arr_spires,
+            'sel_spires' => $spires,
+            'onlyErrors' => $onlyErrors,
+            'firstErrors' => $firstErrors,
+            'showEmpty' => $showEmpty,
+            'return_file_name_pdf' => $return_file_name,
+            'debug_sql' => $sql_reg_pt,
+            'debug_fecha' => $fechaInicio_Date,
+        ]);
+    }
+
+    /**
+     * Estados Diarios de Espiras VS - Reporte de estado general por día
+     * Muestra gráfico de barras apiladas con porcentaje de tiempo en cada estado
+     */
+    #[Route('/spire_general_status_vs', name: 'cot_spire_general_status_vs', methods: ['GET', 'POST'])]
+    public function cotSpireGeneralStatusVsAction(Request $request): Response
+    {
+        // Configurar timezone correcto para Chile
+        date_default_timezone_set('America/Santiago');
+
+        // Parámetros de la petición
+        $params = $request->getMethod() == 'POST' ? $request->request->all() : $request->query->all();
+
+        $action = $params['action'] ?? false;
+        $spires = $params['spires'] ?? false;
+        $generatePdf = isset($params['generatePdf']) && $params['generatePdf'] == 'on';
+        $firstErrors = isset($params['firstErrors']) && $params['firstErrors'] == 'on' ? 1 : 0;
+        $onlyErrors = isset($params['onlyErrors']) && $params['onlyErrors'] == 'on' ? 1 : 0;
+        $showEmpty = isset($params['showEmpty']) && $params['showEmpty'] == 'on' ? 1 : 0;
+
+        // Filtros de fecha - solo fecha de inicio para estados diarios
+        if (isset($params['fechaInicio']) && $params['fechaInicio']) {
+            $fechaInicio = $params['fechaInicio'];
+            $fechaInicio_Date = $this->getDate($fechaInicio);
+
+            // Convertir a solo fecha (sin hora)
+            $date = new \DateTime($fechaInicio_Date);
+            $fechaInicio_Date = $date->format('Y-m-d');
+        } else {
+            // Default: primer día del mes actual
+            $fechaInicio = date('d-m-Y', mktime(0, 0, 0, date('n'), date('d'), date('Y')));
+            $fechaInicio_Date = date('Y-m-d', mktime(0, 0, 0, date('n'), date('d'), date('Y')));
+        }
+
+        // La fecha de término no se usa en este reporte
+        $fechaTermino = $fechaInicio;
+        $fechaTermino_Date = $fechaInicio_Date;
+
+        $arr_reg = [];
+        $conn = $this->entityManager->getConnection();
+
+        // Preparar string de espiras seleccionadas - LEGACY LOGIC
+        $str_spires = false;
+
+        if (is_array($spires)) {
+            foreach ($spires as $spire) {
+                $str_spires .= ($str_spires ? ',' : '') . $spire;
+            }
+        } else if (strlen($spires) > 0) {
+            $str_spires .= ($str_spires ? ',' : '') . $spires;
+        }
+
+        // Obtener lista de todas las espiras (multi-concesionaria como en legacy)
+        $sql_spires = "SELECT * FROM tbl_cot_02_dispositivos 
+         WHERE id_tipo = 13 
+        AND descripcion = 'nuevo'
+        AND reg_status = 1
+         ORDER BY nombre ASC";
+        $stmt = $conn->prepare($sql_spires);
+        $result = $stmt->executeQuery();
+        $arr_spires = $result->fetchAllAssociative();
+
+        // Construir WHERE clause
+        $sql_where = "WHERE 1=1 
+        AND id_tipo = 13 
+        AND descripcion = 'nuevo'
+        AND reg_status = 1";
+
+        if ($fechaInicio_Date) {
+            $sql_where .= " AND t.created_at = '$fechaInicio_Date'";
+        }
+
+        if ($str_spires) {
+            $sql_where .= " AND t.id_espira in ($str_spires)";
+        }
+
+        if ($onlyErrors) {
+            $sql_where .= " AND (t.rojo > 0 OR t.amarillo > 0)";
+        }
+
+        // Ordenamiento
+        $sql_sort = 'ORDER BY tcd.nombre ASC';
+        if ($firstErrors) {
+            $sql_sort = "ORDER BY t.verde ASC";
+        }
+
+        // Query principal - obtiene promedios de estados por espira
+        // Calcula porcentaje basado en 1440 minutos por día (24 horas * 60 minutos)
+        $sql_reg_pt = "SELECT t.id, t.id_espira, tcd.nombre as id_dispositivo,
+                        ROUND(AVG(t.verde)*(100/1440),2) as ver,
+                        ROUND(AVG(t.amarillo)*(100/1440),2) as ama,
+                        ROUND(AVG(t.rojo)*(100/1440),2) as roj
+                        FROM tbl_cot_10_acumulado_resumen_espiras_vs t
+                        LEFT JOIN tbl_cot_02_dispositivos tcd on t.id_espira = tcd.id 
                         $sql_where
                         GROUP BY t.id_espira
                         $sql_sort";
@@ -1456,7 +1598,7 @@ class CotController extends AbstractDashboardController
         } catch (\Exception $e) {
             return new JsonResponse([
                 'success' => false,
-                'error' => 'Error al actualizar dispositivo: ' . $e->getMessage()
+                'error' => 'Error al actualizar dispositivo'
             ], 500);
         }
     }
@@ -1524,6 +1666,9 @@ class CotController extends AbstractDashboardController
 
         $tipos_dispositivos = $qb_tipos->getQuery()->getArrayResult();
         $all_tipos_dispositivos = $tipos_dispositivos; // Keep all types for filters
+
+        // Activar flag OPC Daemon para tipos con metodo_monitoreo=3
+        $this->enableOpcPolling($concessionId);
 
         // Get devices for VS
         $qb_dispositivos = $em->createQueryBuilder();
@@ -2516,7 +2661,7 @@ class CotController extends AbstractDashboardController
             return new JsonResponse([
                 'body' => '',
                 'status' => 'error',
-                'message' => $e->getMessage()
+                'message' => 'Error interno. Revise los logs del servidor.'
             ], 500);
         }
     }
@@ -2697,7 +2842,7 @@ class CotController extends AbstractDashboardController
             return new JsonResponse([
                 'body' => '',
                 'status' => 'error',
-                'message' => $e->getMessage()
+                'message' => 'Error interno. Revise los logs del servidor.'
             ], 500);
         }
     }
@@ -2740,7 +2885,7 @@ class CotController extends AbstractDashboardController
         }
 
         // FLAG DESARROLLO - Cambiar a true en producción
-        $isProduction = true;
+        $isProduction = false;
 
         // Configurar destinatarios según modo
         if ($isProduction) {
@@ -2891,7 +3036,7 @@ class CotController extends AbstractDashboardController
             return new JsonResponse([
                 'body' => '',
                 'status' => 'error',
-                'message' => $e->getMessage()
+                'message' => 'Error interno. Revise los logs del servidor.'
             ], 500);
         }
     }

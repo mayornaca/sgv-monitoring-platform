@@ -18,6 +18,11 @@
 
     {# Custom Legacy CSS (loaded after Encore to override styles) #}
     <link rel="stylesheet" href="{{ asset('css/auth-legacy-style.css') }}">
+
+    {# Google reCAPTCHA v2 #}
+    {% if recaptcha_enabled is defined and recaptcha_enabled %}
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    {% endif %}
 </head>
 <body>
 
@@ -74,7 +79,7 @@
                                 </div>
                             {% endfor %}
 
-                            {# Username Field with Floating Label #}
+                            {# Username/Email Field with Floating Label #}
                             <div class="form-group row">
                                 <div class="col-12">
                                     <div class="form-material floating">
@@ -87,7 +92,7 @@
                                                required
                                                autofocus
                                                autocomplete="username">
-                                        <label for="username">Nombre de usuario</label>
+                                        <label for="username">Email o Usuario</label>
                                     </div>
                                 </div>
                             </div>
@@ -102,7 +107,10 @@
                                                name="_password"
                                                placeholder=" "
                                                required
-                                               autocomplete="current-password">
+                                               autocomplete="current-password"
+{#                                               autocomplete="off"#}
+
+                                        >
                                         <label for="password">Contraseña</label>
                                     </div>
                                 </div>
@@ -122,6 +130,15 @@
                                     </div>
                                 </div>
                             </div>
+
+                            {# Google reCAPTCHA v2 Widget #}
+                            {% if recaptcha_enabled is defined and recaptcha_enabled %}
+                            <div class="form-group row">
+                                <div class="col-12">
+                                    <div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}"></div>
+                                </div>
+                            </div>
+                            {% endif %}
                         </form>
 
                         {# Submit Button (Outside form for AJAX) #}
@@ -138,7 +155,7 @@
                             <div class="mt-30">
                                 <a class="link-effect text-muted mr-10 mb-5 d-inline-block"
                                    href="{{ path('app_forgot_password') }}">
-                                    <i class="fa fa-exclamation-triangle mr-5"></i> ¿Has olvidado tu contraseña?
+                                    <i class="fa fa-exclamation-triangle mr-5"></i> ¿Ha olvidado su contraseña?
                                 </a>
                             </div>
                         </div>

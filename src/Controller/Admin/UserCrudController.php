@@ -144,6 +144,7 @@ class UserCrudController extends AbstractCrudController
                 ->setChoices([
                     'Roles Básicos' => [
                         'Usuario' => 'ROLE_USER',
+                        'Usuario VS' => 'ROLE_USUARIO_VS',
                     ],
                     'Administración' => [
                         'Administrador' => 'ROLE_ADMIN',
@@ -156,10 +157,8 @@ class UserCrudController extends AbstractCrudController
                     ],
                     'Monitoreo y Reportes' => [
                         'Monitor Gerencia' => 'ROLE_MONITOR_GERENCIA',
+                        'Monitor Gerencia VS' => 'ROLE_MONITOR_GERENCIA_VS',
                         'Monitor Gerencia Reportes' => 'ROLE_MONITOR_GERENCIA_REPORTES',
-                    ],
-                    'Vespucio Sur (VS)' => [
-                        'Usuario VS' => 'ROLE_USUARIO_VS',
                     ],
                     'Fiscalización' => [
                         'Inspector Fiscal' => 'ROLE_FISCAL_INSPECTOR',
@@ -168,6 +167,7 @@ class UserCrudController extends AbstractCrudController
                         'Operador SCADA' => 'ROLE_OPERATOR_SCADA',
                         'Operador Pórtico' => 'ROLE_OPERATOR_PORTICO',
                         'Operador Incidentes' => 'ROLE_OPERATOR_INCIDENTS',
+                        'Operador VS' => 'ROLE_OPERATOR_VS',
                     ],
                 ])
                 ->allowMultipleChoices()
@@ -181,7 +181,6 @@ class UserCrudController extends AbstractCrudController
                 ->setChoices([
                     'Español' => 'es',
                     'English' => 'en',
-                    'Português' => 'pt',
                 ])
                 ->setHelp('Idioma preferido del usuario'),
             // Campo Personal con búsqueda

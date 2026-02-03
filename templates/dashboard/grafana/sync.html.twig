@@ -1,0 +1,462 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+{% block title %}Grafana Sync{% endblock %}
+
+{% block content_title %}{% endblock %}
+
+{% block content_top_header %}
+    <div class="d-flex align-items-center gap-2">
+        <h5 class="m-0">
+            <i class="fas fa-sync-alt"></i>
+            Sincronización Grafana
+        </h5>
+    </div>
+    {{ parent() }}
+{% endblock %}
+
+{% block head_stylesheets %}
+    {{ parent() }}
+    <style>
+        .sync-container { padding: 1rem; }
+        .instance-card {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            background: #fff;
+        }
+        .instance-card.connected { border-left: 4px solid #28a745; }
+        .instance-card.disconnected { border-left: 4px solid #dc3545; }
+        .instance-card.unknown { border-left: 4px solid #6c757d; }
+        .content-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 0.5rem;
+            background: #f8f9fa;
+        }
+        .content-item {
+            padding: 0.25rem 0.5rem;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .content-item:last-child { border-bottom: none; }
+        .sync-panel {
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+            margin-top: 1rem;
+        }
+        .badge-folder { background: #6f42c1; }
+        .badge-dashboard { background: #0d6efd; }
+        .badge-datasource { background: #fd7e14; }
+        .modal-lg { max-width: 600px; }
+        .result-summary {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin: 1rem 0;
+        }
+        .result-item {
+            text-align: center;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        .result-item .count { font-size: 1.5rem; font-weight: bold; }
+        .error-list {
+            max-height: 200px;
+            overflow-y: auto;
+            text-align: left;
+            font-size: 0.85rem;
+        }
+    </style>
+{% endblock %}
+
+{% block main %}
+<div class="sync-container">
+    <div class="row">
+        <div class="col-12 mb-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <p class="text-muted mb-0">Gestiona y sincroniza dashboards entre instancias de Grafana</p>
+                <button class="btn btn-primary btn-sm" onclick="showAddInstanceModal()">
+                    <i class="fas fa-plus"></i> Agregar Instancia
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="instances-container" class="row">
+        {% for key, instance in instances %}
+        <div class="col-md-6 col-lg-4" id="instance-{{ key }}">
+            <div class="instance-card unknown">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <h6 class="mb-1">{{ instance.name }}</h6>
+                        <small class="text-muted">{{ instance.url }}</small>
+                    </div>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-secondary" onclick="testConnection('{{ key }}')" title="Test conexión">
+                            <i class="fas fa-plug"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="loadContent('{{ key }}')" title="Ver contenido">
+                            <i class="fas fa-folder-open"></i>
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="deleteInstance('{{ key }}')" title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="status-badge mb-2">
+                    <span class="badge bg-secondary" id="status-{{ key }}">Sin verificar</span>
+                    <span class="badge bg-light text-dark" id="version-{{ key }}"></span>
+                </div>
+                <div id="content-{{ key }}" class="content-list d-none"></div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                No hay instancias configuradas. Agrega una instancia para comenzar.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="sync-panel" id="sync-panel">
+        <h5><i class="fas fa-exchange-alt"></i> Sincronización</h5>
+        <p class="text-muted">Selecciona origen y destino para sincronizar dashboards</p>
+        <div class="row justify-content-center">
+            <div class="col-md-4">
+                <label class="form-label">Origen</label>
+                <select class="form-select" id="sync-source">
+                    <option value="">Seleccionar...</option>
+                    {% for key, instance in instances %}
+                    <option value="{{ key }}">{{ instance.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-1 d-flex align-items-end justify-content-center pb-2">
+                <i class="fas fa-arrow-right fa-lg text-muted"></i>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Destino</label>
+                <select class="form-select" id="sync-target">
+                    <option value="">Seleccionar...</option>
+                    {% for key, instance in instances %}
+                    <option value="{{ key }}">{{ instance.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="mt-3">
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="sync-datasources" checked>
+                <label class="form-check-label" for="sync-datasources">Incluir Datasources</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="sync-overwrite" checked>
+                <label class="form-check-label" for="sync-overwrite">Sobrescribir existentes</label>
+            </div>
+        </div>
+        <button class="btn btn-success mt-3" onclick="startSync()" id="btn-sync">
+            <i class="fas fa-sync-alt"></i> Iniciar Sincronización
+        </button>
+    </div>
+</div>
+
+<!-- Modal: Agregar Instancia -->
+<div class="modal fade" id="addInstanceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Agregar Instancia Grafana</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Identificador (key)</label>
+                    <input type="text" class="form-control" id="instance-key" placeholder="ej: cn, vs, central">
+                    <small class="text-muted">Identificador único sin espacios</small>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Nombre</label>
+                    <input type="text" class="form-control" id="instance-name" placeholder="ej: Costanera Norte">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">URL de Grafana</label>
+                    <input type="url" class="form-control" id="instance-url" placeholder="https://example.com/grafana">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">API Token</label>
+                    <input type="password" class="form-control" id="instance-token" placeholder="glsa_xxx...">
+                    <small class="text-muted">Generar en Grafana: Administration > API Keys</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveInstance()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Resultados de Sincronización -->
+<div class="modal fade" id="syncResultModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="syncResultTitle">Resultado de Sincronización</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="syncResultBody">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block body_javascript %}
+{{ parent() }}
+<script>
+const API_BASE = '{{ path('admin_grafana_sync_api_instances') }}';
+
+function showAddInstanceModal() {
+    const modal = new bootstrap.Modal(document.getElementById('addInstanceModal'));
+    document.getElementById('instance-key').value = '';
+    document.getElementById('instance-name').value = '';
+    document.getElementById('instance-url').value = '';
+    document.getElementById('instance-token').value = '';
+    modal.show();
+}
+
+async function saveInstance() {
+    const data = {
+        key: document.getElementById('instance-key').value.trim(),
+        name: document.getElementById('instance-name').value.trim(),
+        url: document.getElementById('instance-url').value.trim(),
+        token: document.getElementById('instance-token').value.trim()
+    };
+
+    if (!data.key || !data.name || !data.url || !data.token) {
+        alert('Todos los campos son requeridos');
+        return;
+    }
+
+    try {
+        const response = await fetch(API_BASE, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + result.error);
+        }
+    } catch (e) {
+        alert('Error de conexión: ' + e.message);
+    }
+}
+
+async function deleteInstance(key) {
+    if (!confirm('¿Eliminar esta instancia?')) return;
+
+    try {
+        const response = await fetch(API_BASE + '/' + key, { method: 'DELETE' });
+        const result = await response.json();
+
+        if (result.success) {
+            document.getElementById('instance-' + key)?.remove();
+        } else {
+            alert('Error: ' + result.error);
+        }
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
+
+async function testConnection(key) {
+    const statusEl = document.getElementById('status-' + key);
+    const versionEl = document.getElementById('version-' + key);
+    const card = document.querySelector('#instance-' + key + ' .instance-card');
+
+    statusEl.className = 'badge bg-warning';
+    statusEl.textContent = 'Verificando...';
+
+    try {
+        const response = await fetch(API_BASE + '/' + key + '/test');
+        const result = await response.json();
+
+        if (result.success) {
+            card.classList.remove('unknown', 'disconnected');
+            card.classList.add('connected');
+            statusEl.className = 'badge bg-success';
+            statusEl.textContent = result.org || 'Conectado';
+            versionEl.textContent = result.version ? 'v' + result.version : '';
+        } else {
+            card.classList.remove('unknown', 'connected');
+            card.classList.add('disconnected');
+            statusEl.className = 'badge bg-danger';
+            statusEl.textContent = 'Error';
+            versionEl.textContent = '';
+            console.error(result.error);
+        }
+    } catch (e) {
+        card.classList.remove('unknown', 'connected');
+        card.classList.add('disconnected');
+        statusEl.className = 'badge bg-danger';
+        statusEl.textContent = 'Error conexión';
+    }
+}
+
+async function loadContent(key) {
+    const contentEl = document.getElementById('content-' + key);
+    contentEl.classList.remove('d-none');
+    contentEl.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando...</div>';
+
+    try {
+        const response = await fetch(API_BASE + '/' + key + '/content');
+        const result = await response.json();
+
+        if (result.success) {
+            let html = '';
+
+            if (result.folders.length) {
+                html += '<div class="mb-2"><strong>Folders (' + result.folders.length + ')</strong></div>';
+                result.folders.forEach(f => {
+                    html += '<div class="content-item"><span><span class="badge badge-folder">F</span> ' + f.title + '</span></div>';
+                });
+            }
+
+            if (result.datasources.length) {
+                html += '<div class="mb-2 mt-3"><strong>Datasources (' + result.datasources.length + ')</strong></div>';
+                result.datasources.forEach(d => {
+                    html += '<div class="content-item"><span><span class="badge badge-datasource">DS</span> ' + d.name + '</span><small class="text-muted">' + d.type + '</small></div>';
+                });
+            }
+
+            if (result.dashboards.length) {
+                html += '<div class="mb-2 mt-3"><strong>Dashboards (' + result.dashboards.length + ')</strong></div>';
+                result.dashboards.forEach(d => {
+                    html += '<div class="content-item"><span><span class="badge badge-dashboard">D</span> ' + d.title + '</span><small class="text-muted">' + (d.folderTitle || 'General') + '</small></div>';
+                });
+            }
+
+            contentEl.innerHTML = html || '<p class="text-muted text-center">Sin contenido</p>';
+        } else {
+            contentEl.innerHTML = '<p class="text-danger">Error: ' + result.error + '</p>';
+        }
+    } catch (e) {
+        contentEl.innerHTML = '<p class="text-danger">Error: ' + e.message + '</p>';
+    }
+}
+
+async function startSync() {
+    const source = document.getElementById('sync-source').value;
+    const target = document.getElementById('sync-target').value;
+    const includeDatasources = document.getElementById('sync-datasources').checked;
+    const overwrite = document.getElementById('sync-overwrite').checked;
+
+    if (!source || !target) {
+        alert('Selecciona origen y destino');
+        return;
+    }
+
+    if (source === target) {
+        alert('Origen y destino deben ser diferentes');
+        return;
+    }
+
+    const btn = document.getElementById('btn-sync');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sincronizando...';
+
+    try {
+        const response = await fetch('{{ path('admin_grafana_sync_api_sync') }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ source, target, includeDatasources, overwrite })
+        });
+
+        const result = await response.json();
+        showSyncResult(result);
+    } catch (e) {
+        alert('Error: ' + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-sync-alt"></i> Iniciar Sincronización';
+    }
+}
+
+function showSyncResult(result) {
+    const modal = new bootstrap.Modal(document.getElementById('syncResultModal'));
+    const titleEl = document.getElementById('syncResultTitle');
+    const bodyEl = document.getElementById('syncResultBody');
+
+    if (result.success) {
+        titleEl.innerHTML = '<i class="fas fa-check-circle text-success"></i> Sincronización Completada';
+    } else if (result.partial) {
+        titleEl.innerHTML = '<i class="fas fa-exclamation-triangle text-warning"></i> Sincronización Parcial';
+    } else {
+        titleEl.innerHTML = '<i class="fas fa-times-circle text-danger"></i> Error en Sincronización';
+        bodyEl.innerHTML = '<p class="text-danger">' + result.error + '</p>';
+        modal.show();
+        return;
+    }
+
+    const summary = result.summary;
+    let html = `
+        <div class="result-summary">
+            <div class="result-item">
+                <div class="count text-primary">${summary.folders}</div>
+                <div>Folders</div>
+            </div>
+            <div class="result-item">
+                <div class="count text-warning">${summary.datasources}</div>
+                <div>Datasources</div>
+            </div>
+            <div class="result-item">
+                <div class="count text-success">${summary.dashboards}</div>
+                <div>Dashboards</div>
+            </div>
+            <div class="result-item">
+                <div class="count text-danger">${summary.errors}</div>
+                <div>Errores</div>
+            </div>
+        </div>
+    `;
+
+    if (result.results.errors && result.results.errors.length > 0) {
+        html += '<div class="alert alert-warning mt-3"><strong>Errores:</strong><div class="error-list">';
+        result.results.errors.forEach(e => {
+            html += `<div><strong>${e.type}:</strong> ${e.name} - ${e.error}</div>`;
+        });
+        html += '</div></div>';
+    }
+
+    if (summary.datasources > 0) {
+        html += '<div class="alert alert-info mt-3"><i class="fas fa-info-circle"></i> <strong>Importante:</strong> Re-ingresa las credenciales de los datasources en el Grafana destino.</div>';
+    }
+
+    bodyEl.innerHTML = html;
+    modal.show();
+}
+
+// Test all connections on load
+document.addEventListener('DOMContentLoaded', function() {
+    {% for key, instance in instances %}
+    testConnection('{{ key }}');
+    {% endfor %}
+});
+</script>
+{% endblock %}

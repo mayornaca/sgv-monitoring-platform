@@ -9,6 +9,8 @@ parameters:
     siv_templates_directory: '%kernel.project_dir%/public/files/templates'
     cot_devices_directory: '%kernel.project_dir%/public/downloads'
     instance_concessions: '%env(string:INSTANCE_CONCESSIONS)%'
+    recaptcha_site_key: '%env(default::string:RECAPTCHA_SITE_KEY)%'
+    recaptcha_secret_key: '%env(default::string:RECAPTCHA_SECRET_KEY)%'
 
 services:
     # default configuration for services in *this* file
@@ -72,3 +74,9 @@ services:
     App\Repository\AppSettingRepository:
         calls:
             - setCache: ['@cache.app']
+
+    # reCAPTCHA Service con credenciales desde env
+    App\Service\RecaptchaService:
+        arguments:
+            $siteKey: '%recaptcha_site_key%'
+            $secretKey: '%recaptcha_secret_key%'

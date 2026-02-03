@@ -58,7 +58,7 @@
         <div class="mb-3">
             <div class="btn-group">
                 <button class="btn btn-info" type="button">
-                    Total registros: <span id="total" class="badge bg-light text-dark">{{ data_table|length|default(0) }}</span>
+                    Total registros: <span id="total" class="badge bg-light text-dark">{{ data_table|length }}</span>
                 </button>
                 <button id="toggle_task_bar" type="button" class="btn btn-secondary" data-bs-toggle="collapse" data-bs-target="#filter-panel">
                     <i class="fas fa-filter"></i> Filtros & Opciones
@@ -146,11 +146,11 @@
                                 <label for="p_km_ini" class="form-label">
                                     <i class="fas fa-map-marker-alt me-1"></i>Km Inicio
                                 </label>
-                                <input id="p_km_ini" type="number" name="p_km_ini" class="form-control" disabled value="{{ p_km_ini }}">
+                                <input id="p_km_ini" type="number" name="p_km_ini" class="form-control" disabled>
                                 <label for="p_km_fin" class="form-label mt-2">
                                     <i class="fas fa-map-marker-alt me-1"></i>Km Fin
                                 </label>
-                                <input id="p_km_fin" type="number" name="p_km_fin" class="form-control" disabled value="{{ p_km_fin }}">
+                                <input id="p_km_fin" type="number" name="p_km_fin" class="form-control" disabled>
                             </div>
 
                             <div class="col-md-2 d-flex align-items-end">
@@ -408,12 +408,12 @@
                 if(startkm !== '-' && endkm !== '-'){
                     p_km_ini.prop('disabled', false);
                     p_km_fin.prop('disabled', false);
-                    p_km_ini.prop('min', startkm);
-                    p_km_ini.prop('max', endkm);
-                    p_km_fin.prop('min', startkm);
-                    p_km_fin.prop('max', endkm);
-                    p_km_ini.val(startkm);
-                    p_km_fin.val(endkm);
+                    // p_km_ini.prop('min', startkm);
+                    // p_km_ini.prop('max', endkm);
+                    // p_km_fin.prop('min', startkm);
+                    // p_km_fin.prop('max', endkm);
+                    // p_km_ini.val(startkm);
+                    // p_km_fin.val(endkm);
                 } else {
                     p_km_ini.val(null);
                     p_km_fin.val(null);

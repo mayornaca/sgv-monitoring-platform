@@ -4,7 +4,8 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Form\ChangePasswordFormType;
-use App\Form\ResetPasswordRequestFormType;
+use App\Repository\UserRepository;
+use App\Service\RecaptchaService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -23,35 +24,49 @@ class ResetPasswordController extends AbstractController
         private TokenGeneratorInterface $tokenGenerator,
         private EntityManagerInterface $entityManager,
         private MailerInterface $mailer,
-        private UserPasswordHasherInterface $passwordHasher
+        private UserPasswordHasherInterface $passwordHasher,
+        private RecaptchaService $recaptchaService,
+        private UserRepository $userRepository
     ) {}
 
     #[Route('', name: 'app_forgot_password')]
     public function request(Request $request): Response
     {
-        $form = $this->createForm(ResetPasswordRequestFormType::class);
-        $form->handleRequest($request);
+        if ($request->isMethod('POST')) {
+            // Validar reCAPTCHA si está habilitado
+            if ($this->recaptchaService->isEnabled()) {
+                $recaptchaResponse = $request->request->get('g-recaptcha-response');
+                if (!$this->recaptchaService->validate($recaptchaResponse, $request->getClientIp())) {
+                    $this->addFlash('error', 'Por favor complete la verificación de seguridad (reCAPTCHA).');
+                    return $this->redirectToRoute('app_forgot_password');
+                }
+            }
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $email = $form->get('email')->getData();
-            
-            $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $email]);
-            
-            if ($user) {
+            $identifier = trim($request->request->get('email', ''));
+
+            if (empty($identifier)) {
+                $this->addFlash('error', 'Por favor ingresa tu email o nombre de usuario.');
+                return $this->redirectToRoute('app_forgot_password');
+            }
+
+            // Buscar por email O username usando el método del repositorio
+            $user = $this->userRepository->findByIdentifier($identifier);
+
+            if ($user && $user->isActive()) {
                 // Generate reset token
                 $resetToken = $this->tokenGenerator->generateToken();
                 $user->setResetToken($resetToken);
                 $user->setResetTokenExpiresAt(new \DateTimeImmutable('+1 hour'));
-                
+
                 $this->entityManager->flush();
-                
+
                 // Send email
-                $resetUrl = $this->generateUrl('app_reset_password', 
-                    ['token' => $resetToken], 
+                $resetUrl = $this->generateUrl('app_reset_password',
+                    ['token' => $resetToken],
                     UrlGeneratorInterface::ABSOLUTE_URL
                 );
-                
-                $email = (new Email())
+
+                $emailMessage = (new Email())
                     ->from('sgv@gesvial.cl')
                     ->to($user->getEmail())
                     ->subject('Recuperación de contraseña - SGV')
@@ -61,22 +76,23 @@ class ResetPasswordController extends AbstractController
                         <p><a href="%s">%s</a></p>
                         <p>Este enlace expirará en 1 hora.</p>
                         <p>Si no solicitaste este cambio, ignora este mensaje.</p>',
-                        $user->getFirstName(),
+                        $user->getFirstName() ?: $user->getUsername(),
                         $resetUrl,
                         $resetUrl
                     ));
-                
-                $this->mailer->send($email);
+
+                $this->mailer->send($emailMessage);
             }
-            
+
             // Always show success message to prevent user enumeration
-            $this->addFlash('success', 'Si existe una cuenta con ese email, recibirás instrucciones para restablecer tu contraseña.');
-            
+            $this->addFlash('success', 'Si existe una cuenta con ese email o usuario, recibirás instrucciones para restablecer tu contraseña.');
+
             return $this->redirectToRoute('app_login');
         }
 
         return $this->render('security/reset_password_request.html.twig', [
-            'requestForm' => $form->createView(),
+            'recaptcha_site_key' => $this->recaptchaService->getSiteKey(),
+            'recaptcha_enabled' => $this->recaptchaService->isEnabled(),
         ]);
     }
 

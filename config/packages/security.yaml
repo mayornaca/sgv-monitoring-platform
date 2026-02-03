@@ -24,6 +24,7 @@ security:
             - ROLE_VIEW_VS_MONITOR
             - ROLE_VIEW_SIV_REPORTS
             - ROLE_ALLOWED_TO_SWITCH
+            - ROLE_USUARIO_VS
 
         # Admin COT - 4 menús específicos
         ROLE_ADMIN_COT:
@@ -71,6 +72,14 @@ security:
             - ROLE_VIEW_VS_MONITOR           # monitor espiras vs
 #            - ROLE_VIEW_INCIDENT_REPORTS     # Reportes incidentes
 #            - ROLE_VIEW_PHONE_REPORTS        # Reportes Citofonia
+        # Monitor Gerencia - 4 menús específicos
+        ROLE_MONITOR_GERENCIA_VS:
+            - ROLE_ADMIN
+            - ROLE_VIEW_SPIRE_MONITOR        # monitor espiras
+            - ROLE_VIEW_SPIRE_HISTORY        # historial espiras
+            - ROLE_VIEW_VS_SPIRE_HISTORY     # historial espiras vs
+            - ROLE_VIEW_VS_MONITOR           # monitor espiras vs
+            - ROLE_VIEW_INCIDENT_REPORTS
 
         # Monitor Gerencia Reportes - Solo acceso a reportes de incidentes
         ROLE_MONITOR_GERENCIA_REPORTES:
@@ -88,11 +97,19 @@ security:
             - ROLE_VIEW_SOS_REPORT           # Reporte sensores sos
             - ROLE_VIEW_SOS_MONITOR          # monitor sensores sos
 
+        ROLE_OPERATOR_VS:
+            - ROLE_ADMIN
+            - ROLE_VIEW_VS_SPIRE_HISTORY     # historial espiras vs
+            - ROLE_VIEW_VS_MONITOR           # monitor espiras vs
+
         # Usuario VS - 2 menús específicos
         ROLE_USUARIO_VS:
             - ROLE_ADMIN
             - ROLE_VIEW_VS_SPIRE_HISTORY     # historial espiras vs
             - ROLE_VIEW_VS_MONITOR           # monitor espiras vs
+            - ROLE_VIEW_VS_SPIRE_HISTORY     # historial espiras vs
+            - ROLE_VIEW_VS_MONITOR           # monitor espiras vs
+            - ROLE_VIEW_INCIDENT_REPORTS
 
         # Admin general del sistema
         ROLE_ADMIN:
@@ -128,7 +145,8 @@ security:
         app_user_provider:
             entity:
                 class: App\Entity\User
-                property: email
+                # Sin "property" → Symfony usa UserLoaderInterface del Repository
+                # Permite login con email O username (extensible a teléfono)
         # used to reload user from session & other features (e.g. switch_user)
     
     firewalls:
@@ -177,7 +195,8 @@ security:
         main:
             lazy: true
             provider: app_user_provider
-            
+            user_checker: App\Security\UserChecker
+
             form_login:
                 login_path: app_login
                 check_path: app_login

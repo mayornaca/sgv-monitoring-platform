@@ -71,4 +71,30 @@ class DeviceTypeRepository extends ServiceEntityRepository
             ->getQuery()
             ->getArrayResult();
     }
+
+    /**
+     * Activa el flag consultar=1 para tipos de dispositivo con metodo_monitoreo=3 (OPC Daemon).
+     * Un servicio externo lee este flag para saber qué dispositivos pollear.
+     * Usa UPDATE bulk (1 query) en vez de N queries individuales.
+     *
+     * @param int|null $concesionaria Si se pasa, filtra por concesionaria. Si es null, activa todos.
+     * @return int Cantidad de registros actualizados
+     */
+    public function enableOpcPolling(?int $concesionaria = null): int
+    {
+        $qb = $this->getEntityManager()->createQueryBuilder()
+            ->update(DeviceType::class, 'dt')
+            ->set('dt.consultar', 1)
+            ->where('dt.metodoMonitoreo = :method')
+            ->andWhere('dt.mostrar = :mostrar')
+            ->setParameter('method', 3)
+            ->setParameter('mostrar', true);
+
+        if ($concesionaria !== null) {
+            $qb->andWhere('dt.concesionaria = :concesionaria')
+                ->setParameter('concesionaria', $concesionaria);
+        }
+
+        return $qb->getQuery()->execute();
+    }
 }

@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Contracts\Service\Attribute\Required;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -33,73 +34,55 @@ abstract class BaseController extends AbstractController
     protected ?SessionInterface $session = null;
     protected ?LoggerInterface $logger = null;
 
-    /**
-     * @required
-     */
+    #[Required]
     public function setEntityManager(EntityManagerInterface $entityManager): void
     {
         $this->entityManager = $entityManager;
     }
 
-    /**
-     * @required
-     */
+    #[Required]
     public function setFormFactory(FormFactoryInterface $formFactory): void
     {
         $this->formFactory = $formFactory;
     }
 
-    /**
-     * @required
-     */
+    #[Required]
     public function setTwig(Environment $twig): void
     {
         $this->twig = $twig;
     }
 
-    /**
-     * @required
-     */
+    #[Required]
     public function setRouter(RouterInterface $router): void
     {
         $this->router = $router;
     }
 
-    /**
-     * @required
-     */
+    #[Required]
     public function setTranslator(TranslatorInterface $translator): void
     {
         $this->translator = $translator;
     }
 
-    /**
-     * @required
-     */
+    #[Required]
     public function setAuthChecker(AuthorizationCheckerInterface $authChecker): void
     {
         $this->authChecker = $authChecker;
     }
 
-    /**
-     * @required
-     */
+    #[Required]
     public function setTokenStorage(TokenStorageInterface $tokenStorage): void
     {
         $this->tokenStorage = $tokenStorage;
     }
 
-    /**
-     * @required
-     */
+    #[Required]
     public function setPasswordHasher(UserPasswordHasherInterface $passwordHasher): void
     {
         $this->passwordHasher = $passwordHasher;
     }
 
-    /**
-     * @required
-     */
+    #[Required]
     public function setRequestStack(RequestStack $requestStack): void
     {
         $this->requestStack = $requestStack;
@@ -109,9 +92,7 @@ abstract class BaseController extends AbstractController
         }
     }
 
-    /**
-     * @required
-     */
+    #[Required]
     public function setLogger(LoggerInterface $logger): void
     {
         $this->logger = $logger;
@@ -170,7 +151,7 @@ abstract class BaseController extends AbstractController
     /**
      * Translate message
      */
-    protected function trans(string $id, array $parameters = [], string $domain = null, string $locale = null): string
+    protected function trans(string $id, array $parameters = [], ?string $domain = null, ?string $locale = null): string
     {
         return $this->translator?->trans($id, $parameters, $domain, $locale) ?? $id;
     }

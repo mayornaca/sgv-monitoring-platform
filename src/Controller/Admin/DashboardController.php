@@ -159,9 +159,12 @@ class DashboardController extends AbstractDashboardController
     public function configureDashboard(): Dashboard
     {
         $logoHtml = '<img src="/assets/images/logo.png" style="height: 35px;">';
-        if ($this->hasConcession(20)) {
+        if ($this->hasConcession(20) && !$this->hasConcession(22)) {
             // mostrar logo Vespucio Sur si la concesión 20 está habilitada como svg
             $logoHtml = '<img src="/images/concessions/vs_logo.png" style="height: 35px;">';
+        }
+        elseif ($this->hasConcession(22) && !$this->hasConcession(20)){
+            $logoHtml = '<img src="/images/concessions/cn_logo.png" style="height: 35px;">';
         }
 
         return Dashboard::new()
@@ -198,8 +201,9 @@ class DashboardController extends AbstractDashboardController
         //yield MenuItem::linkToDashboard('Dashboard', 'fas fa-tachometer-alt');
 
         // Monitor de dispositivos - CN (Costanera Norte)
-        yield MenuItem::section('Monitoreo')->setPermission('ROLE_VIEW_DEVICE_LIST');;
-        if ($this->hasConcession(22)){
+        yield MenuItem::section('Monitoreo')->setPermission('ROLE_VIEW_DEVICE_LIST');
+        // Menú específico para concesión Costanera Norte (22)
+        if ($this->hasConcession(22) && !$this->hasConcession(20)){
             yield MenuItem::linkToRoute('Resumen', 'fas fa-pie-chart', 'cot_dashboard')
                 ->setPermission('ROLE_SUPER_ADMIN');
 //        yield MenuItem::linkToRoute('Videowall Dispositivos', 'fas fa-th-large', 'admin_cot_monitor', [
@@ -275,44 +279,50 @@ class DashboardController extends AbstractDashboardController
             yield MenuItem::linkToRoute('Bitácora', 'fas fa-book', 'admin_siv_dashboard_lista_bitacora_scada')
                 ->setPermission('ROLE_VIEW_SCADA_LOG');
         }
-        elseif ($this->hasConcession(20)){
+        elseif ($this->hasConcession(20) && !$this->hasConcession(22)){
+
+            // Menu específico para concesión Vespucio Sur (20)
             // Monitor Dispositivos (el reporte está dentro via botón "Generar Reporte")
-            yield MenuItem::linkToRoute('Lista Dispositivos VS', 'fas fa-list', 'admin_cot_monitor', [
-                'id' => 0,
-                'concession' => 20,
-                'videowall' => 'false',
-                'device_status' => 'all',
-                'contract_ui' => 'true',
-                'masonry' => 'true',
-                'grid_items_width' => '2',
-                'input_device_finder' => ''
-            ])->setPermission('ROLE_SUPER_ADMIN');
+
+//            yield MenuItem::linkToRoute('Lista Dispositivos VS', 'fas fa-list', 'admin_cot_monitor', [
+//                'id' => 0,
+//                'concession' => 20,
+//                'videowall' => 'false',
+//                'device_status' => 'all',
+//                'contract_ui' => 'true',
+//                'masonry' => 'true',
+//                'grid_items_width' => '2',
+//                'input_device_finder' => ''
+//            ])->setPermission('ROLE_SUPER_ADMIN');
+
             yield MenuItem::linkToRoute('Monitor Espiras VS', 'fas fa-circle-notch', 'admin_vs_index', ['id' => 13])
                 ->setPermission('ROLE_VIEW_VS_SPIRE_HISTORY');
+
             yield MenuItem::linkToRoute('Historial Espiras VS', 'fas fa-history', 'admin_spire_history_vs_min')
                 ->setPermission('ROLE_VIEW_VS_SPIRE_HISTORY');
 
-            // Reportes SIV (enlaces duplicados desde menú general para facilitar acceso)
-            yield MenuItem::linkToRoute('Tiempos Recursos externos', 'fas fa-clock', 'admin_siv_dashboard_tiempos_recursos_externos_vs')
-                ->setPermission('ROLE_SUPER_ADMIN');
-            yield MenuItem::linkToRoute('Tiempos Respuesta por recurso', 'fas fa-stopwatch', 'admin_siv_dashboard_tiempos_respuesta_recursos_vs')
-                ->setPermission('ROLE_SUPER_ADMIN');
-            yield MenuItem::linkToRoute('Tiempos Respuesta por incidente', 'fas fa-hourglass', 'admin_siv_dashboard_tiempos_respuesta_incidente_vs')
-                ->setPermission('ROLE_SUPER_ADMIN');
-            yield MenuItem::linkToRoute('Detalle Incidentes', 'fas fa-list-alt', 'admin_siv_dashboard_detalle_incidentes_vs')
-                ->setPermission('ROLE_SUPER_ADMIN');
-            yield MenuItem::linkToRoute('Incidentes Ocupación', 'fas fa-road', 'admin_siv_dashboard_incidentes_ocupacion_vs')
-                ->setPermission('ROLE_SUPER_ADMIN');
-
-
-
+            // Incidentes
+            yield MenuItem::subMenu('Incidentes', 'fas fa-car-crash')->setSubItems([
+                // Reportes SIV (enlaces duplicados desde menú general para facilitar acceso)
+                 MenuItem::linkToRoute('Tiempos Recursos externos', 'fas fa-clock', 'admin_siv_dashboard_tiempos_recursos_externos_vs')
+                    ->setPermission('ROLE_VIEW_INCIDENT_REPORTS'),
+            MenuItem::linkToRoute('Tiempos Respuesta por recurso', 'fas fa-stopwatch', 'admin_siv_dashboard_tiempos_respuesta_recursos_vs')
+                ->setPermission('ROLE_VIEW_INCIDENT_REPORTS'),
+            MenuItem::linkToRoute('Tiempos Respuesta por incidente', 'fas fa-hourglass', 'admin_siv_dashboard_tiempos_respuesta_incidente_vs')
+                ->setPermission('ROLE_VIEW_INCIDENT_REPORTS'),
+            MenuItem::linkToRoute('Detalle Incidentes', 'fas fa-list-alt', 'admin_siv_dashboard_detalle_incidentes_vs')
+                ->setPermission('ROLE_USUARIO_VS'),
+            MenuItem::linkToRoute('Incidentes Ocupación', 'fas fa-road', 'admin_siv_dashboard_incidentes_ocupacion_vs')
+                ->setPermission('ROLE_VIEW_INCIDENT_REPORTS')
+            ])->setPermission('ROLE_VIEW_INCIDENT_REPORTS');
         }
 
-        if ($this->hasConcession(22)){
+        // Menu específico para concesión Costanera Norte (22) y Vespucio Sur (20)
+        if ($this->hasConcession(22) && $this->hasConcession(20)){
             // VS (Vespucio Sur)
             yield MenuItem::subMenu('VESPUCIO SUR', 'fas fa-highway')->setSubItems([
                 // Monitor Dispositivos (el reporte está dentro via botón "Generar Reporte")
-                MenuItem::linkToRoute('Lista Dispositivos VS', 'fas fa-list', 'admin_cot_monitor', [
+                MenuItem::linkToRoute('Lista Dispositivos', 'fas fa-list', 'admin_cot_monitor', [
                     'id' => 0,
                     'concession' => 20,
                     'videowall' => 'false',
@@ -322,7 +332,8 @@ class DashboardController extends AbstractDashboardController
                     'grid_items_width' => '2',
                     'input_device_finder' => ''
                 ])->setPermission('ROLE_SUPER_ADMIN'),
-                MenuItem::linkToRoute('Monitor Espiras VS', 'fas fa-circle-notch', 'admin_vs_index', ['id' => 13])
+
+                MenuItem::linkToRoute('Monitor Espiras', 'fas fa-circle-notch', 'admin_vs_index', ['id' => 13])
                     ->setPermission('ROLE_VIEW_VS_SPIRE_HISTORY'),
                 MenuItem::linkToRoute('Historial Espiras VS', 'fas fa-history', 'admin_spire_history_vs_min')
                     ->setPermission('ROLE_VIEW_VS_SPIRE_HISTORY'),
@@ -369,6 +380,8 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToCrud('Mensajes Enviados', 'fas fa-message', Message::class)
             ->setPermission('ROLE_SUPER_ADMIN');
         yield MenuItem::linkToRoute('Grafana Dashboard', 'fas fa-chart-line', 'admin_grafana_dashboard')
+            ->setPermission('ROLE_SUPER_ADMIN');
+        yield MenuItem::linkToRoute('Grafana Sync', 'fas fa-sync-alt', 'admin_grafana_sync')
             ->setPermission('ROLE_SUPER_ADMIN');
         yield MenuItem::linkToRoute('Prometheus', 'fas fa-database', 'admin_prometheus_dashboard')
             ->setPermission('ROLE_SUPER_ADMIN');

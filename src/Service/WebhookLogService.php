@@ -3,10 +3,12 @@
 namespace App\Service;
 
 use App\Entity\WebhookLog;
+use App\Message\ProcessWebhookMessage;
 use App\Repository\WebhookLogRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 /**
  * Service for logging and tracking incoming webhooks
@@ -17,6 +19,7 @@ class WebhookLogService
         private EntityManagerInterface $entityManager,
         private WebhookLogRepository $webhookLogRepository,
         private ConcessionMappingService $concessionMappingService,
+        private MessageBusInterface $messageBus,
         private LoggerInterface $logger
     ) {
     }
@@ -124,6 +127,30 @@ class WebhookLogService
             'id' => $webhookLog->getId(),
             'source' => $webhookLog->getSource(),
             'error' => $error
+        ]);
+    }
+
+    /**
+     * Dispatches the webhook for async processing via Symfony Messenger
+     * Marks the webhook as QUEUED and sends a message to the bus
+     */
+    public function dispatchForProcessing(WebhookLog $webhookLog): void
+    {
+        // Mark as queued before dispatching
+        $webhookLog->markAsQueued();
+        $this->entityManager->flush();
+
+        // Dispatch message to the bus
+        $message = new ProcessWebhookMessage(
+            $webhookLog->getId(),
+            $webhookLog->getSource()
+        );
+
+        $this->messageBus->dispatch($message);
+
+        $this->logger->info('Webhook dispatched for async processing', [
+            'id' => $webhookLog->getId(),
+            'source' => $webhookLog->getSource()
         ]);
     }
 

@@ -97,6 +97,12 @@
             formData.append('_remember_me', 'on');
         }
 
+        // Incluir token reCAPTCHA si está presente
+        const recaptchaResponse = document.querySelector('[name="g-recaptcha-response"]');
+        if (recaptchaResponse && recaptchaResponse.value) {
+            formData.append('g-recaptcha-response', recaptchaResponse.value);
+        }
+
         // Send AJAX request
         fetch(window.location.href, {
             method: 'POST',
